@@ -1,0 +1,32 @@
+    if (P.state === 'flat') {
+      /* 侧身 = **把人压成一条**，而不是另画一条线。
+       * 第一版是手画一根墨线 + 亮边，结果它和墙上的纸缝长得一模一样 ——
+       * 玩家会找不到自己（这不是审美问题，是可用性问题）。
+       * 正确做法：把同一张精灵横向压到 6px，竖向不动。
+       * 压完之后上下仍是原色（头发、绿外套、裤子），读出来是"人转了个面"。 */
+      const breath = 0.13 + Math.sin(P.t * 3.4) * 0.045;
+      ctx.save();
+      ctx.globalAlpha = breath;
+      ctx.fillStyle = '#ffd9a0';
+      ctx.fillRect(feetX - 10, P.y, 20, P_H);
+      ctx.restore();
+      const animF = PACK_ATLAS.map[P.state] || 'idle';
+      ctx.save();
+      ctx.translate(feetX, 0);
+      ctx.scale(FLAT_W / P_W, 1);
+      ctx.translate(-feetX, 0);
+      if (playerPack.kind === 'atlas') {
+        drawAtlasFrame(ctx, PACK_ATLAS.map.stand || 'idle', P.animT, feetX, feetY,
+                       P_SPRITE_H, P.face < 0, null);
+      } else {
+        drawPhotoFrame(ctx, feetX, feetY, P_SPRITE_H, P.face < 0, 'stand', P.animT);
+      }
+      ctx.restore();
+      /* 面向观众那一侧的亮边：纸的侧棱。它同时是"我朝哪边"的唯一提示。 */
+      ctx.fillStyle = 'rgba(255,240,214,.42)';
+      ctx.fillRect(feetX + (P.face > 0 ? 2.4 : -3.4), P.y + 3, 1, P_H - 8);
+      /* 脚下压一小片影子，不然这条线看着像浮在墙上 */
+      ctx.save();
+      ctx.globalAlpha = 0.35; ctx.fillStyle = '#05040a';
+      ctx.beginPath(); ctx.ellipse(feetX, P.y + P_H - 1, 11, 3, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();

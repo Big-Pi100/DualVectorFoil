@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>风格对照 · SoulKeep</title>
+<style>
+  :root{ --paper:#111014; --tile:#17161b; --txt:#e8e2d4; --dim:#8c8578; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--txt);
+       font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif;padding:26px 26px 40px}
+  h1{font-size:17px;font-weight:600;letter-spacing:.06em;margin:0 0 5px}
+  .sub{color:var(--dim);font-size:12px;margin:0 0 20px;line-height:1.75}
+  .grid{display:grid;grid-template-columns:repeat(3,480px);gap:20px 22px}
+  .cell{background:var(--tile);border-radius:4px;overflow:hidden;border:1px solid #232228}
+  canvas{display:block;width:480px;height:270px}
+  .cap{padding:9px 11px 11px;border-top:1px solid #232228}
+  .cap .n{font-size:12.5px;font-weight:600;letter-spacing:.05em}
+  .cap .n b{color:#ffd75e;font-weight:600;margin-right:8px}
+  .cap .p{font-size:11.5px;color:#c9c2b4;margin-top:4px;line-height:1.6}
+  .cap .c{font-size:11px;color:#7f786c;margin-top:3px;line-height:1.5}
+</style>
+</head>
+<body>
+<h1>风格对照 · 同一场景六种画法</h1>
+<p class="sub">场景固定：砖房 + 平台 + 主角（持刀）+ 两只敌 + 一刀斩击 + 拾取物 + 一条血。<br>
+判据只有三条 —— ① 站得住的地方看得出来吗 ② 主角和背景分得开吗 ③ 打中的那一下亮不亮。</p>
+<div class="grid" id="grid"></div>
+<script>
+const W = 480, H = 270, FLOOR = 196;
+
+const SCENE = {
+  ledge:{x:150,y:150,w:186,h:10},
+  hero:{x:112,y:FLOOR,h:96},
+  foeA:{x:268,y:FLOOR,w:30,h:26},
+  foeB:{x:306,y:100,w:24,h:20},
+  slit:{cx:150,cy:172,r:42},
+  spark:{x:184,y:170},
+  pick:{x:402,y:FLOOR}
+};
+
+/* ─── 共用：影子、砖墙、地面、平台 ─── */
+function shadow(g,x,y,w,a){
+  g.save(); g.globalAlpha=a==null?.22:a; g.fillStyle='#000';
+  g.beginPath(); g.ellipse(x,y+1,w*.62,w*.16,0,0,7); g.fill(); g.restore();
+}
+function brickWall(g,S,line,rows){
+  g.fillStyle=S.wall; g.fillRect(0,0,W,FLOOR);
+  g.strokeStyle=line; g.lineWidth=1;
+  for(let y=0;y<FLOOR;y+=18){
+    g.beginPath(); g.moveTo(0,y+.5); g.lineTo(W,y+.5); g.stroke();
+    const off=(Math.floor(y/18)%2)?18:0;
+    for(let x=off;x<W;x+=36){ g.beginPath(); g.moveTo(x+.5,y); g.lineTo(x+.5,y+18); g.stroke(); }
+  }
+}
+function floorSlab(g,S,edge){
+  g.fillStyle=S.floor; g.fillRect(0,FLOOR,W,H-FLOOR);
+  g.fillStyle=edge; g.fillRect(0,FLOOR,W,4);
+  g.strokeStyle=S.wall; g.lineWidth=1;
+  for(let x=0;x<W;x+=44){ g.beginPath(); g.moveTo(x+.5,FLOOR+4); g.lineTo(x+.5,H); g.stroke(); }
+}
+function ledge(g,S,top){
+  const L=SCENE.ledge;
+  g.fillStyle=S.plat; g.fillRect(L.x,L.y,L.w,L.h);
+  g.fillStyle=top;    g.fillRect(L.x,L.y-1,L.w,4);
+  g.strokeStyle=S.wall; g.lineWidth=1;
+  for(let x=L.x;x<L.x+L.w;x+=24){ g.beginPath(); g.moveTo(x+.5,L.y+3); g.lineTo(x+.5,L.y+L.h); g.stroke(); }
+}
+/* 两根柱子 + 一盏吊灯 + 地面碎石：让房间“有深度”，六版共用 */
+function props(g,S,o){
+  o=o||{};
+  g.fillStyle=o.pillar||S.plat;
+  g.fillRect(34,26,22,FLOOR-26); g.fillRect(428,26,22,FLOOR-26);
+  if(o.pillarEdge){ g.fillStyle=o.pillarEdge; g.fillRect(34,26,3,FLOOR-26); g.fillRect(428,26,3,FLOOR-26); }
+  if(o.lamp){
+    g.strokeStyle=o.lamp; g.lineWidth=2;
+    g.beginPath(); g.moveTo(236,0); g.lineTo(236,52); g.stroke();
+    g.fillStyle=o.lamp; g.beginPath();
+    g.moveTo(226,52); g.lineTo(246,52); g.lineTo(241,64); g.lineTo(231,64); g.closePath(); g.fill();
+    const rg=g.createRadialGradient(236,62,4,236,62,110);
+    rg.addColorStop(0,o.lampGlow||'rgba(255,220,150,.22)'); rg.addColorStop(1,'rgba(255,220,150,0)');
+    g.fillStyle=rg; g.fillRect(110,0,260,FLOOR);
+  }
+  if(o.rubble!==false){ g.fillStyle=o.rubble||S.wall;
+    [[70,FLOOR-4],[196,FLOOR-3],[300,FLOOR-5],[452,FLOOR-4]].forEach(([x,y])=>g.fillRect(x,y,5,3)); }
+}
+
+/* ─── 主角：大衣 + 礼帽 + 持刀 ─── */
+function hero(g,S,o){
+  o=o||{};
+  const {x,y,h}=SCENE.hero;
+  const coat=o.body||S.hero, skin=o.head||S.skin, ink=o.outline, ow=o.ow||2;
+  const bw=h*.36;
+  shadow(g,x,y,bw,o.shadow);
+
+  const draw=(dx,dy,fill)=>{
+    const X=x+dx, Y=y+dy;
+    g.fillStyle=fill;
+    // 腿
+    g.fillRect(X-h*.09-.055*h, Y-h*.32, h*.11, h*.32);
+    g.fillRect(X+h*.09-.055*h, Y-h*.32, h*.11, h*.32);
+    // 大衣（下摆张开）
+    g.beginPath();
+    g.moveTo(X-bw*.42, Y-h*.80);
+    g.lineTo(X+bw*.42, Y-h*.80);
+    g.lineTo(X+bw*.56, Y-h*.30);
+    g.lineTo(X-bw*.56, Y-h*.30);
+    g.closePath(); g.fill();
+    // 头 + 帽（帽檐压在头顶上方，不许切脸）
+    g.beginPath(); g.arc(X, Y-h*.855, h*.095, 0, 7); g.fill();
+    g.fillRect(X-h*.135, Y-h*1.015, h*.27, h*.045);
+    g.fillRect(X-h*.072, Y-h*1.085, h*.144, h*.075);
+    // 持刀的手
+    g.fillRect(X+bw*.30, Y-h*.66, h*.09, h*.075);
+  };
+  if(o.rim){ draw(o.rimDx||2.5, -1, o.rim); }   // 先画一层暖色，露出右缘
+  draw(0,0,coat);
+  g.fillStyle=skin; g.beginPath(); g.arc(x, y-h*.855, h*.085, 0, 7); g.fill();
+  g.fillStyle=coat; g.fillRect(x-h*.12, y-h*1.015, h*.24, h*.04);
+  g.fillRect(x-h*.062, y-h*1.078, h*.124, h*.068);
+
+  if(ink){
+    g.strokeStyle=ink; g.lineWidth=ow; g.lineJoin='round';
+    g.beginPath();
+    g.moveTo(x-bw*.42, y-h*.80); g.lineTo(x+bw*.42, y-h*.80);
+    g.lineTo(x+bw*.56, y-h*.30); g.lineTo(x-bw*.56, y-h*.30); g.closePath(); g.stroke();
+    g.beginPath(); g.arc(x, y-h*.855, h*.095, 0, 7); g.stroke();
+    g.strokeRect(x-h*.135, y-h*1.015, h*.27, h*.045);
+    g.strokeRect(x-h*.09, y-h*.32, h*.11, h*.32);
+    g.strokeRect(x+h*.035, y-h*.32, h*.11, h*.32);
+  }
+  // 刀：一条亮线，六版都留着 —— 它同时是“攻击范围”的视觉提示
+  g.save(); g.strokeStyle=o.blade||S.blade||'#e8e2d2'; g.lineWidth=o.bladeW||2; g.lineCap='round';
+  g.beginPath(); g.moveTo(x+bw*.36, y-h*.64); g.lineTo(x+bw*.36+h*.30, y-h*.76); g.stroke();
+  g.restore();
+}
+
+/* ─── 敌：梯形身 + 两点眼 ─── */
+function foe(g,S,pos,o){
+  o=o||{}; const {x,y,w,h}=pos;
+  shadow(g,x,y,w*.8,o.shadow);
+  g.fillStyle=o.body||S.foe;
+  g.beginPath();
+  g.moveTo(x-w/2, y); g.lineTo(x-w/2+w*.14, y-h);
+  g.lineTo(x+w/2-w*.14, y-h); g.lineTo(x+w/2, y);
+  g.closePath(); g.fill();
+  if(o.outline){ g.strokeStyle=o.outline; g.lineWidth=o.ow||1.6; g.stroke(); }
+  g.fillStyle=o.eye||S.accent;
+  g.fillRect(x-w*.20, y-h*.60, w*.13, w*.13);
+  g.fillRect(x+w*.08, y-h*.60, w*.13, w*.13);
+}
+
+/* ─── 斩击：主弧 + 一道拖尾 ─── */
+function slash(g,color,glow,lw){
+  const {cx,cy,r}=SCENE.slit;
+  g.save(); g.lineCap='round';
+  if(glow){ g.shadowColor=color; g.shadowBlur=16; }
+  g.strokeStyle=color; g.lineWidth=lw||7;
+  g.beginPath(); g.arc(cx,cy,r,-1.15,0.95); g.stroke();
+  g.globalAlpha=.45; g.lineWidth=(lw||7)*.4;
+  g.beginPath(); g.arc(cx,cy,r+11,-0.95,0.7); g.stroke();
+  g.restore();
+}
+function spark(g,color){
+  const {x,y}=SCENE.spark;
+  g.save(); g.strokeStyle=color; g.lineWidth=2.2; g.lineCap='round';
+  for(let i=0;i<7;i++){ const a=i/7*6.283+.2,r1=6,r2=15;
+    g.beginPath(); g.moveTo(x+Math.cos(a)*r1,y+Math.sin(a)*r1);
+    g.lineTo(x+Math.cos(a)*r2,y+Math.sin(a)*r2); g.stroke(); }
+  g.fillStyle=color; g.beginPath(); g.arc(x,y,3.2,0,7); g.fill();
+  g.restore();
+}
+function pickup(g,color){
+  const p=SCENE.pick; g.save();
+  g.shadowColor=color; g.shadowBlur=12; g.fillStyle=color;
+  g.beginPath(); g.moveTo(p.x,p.y-18); g.lineTo(p.x+8,p.y-9);
+  g.lineTo(p.x,p.y); g.lineTo(p.x-8,p.y-9); g.closePath(); g.fill();
+  g.globalAlpha=.35; g.beginPath(); g.ellipse(p.x,p.y+1,9,3,0,0,7); g.fill();
+  g.restore();
+}
+function hpBar(g,fg,back,txt){
+  g.fillStyle=back; g.fillRect(14,13,98,8);
+  g.fillStyle=fg;   g.fillRect(14,13,98*.72,8);
+  g.fillStyle=txt;  g.font='9px "Microsoft YaHei",sans-serif';
+  g.fillText('12 / 12',120,21);
+}
+
+/* ─── 六版 ─── */
+const STYLES=[
+{ id:'F', name:'现状（只修可读性）',
+  pitch:'配色不动，只把「墙 / 地 / 平台 / 人」四层明度拉开，加影子与刀光。',
+  cost:'代价：几乎零成本。但底子还是那股灰泥味，暗场里依然闷。',
+  draw(g){
+    const S={wall:'#241d1a',floor:'#3a322c',plat:'#4a3f36',hero:'#8b98a3',skin:'#e6d3b6',
+             foe:'#d8c9b2',accent:'#ff6a52',blade:'#f2ead6'};
+    brickWall(g,S,'#2e2521'); floorSlab(g,S,'#c9a868');
+    props(g,S,{pillar:'#2b2320',pillarEdge:'#3b3029',lamp:'#6b5a3a',lampGlow:'rgba(255,214,140,.20)'});
+    ledge(g,S,'#c9a868');
+    foe(g,{foe:S.foe,accent:S.accent},SCENE.foeB,{});
+    hero(g,S,{outline:'#100c0a',ow:2});
+    foe(g,{foe:S.foe,accent:S.accent},SCENE.foeA,{outline:'#100c0a'});
+    slash(g,'#f7f2e2',true,7); spark(g,'#ffd75e'); pickup(g,'#ffd75e');
+    hpBar(g,'#d8402f','#1b1410','#e8e2d4');
+  }},
+
+{ id:'A', name:'墨刻 · 版画纸',
+  pitch:'近白纸底 + 纯黑厚描边 + 一点朱红。硬阴影、无渐变，像木刻印出来的。',
+  cost:'代价：tile 与角色全部线稿化。但美术量最小、永远读得清，和「纸」的世界观最合。',
+  draw(g){
+    g.fillStyle='#f4efe2'; g.fillRect(0,0,W,H);
+    // 墙：木刻横纹，越靠下越密
+    g.strokeStyle='#e0d6c0'; g.lineWidth=1;
+    for(let y=10;y<FLOOR;y+=6){ g.beginPath(); g.moveTo(0,y+.5); g.lineTo(W,y+.5); g.stroke(); }
+    // 斜刀痕
+    g.save(); g.beginPath(); g.rect(0,0,W,FLOOR); g.clip();
+    g.strokeStyle='rgba(20,17,14,.085)'; g.lineWidth=2;
+    for(let i=-H;i<W+H;i+=11){ g.beginPath(); g.moveTo(i,FLOOR); g.lineTo(i+150,0); g.stroke(); }
+    g.restore();
+    // 柱：黑块 + 白缝
+    g.fillStyle='#14110e'; g.fillRect(34,26,22,FLOOR-26); g.fillRect(428,26,22,FLOOR-26);
+    g.fillStyle='#f4efe2';
+    for(let y=34;y<FLOOR;y+=16){ g.fillRect(36,y,18,2); }
+    // 地：黑实块 + 白碎石
+    g.fillStyle='#14110e'; g.fillRect(0,FLOOR,W,H-FLOOR);
+    g.fillStyle='#f4efe2';
+    for(let x=8;x<W;x+=30){ g.fillRect(x,FLOOR+14,14,2); g.fillRect(x+6,FLOOR+30,9,2); }
+    // 平台：黑条 + 朱红上缘
+    const L=SCENE.ledge;
+    g.fillStyle='#14110e'; g.fillRect(L.x,L.y,L.w,L.h+3);
+    g.fillStyle='#c2372b'; g.fillRect(L.x,L.y-4,L.w,4);
+    // 吊灯：只留剪影与一圈点刻光
+    g.fillStyle='#14110e'; g.fillRect(235,0,2,52);
+    g.beginPath(); g.moveTo(224,52); g.lineTo(248,52); g.lineTo(243,66); g.lineTo(229,66); g.closePath(); g.fill();
+    g.fillStyle='rgba(194,55,43,.10)';
+    for(let a=0;a<6.283;a+=0.22){ const rr=70+Math.sin(a*7)*6;
+      g.fillRect(236+Math.cos(a)*rr, 64+Math.sin(a)*rr*.62, 3,3); }
+    const S={hero:'#14110e',skin:'#14110e',foe:'#14110e',accent:'#c2372b'};
+    foe(g,S,SCENE.foeB,{});
+    hero(g,S,{blade:'#c2372b',bladeW:3});
+    foe(g,S,SCENE.foeA,{});
+    slash(g,'#c2372b',false,8); spark(g,'#c2372b'); pickup(g,'#c2372b');
+    hpBar(g,'#c2372b','rgba(20,17,14,.12)','#14110e');
+  }},
+
+{ id:'B', name:'霓虹洞窟',
+  pitch:'近黑底 + 青/洋红双色 + 加法光晕。DC 那套「暗底亮边」，敌人一眼从背景里跳出来。',
+  cost:'代价：要单独做一层光晕；pixelfx 的 light buffer 正好就是这层，不用自己写。',
+  draw(g){
+    g.fillStyle='#06060b'; g.fillRect(0,0,W,H);
+    const S={wall:'#0c0e1c',floor:'#111325',plat:'#191430',hero:'#1b2438',skin:'#243050',
+             foe:'#161a2e',accent:'#ff2e88',blade:'#8ffcff'};
+    brickWall(g,S,'#171b31'); floorSlab(g,S,'#2ee6d6');
+    // 环境光
+    let rg=g.createRadialGradient(240,130,10,240,130,270);
+    rg.addColorStop(0,'rgba(46,230,214,.09)'); rg.addColorStop(1,'rgba(46,230,214,0)');
+    g.fillStyle=rg; g.fillRect(0,0,W,H);
+    props(g,S,{pillar:'#101326',pillarEdge:'#2ee6d6',lamp:'#2ee6d6',lampGlow:'rgba(46,230,214,.16)'});
+    ledge(g,S,'#2ee6d6');
+    foe(g,S,SCENE.foeB,{outline:'#ff2e88',ow:1.4});
+    hero(g,S,{outline:'#2ee6d6',ow:1.6,rim:'#2ee6d6',rimDx:2.2});
+    foe(g,S,SCENE.foeA,{outline:'#ff2e88',ow:1.4});
+    slash(g,'#8ffcff',true,8); spark(g,'#ff2e88'); pickup(g,'#ff2e88');
+    g.save(); g.shadowColor='#2ee6d6'; g.shadowBlur=9;
+    hpBar(g,'#2ee6d6','rgba(46,230,214,.16)','#cdf6f4'); g.restore();
+  }},
+
+{ id:'C', name:'低分辨率像素 · 有序抖动',
+  pitch:'160×90 缓冲，6 色色板，Bayer 抖动做过渡，硬像素无抗锯齿。',
+  cost:'代价：全库美术按像素格重画。换来 pixelfx 那 244 个特效 100% 直插、连色板都能共用。',
+  draw(g){
+    const cv=document.createElement('canvas'); cv.width=160; cv.height=90;
+    const q=cv.getContext('2d'); q.scale(1/3,1/3);
+    const P=['#0a0d10','#1b2730','#324650','#6d8b8b','#c9d8c8','#e8b04b'];
+    q.fillStyle=P[1]; q.fillRect(0,0,W,FLOOR);
+    // 砖：两色 + 底缘抖动，不做满屏噪点
+    q.strokeStyle=P[0]; q.lineWidth=1;
+    for(let y=0;y<FLOOR;y+=18){
+      q.beginPath(); q.moveTo(0,y+.5); q.lineTo(W,y+.5); q.stroke();
+      const off=(Math.floor(y/18)%2)?18:0;
+      for(let x=off;x<W;x+=36){ q.beginPath(); q.moveTo(x+.5,y); q.lineTo(x+.5,y+18); q.stroke(); }
+    }
+    const Bayer=[[0,8,2,10],[12,4,14,6],[3,11,1,9],[15,7,13,5]];
+    for(let y=120;y<FLOOR;y+=3) for(let x=0;x<W;x+=3){
+      const t=(y-120)/(FLOOR-120);
+      if(t*16 > Bayer[(y/3|0)%4][(x/3|0)%4]){ q.fillStyle=P[2]; q.fillRect(x,y,3,3); }
+    }
+    // 柱
+    q.fillStyle=P[0]; q.fillRect(34,26,22,FLOOR-26); q.fillRect(428,26,22,FLOOR-26);
+    q.fillStyle=P[2]; q.fillRect(34,26,3,FLOOR-26);
+    // 地
+    q.fillStyle=P[0]; q.fillRect(0,FLOOR,W,H-FLOOR);
+    q.fillStyle=P[3]; q.fillRect(0,FLOOR,W,3);
+    // 平台
+    const L=SCENE.ledge;
+    q.fillStyle=P[0]; q.fillRect(L.x,L.y,L.w,L.h);
+    q.fillStyle=P[4]; q.fillRect(L.x,L.y-3,L.w,3);
+    // 吊灯
+    q.fillStyle=P[0]; q.fillRect(234,0,3,50); q.fillRect(222,50,27,4);
+    q.fillStyle=P[5]; q.fillRect(228,54,15,3);
+    const S={hero:P[0],skin:P[3],foe:P[4],accent:P[0],blade:P[5]};
+    foe(q,S,SCENE.foeB,{});
+    hero(q,S,{blade:P[5],bladeW:3});
+    foe(q,S,SCENE.foeA,{});
+    slash(q,P[5],false,6);
+    const {x,y}=SCENE.spark; q.fillStyle=P[5];
+    for(let i=0;i<7;i++){ const a=i/7*6.283+.2;
+      q.fillRect(x+Math.cos(a)*13-1,y+Math.sin(a)*13-1,3,3); }
+    pickup(q,P[5]);
+    q.fillStyle=P[0]; q.fillRect(14,13,98,8);
+    q.fillStyle=P[5]; q.fillRect(14,13,70,8);
+    q.fillStyle=P[4]; q.fillRect(120,14,26,2.4); q.fillRect(120,18,16,2.4);
+    g.imageSmoothingEnabled=false; g.drawImage(cv,0,0,W,H);
+  }},
+
+{ id:'D', name:'双色剪影',
+  pitch:'背景一片冷灰蓝，人和怪全是纯黑剪影，只留一道暖色轮廓光。',
+  cost:'代价：最省美术、可读性最强；但脸和布料细节全没了，只靠动作和轮廓认人。',
+  draw(g){
+    const sky=g.createLinearGradient(0,0,0,FLOOR);
+    sky.addColorStop(0,'#2b3c4e'); sky.addColorStop(1,'#4a6076');
+    g.fillStyle=sky; g.fillRect(0,0,W,FLOOR);
+    // 远景三层楼
+    g.fillStyle='#35495c';
+    for(let i=0;i<6;i++){ const w=64+(i%3)*18,h=42+(i%4)*16; g.fillRect(8+i*80,FLOOR-h,w,h); }
+    g.fillStyle='#1b2733';
+    for(let i=0;i<4;i++){ const w=40+(i%2)*22,h=26+(i%3)*10; g.fillRect(50+i*110,FLOOR-h,w,h); }
+    // 地
+    g.fillStyle='#0f1720'; g.fillRect(0,FLOOR,W,H-FLOOR);
+    // 柱
+    g.fillStyle='#121b25'; g.fillRect(34,26,22,FLOOR-26); g.fillRect(428,26,22,FLOOR-26);
+    // 平台
+    const L=SCENE.ledge;
+    g.fillStyle='#0f1720'; g.fillRect(L.x,L.y,L.w,L.h);
+    g.fillStyle='#e8b04b'; g.fillRect(L.x,L.y-2,L.w,2);
+    // 吊灯
+    g.fillStyle='#0f1720'; g.fillRect(235,0,2,52);
+    g.beginPath(); g.moveTo(224,52); g.lineTo(248,52); g.lineTo(243,66); g.lineTo(229,66); g.closePath(); g.fill();
+    g.fillStyle='#e8b04b'; g.fillRect(232,58,8,3);
+    const S={hero:'#080b10',skin:'#080b10',foe:'#080b10',accent:'#e8b04b',blade:'#f6e7c6'};
+    foe(g,S,SCENE.foeB,{});
+    hero(g,S,{rim:'#e8b04b',rimDx:3.2,blade:'#f6e7c6',bladeW:2.4});
+    foe(g,S,SCENE.foeA,{});
+    slash(g,'#f2e4c8',true,8); spark(g,'#e8b04b'); pickup(g,'#e8b04b');
+    hpBar(g,'#e8b04b','rgba(255,255,255,.14)','#e4edf5');
+  }},
+
+{ id:'E', name:'纸纤维水彩',
+  pitch:'米黄纸纹 + 淡墨晕染 + 细线。温润、安静，偏叙事。',
+  cost:'代价：对比天生偏低，动作戏要靠剪影和描边硬补；HUD 必须单独提亮，否则看不清。',
+  draw(g){
+    g.fillStyle='#efe6d3'; g.fillRect(0,0,W,H);
+    let sd=9; const rnd=()=>{ sd=(sd*1103515245+12345)&0x7fffffff; return sd/0x7fffffff; };
+    for(let i=0;i<3000;i++){ const x=rnd()*W,y=rnd()*H;
+      g.fillStyle = rnd()>.5 ? 'rgba(160,140,105,.11)' : 'rgba(255,252,240,.55)';
+      g.fillRect(x,y,rnd()*5+1,1); }
+    // 墙：一层淡墨 + 晕边
+    g.fillStyle='rgba(122,102,72,.14)'; g.fillRect(0,0,W,FLOOR);
+    g.strokeStyle='rgba(58,49,40,.20)'; g.lineWidth=1;
+    for(let y=0;y<FLOOR;y+=36){ g.beginPath(); g.moveTo(0,y); g.lineTo(W,y+2); g.stroke(); }
+    // 柱
+    g.fillStyle='rgba(74,62,45,.32)'; g.fillRect(34,26,22,FLOOR-26); g.fillRect(428,26,22,FLOOR-26);
+    g.fillStyle='rgba(40,34,26,.45)'; g.fillRect(34,26,2,FLOOR-26); g.fillRect(428,26,2,FLOOR-26);
+    // 地
+    g.fillStyle='rgba(96,79,56,.34)'; g.fillRect(0,FLOOR,W,H-FLOOR);
+    g.fillStyle='rgba(40,34,26,.55)'; g.fillRect(0,FLOOR,W,2);
+    // 平台
+    const L=SCENE.ledge;
+    g.fillStyle='rgba(58,49,40,.60)'; g.fillRect(L.x,L.y,L.w,L.h);
+    g.fillStyle='rgba(168,85,46,.80)'; g.fillRect(L.x,L.y-2,L.w,2);
+    // 吊灯：一个墨点 + 一圈淡晕
+    g.fillStyle='rgba(58,49,40,.7)'; g.fillRect(235,0,1.6,50);
+    g.beginPath(); g.moveTo(226,50); g.lineTo(246,50); g.lineTo(242,62); g.lineTo(230,62); g.closePath(); g.fill();
+    const rg=g.createRadialGradient(236,66,2,236,66,86);
+    rg.addColorStop(0,'rgba(200,150,80,.20)'); rg.addColorStop(1,'rgba(200,150,80,0)');
+    g.fillStyle=rg; g.fillRect(150,10,180,FLOOR-10);
+    const S={hero:'#5a6672',skin:'#c9a886',foe:'#8d7f6a',accent:'#a8552e',blade:'#4a4038'};
+    foe(g,S,SCENE.foeB,{outline:'rgba(30,26,22,.62)',ow:1.3});
+    hero(g,S,{outline:'rgba(30,26,22,.78)',ow:1.5,blade:'rgba(58,49,40,.9)',bladeW:1.8});
+    foe(g,S,SCENE.foeA,{outline:'rgba(30,26,22,.62)',ow:1.3});
+    slash(g,'rgba(58,49,40,.88)',false,6); spark(g,'#a8552e'); pickup(g,'#a8552e');
+    g.fillStyle='rgba(58,49,40,.20)'; g.fillRect(14,13,98,8);
+    g.fillStyle='#a8552e'; g.fillRect(14,13,70,8);
+    g.fillStyle='#3a3128'; g.font='9px "Microsoft YaHei",sans-serif'; g.fillText('12 / 12',120,21);
+  }}
+];
+
+const grid=document.getElementById('grid');
+for(const S of STYLES){
+  const cell=document.createElement('div'); cell.className='cell';
+  const cv=document.createElement('canvas'); cv.width=W*2; cv.height=H*2;
+  const g=cv.getContext('2d'); g.scale(2,2); S.draw(g);
+  cell.appendChild(cv);
+  const cap=document.createElement('div'); cap.className='cap';
+  cap.innerHTML='<div class="n"><b>'+S.id+'</b>'+S.name+'</div>'+
+                '<div class="p">'+S.pitch+'</div><div class="c">'+S.cost+'</div>';
+  cell.appendChild(cap); grid.appendChild(cell);
+}
+window.__labReady=true;
+</script>
+</body>
+</html>

@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#07070b">
+<title>二向箔 · DEMO</title>
+<style>
+  :root{
+    --bg:#07070b; --panel:rgba(18,16,24,.82); --line:rgba(255,255,255,.09);
+    --ink:#e8e2d2; --dim:#8b8478; --gold:#ffd75e;
+    --red:#e8735a; --blue:#6fa8dc; --yellow:#d8b24a;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);
+    font-family:ui-sans-serif,"PingFang SC","Microsoft YaHei",sans-serif;overflow:hidden;
+    overscroll-behavior:none;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
+  /* 用 flex 把 960×540 的舞台居中，缩放只交给 transform:scale()
+     —— 别用 translate(-50%,-50%)，它按未缩放尺寸算，一加 scale 就偏。 */
+  body{display:flex;align-items:center;justify-content:center}
+  #stage{position:relative;flex:0 0 auto;width:960px;height:540px;transform-origin:center center;
+    box-shadow:0 0 0 1px var(--line),0 30px 80px rgba(0,0,0,.7);border-radius:10px;overflow:hidden}
+  canvas#cv{display:block;width:960px;height:540px;image-rendering:pixelated}
+  /* 画布可聚焦是为了让 iframe 里能接住键盘；但它不是控件，不该有焦点框。 */
+  canvas#cv:focus{outline:none}
+
+  /* ---------- 顶栏 ---------- */
+  #top{position:absolute;left:0;right:0;top:0;height:46px;display:flex;align-items:center;gap:12px;
+    padding:0 14px;background:linear-gradient(180deg,rgba(6,6,10,.85),rgba(6,6,10,0));pointer-events:none}
+  #title{font-weight:700;letter-spacing:3px;font-size:14px;color:#cfc7b0}
+  #title small{font-weight:400;letter-spacing:1px;color:#6d675d;margin-left:8px}
+  #skinwrap{margin-left:auto;display:flex;align-items:center;gap:8px;pointer-events:auto}
+  #skinlabel{font-size:11px;color:var(--dim);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  /* font-family:inherit 不能省：button 默认不继承字体，中文会用系统 UI 字体渲染，
+     同一排按钮的字距和粗细就对不上（"换回名片"看起来比"按快门"松）。 */
+  .btn{font-family:inherit;font-size:11px;padding:5px 10px;border-radius:6px;border:1px solid var(--line);
+    background:rgba(255,255,255,.05);color:var(--ink);cursor:pointer}
+  .btn:hover{background:rgba(255,255,255,.12)}
+
+  /* ---------- 血槽 ---------- */
+  #bars{position:absolute;left:14px;top:52px;width:250px}
+  .bar{position:relative;height:11px;border-radius:6px;background:rgba(255,255,255,.08);overflow:hidden;
+    border:1px solid rgba(255,255,255,.10);margin-bottom:6px}
+  .bar i{display:block;height:100%;transition:width .12s linear}
+  /* 数值写在条的**右端内侧**（参考图就是 174 / 248 贴在血条右边）。
+     为什么不放左边：条从左往右缩，数字放左边会一直压住没掉的那一截颜色，
+     放右边则永远落在"空掉的那一段"上方，读数不受血量影响。 */
+  .barnum{position:absolute;right:7px;top:50%;transform:translateY(-50%);
+    font-size:10px;line-height:1;color:#fff;letter-spacing:.5px;
+    text-shadow:0 1px 2px rgba(0,0,0,.85);pointer-events:none;
+    font-variant-numeric:tabular-nums}
+  #hpfill{background:linear-gradient(90deg,#b23a2e,#e8735a)}
+  /* 可夺回的血（rally）：紧贴血条右端，斜纹橙。
+     没有这一段，rally 在画面上**完全不存在** —— 玩家不知道有这个机制，
+     等于没做。DC 用橙色血条表达同一件事，这里用斜纹把"还没到手的"和
+     "已经到手的"分开：实心红是现在，斜纹橙是打回去能要回来的。 */
+  #hprally{position:absolute;top:0;left:100%;width:0;height:100%;display:block;
+    background:repeating-linear-gradient(45deg,
+      rgba(255,152,58,.62) 0 3px, rgba(255,152,58,.26) 3px 6px);
+    transition:left .12s linear,width .12s linear;pointer-events:none}
+  /* 墨条只在有灯的房间里**可见**，但它的**位置永远留着**（裁定 Q7）。
+   * 上一版是 display:none —— 一进有灯的房间，左边 HP/MP/房间名整体往下跳 30px，
+   * 玩家的视线跟着弹一下。visibility 换 display，占位不变，只换看不看得见。 */
+  #inkfill{background:linear-gradient(90deg,#7a6838,#dcc98c)}
+  #inkrow{visibility:hidden}
+  #stage.ink #inkrow{visibility:visible}
+  .barlabel{font-size:11px;color:var(--dim);letter-spacing:1px;margin-bottom:2px}
+
+  /* ---------- 房间名 / 魂槽 ---------- */
+  /* 房间名挪到血瓶**右边**同一行（left 62 = 瓶右缘 54 + 8）。
+     原来在 top:156 独占一行，瓶格下移到 126 之后就压在它头上了；
+     与其把房间名再往下推（越推越接近画面中央），不如并排 —— 左列本来就是
+     "状态一条竖线"，横向还空着。 */
+  #roomname{position:absolute;left:62px;top:136px;font-size:13px;letter-spacing:2px;color:#b8ae98}
+
+  /* ---------- 血瓶（左上，HP/墨 两条之后）----------
+     参考图：瓶格在数值行**正下方**、HUD 最左侧那一列。参考图里没有墨条，
+     所以它紧跟着血条；我们的 HUD 多一条墨，瓶格就得让到**两条之后**。
+     上一版放 top:104 —— 正好压在墨条上，有灯的房间里墨条一显形就被瓶子盖住
+     （无灯房间看不出来，所以只在部分房间露馅）。
+     现在 top:126 = 血条底 122 + 4。40×40。 */
+  #flask{position:absolute;left:14px;top:126px;width:40px;height:40px;padding:0;
+    border-radius:8px;border:1.5px solid rgba(232,226,210,.62);
+    background:rgba(10,9,15,.82);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    -webkit-tap-highlight-color:transparent;touch-action:none;
+    box-shadow:0 2px 10px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.04)}
+  #flask:hover{border-color:rgba(255,215,94,.7)}
+  #flask:active{background:rgba(255,215,94,.22)}
+  /* 瓶子用 CSS 画，不用图：塞子 + 颈 + 身 + 高光，四条规则就够。
+     参考图里那瓶是**瘦长**的（高约是宽的 1.6 倍），上一版是 16×16 的方块，
+     看着像颗药丸。这里拉成 14×20，颈和塞子各占一层。
+     （"颜色跟血量走"这句话原来写在注释里，但从来没有实现过 —— 已删。） */
+  #flaskico{position:relative;width:16px;height:24px;display:block}
+  #flaskico::before{content:'';position:absolute;left:4px;top:2px;width:8px;height:5px;
+    border-radius:2px;background:#c9bda2}                     /* 塞子 */
+  #flaskico::after{content:'';position:absolute;left:1px;top:6px;width:14px;height:16px;
+    border-radius:3px 3px 6px 6px;
+    background:linear-gradient(180deg,#8e2418,#e8735a);
+    box-shadow:inset 0 -5px 6px rgba(0,0,0,.35)}
+  #flaskico i{position:absolute;left:3px;top:9px;width:3px;height:9px;border-radius:2px;
+    background:rgba(255,235,220,.5);z-index:1}                /* 高光 */
+  /* 次数徽章压在右下角，不占瓶身 */
+  #flaskn{position:absolute;right:-5px;bottom:-5px;min-width:17px;height:17px;
+    border-radius:9px;background:#1a1720;border:1px solid rgba(232,226,210,.55);
+    font-size:11px;font-weight:700;line-height:15px;text-align:center;color:#efe6d2}
+  /* 次数为 0：瓶身变灰、徽章变红 —— 不是把它藏起来，藏起来玩家会以为这功能没了 */
+  #flask.out #flaskico{filter:grayscale(1) brightness(.55)}
+  #flask.out #flaskn{color:#e8735a;border-color:rgba(232,115,90,.6)}
+
+  /* ---------- 小地图（右上）----------
+     参考图 (1572,63)-(1663,143)，右缘距 257、上缘距 63（1920×887）→ 960 逻辑右缘 128、top 31。
+     我们的顶栏占 0-46，所以 top 52。画布 240×200 是 2x backing store，CSS 显示 120×100。
+     底和边框都很淡：参考图的小地图是**直接浮在场景上**的，没有面板；
+     加一层 .34 的黑底只是为了让暗房间里的蓝块还看得见。 */
+  #mm{position:absolute;right:14px;top:52px;width:120px;height:100px;
+    background:rgba(8,7,12,.34);border-radius:6px;
+    box-shadow:0 0 0 1px rgba(232,226,210,.13) inset;
+    image-rendering:pixelated;pointer-events:none}
+  /* ================= 四格装备栏（照《重生细胞》手机版） =================
+     2 装备（剑 / 纸）+ 2 道具（红魂 / 蓝魂）。格子点一下就使用，冷却画在格子上。
+     位置来源：手机版截图实测 —— 底部横排两格是武器，右缘竖排两格是技能。
+     这四条 right/bottom 只是**默认值**；玩家拖过之后由 JS 写内联 left/top 覆盖。 */
+  #slots{position:absolute;right:0;bottom:0;width:0;height:0}
+  .slot{position:absolute;width:var(--sz,44px);height:var(--sz,44px);
+    padding:0;border-radius:8px;border:1.5px solid rgba(232,226,210,.62);
+    /* 底色压到 .82：桌面版的房间是亮的（长椅、壁灯），.66 的透明底在亮场景上
+       糊成一片，四个格子像贴在墙上的纸片。参考图的格子底色是**实心深色**，
+       不管后面是什么都要看得清。 */
+    background:rgba(10,9,15,.82);color:#e6dcc4;
+    font:600 13px/1.2 "PingFang SC","Microsoft YaHei",sans-serif;letter-spacing:.5px;
+    display:flex;align-items:center;justify-content:center;text-align:center;
+    /* 不换行：44px 的格子放「未装备」三个字，一换行就变成"未装/备"，
+       看着像排版坏了。宁可把字号压到 10px 一行放完。 */
+    white-space:nowrap;
+    backdrop-filter:blur(2px);-webkit-tap-highlight-color:transparent;
+    touch-action:none;pointer-events:auto;cursor:pointer;overflow:hidden;
+    box-shadow:0 2px 10px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.04)}
+  .slot:active,.slot.on{background:rgba(255,215,94,.22);border-color:rgba(255,215,94,.85);color:#fff6d8}
+  /* 空槽用虚线边 + 明确的「未装备」（WO-003 §6）。
+   * 原来只写一个低对比的「空」字，玩家要凑近看才知道这里是空的、不是坏的。 */
+  .slot.empty{color:#9a9181;border-style:dashed;letter-spacing:1px;font-weight:500;font-size:11px}
+  /* 冷却：--cd = 剩余比例（1 = 刚用完，0 = 好了）。
+     画成"从下往上退去的黑幕"而不是数字：战斗中没人读小数，只看得懂还剩多少。 */
+  .slot.cd::after{content:'';position:absolute;left:0;right:0;bottom:0;pointer-events:none;
+    height:calc(var(--cd, 0) * 100%);background:rgba(0,0,0,.62)}
+  .slot.slot-red{border-color:rgba(232,115,90,.78);color:#f4ac9e}
+  .slot.slot-blue{border-color:rgba(111,168,220,.78);color:#b3d4ee}
+  .slot.gear{border-color:rgba(232,226,210,.62);color:#efe6d2}
+  /* ---- 默认位置：参考图 1920×887 上逐格量出来的四格（WO-005） ----
+     上一版只量到两个格，右侧那两个"技能位"其实是**动作键**，摆错了地方；
+     A/B 斜上方还有两格完全漏掉。这一版用长直线检测把七个方块全量了一遍：
+       底排左  (1172,716)-(1246,790)   74×74   右缘 674  底 97
+       底排右  (1384,716)-(1458,790)   74×74   右缘 462  底 97
+       斜上左  (1233,540)-(1307,614)   74×74   右缘 613  底 273
+       斜上右  (1445,540)-(1519,614)   74×74   右缘 401  底 273
+     两条规律：列距 212，行距 176，上排比下排整体右移 61 —— 是个**斜排的平行四边形**，
+     不是"横排两格 + 竖排两格"。照这个排，四格才像参考图。
+     折算到 960×540（右缘 ×0.5，下缘按屏高比例 540/887）：
+       下排 右缘 337 / 231，下缘 59；上排 右缘 307 / 201，下缘 166。
+     格子不贴屏幕边 —— 参考图下缘还有 97px 的空。 */
+  #slotw1{right:337px;bottom:59px}
+  #slotw2{right:231px;bottom:59px}
+  #slotred{right:307px;bottom:166px}
+  #slotblue{right:201px;bottom:166px}
+
+  /* ---------- 按键图例 ----------
+     主界面只有四个高频动作（裁定 Q3），放右下角，小地图删掉之后这块空了（裁定 Q10）。
+     完整表在魂匣的「操作」页签（WO-003）。
+
+     这是新玩家唯一能看到"我现在怎么操作"的地方，所以它不能长得像一行状态信息
+     （WO-003 §1）。三处一起改才有效：字号、对比度、底衬。
+     只提字号不提对比度，字还是糊在砖地上；只提对比度不加底衬，角色走到右下角时
+     字和角色叠在一起。 */
+  /* 图例挪到**左下**：右下角现在是四格装备栏（照《重生细胞》），
+     两者叠在一起会比谁都不清楚。左下在桌面上是空的（摇杆只在触屏出现）。 */
+  #keys{position:absolute;left:14px;bottom:12px;text-align:left;
+    font-size:13px;color:#d6ccb2;letter-spacing:.5px;white-space:nowrap;line-height:24px;
+    padding:7px 11px 8px;border-radius:9px;pointer-events:none;
+    /* 很轻的暗底：够把字从砖地纹理里拎出来，又不至于变成一块抢眼的面板 */
+    background:linear-gradient(180deg,rgba(7,6,11,.54),rgba(7,6,11,.74));
+    border:1px solid rgba(255,255,255,.07);
+    box-shadow:0 2px 10px rgba(0,0,0,.35);
+    text-shadow:0 1px 3px rgba(0,0,0,.95)}
+  /* 键帽要比动作文字更亮：视线先落在"按哪个键"，再读"干什么" */
+  #keys .k{display:inline-block;min-width:16px;padding:1px 5px;margin-left:7px;margin-right:2px;
+    border:1px solid #7a7160;border-radius:3px;color:#f4ecd6;font-weight:700;
+    font-style:normal;line-height:16px;text-align:center;font-size:12px;
+    background:rgba(255,255,255,.11)}
+  #keys .pair{color:#7d7567;margin:0 4px}
+  .jo{color:#a2988a;margin:0 1px;font-weight:600}
+  /* 条件（地面 / 薄板上）：小一号、稍暗。它解释"为什么按了没反应"。
+   * 不能压到看不见 —— 看不见的条件等于没写。 */
+  #keys .ent u,.lg .ent u{text-decoration:none;color:#9c9283;font-size:11px;margin-left:3px;letter-spacing:0}
+  /* 没装备对应魂的动作整体压暗 + 明写「未装备」（裁定 Q4）。
+   * 空槽时 L 是真按不出东西的，界面必须在按之前就承认这一点。
+   * 0.42 → 0.58：压到 0.42 时「未装备」三个字自己先糊了，等于没解释。 */
+  #keys .ent.off,.lg .ent.off{opacity:.58}
+  .ent .lk{display:none;font-weight:400;font-size:10px;color:#cf9a83;margin-left:4px;
+    border:1px solid rgba(207,154,131,.55);border-radius:3px;padding:0 3px}
+  .ent.off .lk{display:inline}
+  #keys .alias{display:block;color:#9a917f;font-size:12px;letter-spacing:0;margin-top:2px}
+  #keys .alias b{color:#d8cdb2;font-weight:600}
+
+  /* ---------- 魂匣里的完整图例 ---------- */
+  /* 现在它是「操作」页签里的第一块，不再抢菜单底部的位置。
+     字号和行距都要比旧版大：这一页是"查字典"，不是"看备注"。 */
+  #fullkeys{margin-top:0}
+  #fullkeys .lead{font-size:12px;color:#8f887c;line-height:1.7;margin-bottom:14px;letter-spacing:.3px}
+  #fullkeys .lead b{color:#d8cdb2;font-weight:600}
+  /* 完整表长，必须能换行：一行现在有 7 个条目，窄窗口里会顶出菜单右边缘。
+   * flex + wrap 让整条 `S + K 滑铲 地面` 作为整体换行，不会从中间断开。 */
+  #fullkeys .lg{position:relative;padding-left:58px;
+    font-size:13px;color:#a89f8f;letter-spacing:.5px;line-height:28px;
+    display:flex;flex-wrap:wrap;align-items:baseline;gap:1px 9px}
+  #fullkeys .ent{white-space:nowrap}
+  /* 组名脱离文档流、条目统一左缩进 58px：一条组太长而换行时，续行仍然对齐在
+     条目前面，不会被读成"新的一组"（之前「I 后跃」就单独顶在左边）。 */
+  #fullkeys .gname{position:absolute;left:0;top:0;color:#c8bda4;letter-spacing:2px}
+  #fullkeys .k{display:inline-block;min-width:16px;padding:1px 5px;margin-left:9px;margin-right:2px;
+    border:1px solid #7a7160;border-radius:3px;color:#f4ecd6;font-weight:700;
+    font-style:normal;line-height:16px;text-align:center;font-size:12px;
+    background:rgba(255,255,255,.10)}
+  #fullkeys .pair{color:#7d7567;margin:0 5px}
+  #fullkeys .alias{color:#847b6c;font-size:12px;letter-spacing:0;margin-top:12px}
+  #menucount{font-size:11px;color:#8f887c;letter-spacing:1px;margin-top:2px}
+
+  /* ---------- 触屏操作说明（「操作」页里，仅触屏时填充） ----------
+     按动作分组、每行标 点按/按住 —— 触屏独有的歧义就在这里。 */
+  #touchops{margin-top:14px}
+  #touchops .oprow{display:flex;align-items:baseline;gap:8px;font-size:12px;color:#a89f8f;
+    padding:4px 0;border-bottom:1px solid rgba(255,255,255,.045)}
+  #touchops .oprow b{min-width:78px;color:#d8cdb2;font-weight:600;letter-spacing:.5px}
+  #touchops .oprow span{flex:1}
+  #touchops .oprow i{font-style:normal;font-size:10px;color:#8d8474;
+    border:1px solid rgba(255,255,255,.12);border-radius:3px;padding:0 4px;white-space:nowrap}
+
+  /* ---------- 菜单 ---------- */
+  /* 菜单是**标题 + 页签 + 唯一滚动区**，不再往末尾堆固定高度内容（WO-003 §3）。
+   *
+   * 旧版的问题：魂槽区和键位表都想常驻可见，触屏启动时 mobile.js 还往菜单末尾追加
+   * `.touchfoot`（换照片 / 声音）。菜单是 overflow:hidden，子项又是 flex:0 0 auto，
+   * 窗口一矮，底部就直接被裁掉 —— 而且裁掉的正是最该能点的那几个按钮。
+   *
+   * 现在只有 `.pane` 滚动，页签本身永远在顶部，所以"操作说明"和"外观设置"
+   * 不可能被挤出去。 */
+  /* 0.96 而不是 0.93：画面上有很亮的东西（金色提示字、灯火）时，
+     7% 的透光足够让底下的字浮上来，读起来像两段文字叠在一起。
+     backdrop-filter 在部分安卓 WebView 里不生效，不能靠它兜底。 */
+  #menu{position:absolute;inset:0;display:none;padding:30px 52px 18px;overflow:hidden;
+    background:rgba(5,5,9,.96);backdrop-filter:blur(2px)}
+  #menu.show{display:flex;flex-direction:column}
+  #menu > *{flex:0 0 auto}
+  #menu h2{font-size:15px;letter-spacing:4px;margin:0 0 8px;color:var(--gold);font-weight:600}
+  #menu .tabs{display:flex;gap:6px;margin:0 0 10px}
+  /* 未选中的页签也要看得见边框：原来 var(--line) 几乎和底一样暗，
+     玩家不知道还有第二个页签可以点。 */
+  #menu .tab{font:inherit;font-size:13px;letter-spacing:2px;padding:6px 16px;border-radius:6px;
+    border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.05);
+    color:#a89f8f;cursor:pointer}
+  #menu .tab.on{background:rgba(255,215,94,.10);border-color:rgba(255,215,94,.45);color:#e8d9a8}
+  /* 唯一滚动区。页签切的是这个容器的内容，不是整块菜单。 */
+  #menu .pane{flex:1 1 auto;min-height:0;overflow-y:auto;display:none;padding-right:4px}
+  #menu .pane.on{display:block}
+  #menu .sub{font-size:11px;color:var(--dim);margin-bottom:10px}
+  .grp{font-size:11px;letter-spacing:2px;margin:8px 0 4px;color:#9a9284}
+  .grp.red{color:#f0a294}.grp.blue{color:#a8cdea}.grp.yellow{color:#e6cf92}.grp.silver{color:#c8b6f0}
+  .none{font-size:11px;color:#57534c;margin:0 0 6px}
+  #souls{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;align-content:start}
+  #souls .grp,#souls .none{grid-column:1/-1}
+  .soul{text-align:left;padding:10px 12px;border-radius:8px;cursor:pointer;
+    border:1px solid var(--line);background:rgba(255,255,255,.035);color:var(--ink);font:inherit}
+  .soul b{display:block;font-size:12px;margin-bottom:3px}
+  .soul span{font-size:10.5px;color:#8b8478;line-height:1.4;display:block}
+  .soul.on{background:rgba(255,215,94,.10);border-color:rgba(255,215,94,.55)}
+  .soul.red.on{border-color:rgba(232,115,90,.75);background:rgba(232,115,90,.12)}
+  .soul.blue.on{border-color:rgba(111,168,220,.75);background:rgba(111,168,220,.12)}
+  .soul.yellow.on{border-color:rgba(216,178,74,.75);background:rgba(216,178,74,.12)}
+  .silveritem{grid-column:1/-1;font-size:12px;padding:10px 12px;border-radius:8px;
+    border:1px solid rgba(200,182,240,.35);background:rgba(200,182,240,.08)}
+  .silveritem b{color:#d8c8ff;margin-right:8px}
+  .silveritem span{font-size:10.5px;color:#8b8478}
+
+  /* ================= 触屏层（只在移动端出现） ================= */
+  #pad{position:fixed;inset:0;z-index:50;pointer-events:none;
+    -webkit-user-select:none;user-select:none;touch-action:none}
+  #stickzone{position:absolute;left:0;bottom:0;width:46%;height:74%;pointer-events:auto}
+  /* --- 右下三键（照《重生细胞》手机版）-----------------------------------
+     它的右边只有三个键：跳、冲刺、交互。第四个动作（攻击）不在键上，
+     它被装进了装备格 —— 这才是"四个格子 + 三个键"能同时成立的原因。
+     手的位置是**一条斜列**（WO-005 实测）：跳在最下最左，冲刺在中间，
+     交互在最上最右 —— 越往上越贴右缘。上一版写成"跳在右下、冲刺在它左边"
+     是按自己猜的拇指弧线排的，参考图并不是这么摆的。
+     四格的坐标在 .slot 那块，别在这里重复定义。 */
+  #acts{position:absolute;right:calc(6px + env(safe-area-inset-right, 0px));
+    bottom:calc(6px + env(safe-area-inset-bottom, 0px));width:0;height:0;pointer-events:none;
+    transition:opacity .15s}
+  #pad.hideplay #acts,#pad.hideplay #stickzone{opacity:0;pointer-events:none}
+  /* 开菜单时四格也要让开：它们不在 #pad 里，选择器够不到，只能自己挂类 */
+  #slots.hideplay{opacity:0;pointer-events:none}
+  /* 打开魂匣时首次提示必须让开：它压在两栏文字中间，读不成句 */
+  #pad.hideplay #touchhint{display:none}
+
+  #stick{position:fixed;left:-999px;top:-999px;width:112px;height:112px;margin:-56px 0 0 -56px;
+    border-radius:50%;border:1.5px solid rgba(255,255,255,.18);background:rgba(255,255,255,.05);
+    opacity:0;transition:opacity .12s;pointer-events:none}
+  #stick.on{opacity:1}
+  /* 下压状态回执（WO-003 §5）：下推不只是蹲，它还是滑铲/穿板的修饰键。
+   * 摇杆框变暖色，玩家才知道"现在按跳会出滑铲"。 */
+  #stick.down{border-color:rgba(255,215,94,.65);background:rgba(255,215,94,.10)}
+  #stick i{position:absolute;left:50%;top:50%;width:46px;height:46px;margin:-23px 0 0 -23px;
+    border-radius:50%;background:rgba(255,215,94,.5);border:1.5px solid rgba(255,215,94,.9)}
+
+  /* 形状：**圆角方形**，不是圆。参考图的动作键和装备格是同一套底板
+     （深色底 + 浅灰描边 + 小圆角），圆形是我们自己发明的 —— 一眼就不像。
+     圆角取直径的 13%（参考图 98px 键配 12px 圆角），和格子的 11px 呼应。 */
+  .pb{position:absolute;border-radius:9px;pointer-events:auto;touch-action:none;
+    border:1.5px solid rgba(255,255,255,.34);background:rgba(16,14,22,.58);color:#e8e2d2;
+    font:600 15px/1 "PingFang SC","Microsoft YaHei",sans-serif;backdrop-filter:blur(2px);
+    -webkit-tap-highlight-color:transparent;
+    box-shadow:0 2px 10px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.04)}
+  .pb.on{background:rgba(255,215,94,.24);border-color:rgba(255,215,94,.8);color:#fff5d0}
+  /* 动作回执（下推 + 跳 / 剑）：只在动作**真的发生**那一刻出现，不占常驻空间。
+   * 贴在四格左边的空地上 —— 跳和冲刺已经贴着屏幕底边，回执画在按钮下方会被切掉。 */
+  #comboTip{position:absolute;right:300px;bottom:8px;padding:4px 12px;border-radius:6px;
+    font-size:15px;font-weight:600;letter-spacing:2px;color:#1a1408;
+    background:rgba(255,215,94,.94);white-space:nowrap;pointer-events:none;
+    opacity:0;transform:translateY(5px);transition:opacity .12s,transform .12s}
+  #comboTip.on{opacity:1;transform:translateY(0)}
+  #pad.hideplay #comboTip{display:none}
+  /* 三键：参考图右侧是**一条斜列**，不是横排。（(1717,292)-(1813,390) 交互 /
+     (1679,492)-(1775,590) 冲刺 / (1640,748)-(1736,846) 跳）
+     规律：越往上越靠右，右缘距 107 / 145 / 184，下缘距 497 / 297 / 41。
+     折算到 800×360 视口（1:1 屏幕像素，所以不除 --s）：
+     右 45 / 61 / 77，下 202 / 121 / 17。
+     上一版是"底部横排两个 + 右上孤零零一个"，和参考图的斜列完全不同 ——
+     这是"看着不像"的第二处硬伤。 */
+  #pbJump{right:77px;bottom:17px;width:50px;height:50px;font-size:15px}
+  #pbRoll{right:61px;bottom:121px;width:50px;height:50px;font-size:13px;
+    border-color:rgba(255,255,255,.18);color:#d6cdb8}
+  #pbUse{right:45px;bottom:202px;width:50px;height:50px;font-size:12px;
+    border-color:rgba(255,255,255,.16);color:#c9c1ae}
+  /* 魂匣放**左上角**：死细的菜单键就在左上，而且也是方形（不是圆）。
+   * 原来放右上角是因为"右下被五个键占满"——现在右下只有三个键加四格，
+   * 右上可以让给别的东西，而左上正是玩家已经形成肌肉记忆的位置。 */
+  #pbMenu{position:fixed;left:calc(10px + env(safe-area-inset-left, 0px));
+    top:calc(8px + env(safe-area-inset-top, 0px));
+    width:44px;height:44px;border-radius:9px;font-size:12px;z-index:60}
+
+  #touchhint{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:70;
+    padding:9px 16px;border-radius:10px;background:rgba(8,7,12,.82);color:#cfc7b0;
+    font-size:13px;letter-spacing:1px;pointer-events:none;transition:opacity .5s}
+  #touchhint.off{opacity:0}
+
+  /* 嵌入页（iframe）里的"点一下拿焦点"。这不是教程，是焦点诊断：
+   * 父窗口拿着焦点时按键到不了游戏，玩家唯一能看到的现象就是"没反应"。 */
+  #wake{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:80;
+    padding:12px 20px;border-radius:12px;background:rgba(8,7,12,.86);
+    border:1px solid rgba(232,226,210,.16);color:#e6dcc4;text-align:center;
+    font-size:14px;letter-spacing:1px;pointer-events:none;transition:opacity .5s;
+    line-height:22px}
+  #wake small{display:block;margin-top:5px;color:#8f887c;font-size:11px;letter-spacing:.5px}
+  #wake.off{opacity:0}
+
+  #rot{position:fixed;inset:0;z-index:99;display:none;align-items:center;justify-content:center;
+    background:#07070b;color:#b8ae98;font-size:15px;letter-spacing:4px}
+  #rot.show{display:flex}
+
+  /* ================= iPhone 安全区 =================
+     刘海/灵动岛在横屏下吃掉左右各 ~47pt，Home 指示条吃掉底部 ~21pt。
+     舞台是满屏铺开的（不缩进），所以只能把 HUD 往内推 —— 推多少要除以缩放比，
+     因为舞台内的坐标是被 transform:scale() 缩过的。--s 由 mobile.js 写入。 */
+  :root{
+    --s:1;
+    --sl:calc(env(safe-area-inset-left, 0px) / var(--s));
+    --sr:calc(env(safe-area-inset-right, 0px) / var(--s));
+    --st:calc(env(safe-area-inset-top, 0px) / var(--s));
+    --sb:calc(env(safe-area-inset-bottom, 0px) / var(--s));
+  }
+
+  /* 手机上把给键鼠看的元素撤掉，HUD 放大一号（屏幕被缩到 0.72 倍，字号得补回来） */
+  #stage.touch #keys{display:none}
+  #stage.touch #title small{display:none}
+  #stage.touch #skinwrap{display:none}          /* 换肤挪进魂匣菜单，别占顶部 */
+  #stage.touch #top{height:52px;padding-top:8px}
+  #stage.touch #title{font-size:16px;letter-spacing:4px}
+  #stage.touch #bars{width:266px;top:calc(58px + var(--st));left:calc(16px + var(--sl))}
+  #stage.touch .bar{height:15px;margin-bottom:8px}
+  #stage.touch .barlabel{font-size:13px}
+  /* 血瓶：**尺寸不跟着舞台缩**。舞台在 844×390 上是 0.72 倍，
+     逻辑 40px 到手上只剩 29px —— 手指点不准，而且它还是个消耗品按钮，
+     点偏一次就白掉一瓶。所以按 40 物理像素反算（/var(--s)），锚点保持左缘。
+     位置在墨条之下：触屏的两条比桌面高（15px 条 + 8px 间距），底边约 143。 */
+  #stage.touch #flask{left:calc(16px + var(--sl));top:calc(152px + var(--st));
+    width:calc(40px / var(--s));height:calc(40px / var(--s))}
+  #stage.touch #flaskico{transform:scale(calc(1 / var(--s)))}
+  #stage.touch #flaskn{font-size:calc(11px / var(--s));line-height:calc(15px / var(--s));
+    min-width:calc(17px / var(--s));height:calc(17px / var(--s));right:calc(-5px / var(--s));bottom:calc(-5px / var(--s))}
+  #stage.touch #roomname{font-size:15px;top:calc(180px + var(--st));left:calc(78px + var(--sl))}
+  /* 触屏：格子 40px（**视口**像素，所以要除以 --s）。
+     参考图的格子折算是 34px —— 比 iOS 的 44px 可点下限还小，直接抄会点不准。
+     取 40px：比参考大 18%（肉眼几乎看不出），又保住了拇指的余量。 */
+  /* 44px 是 iOS/安卓的可点下限 —— 参考图的格子折算下来只有 34px，
+     真机上手指出油/抖动就点不准。位置（右缘/下缘锚点）严格照参考，
+     尺寸取 44：比参考大 29%，但**锚点一点没动**，所以看上去的位置是对的。 */
+  #stage.touch .slot{--sz:calc(44px / var(--s));font-size:calc(12px / var(--s))}
+  /* 位置照参考图实测（WO-005），换算成视口像素（除以 --s）：
+       下排 右缘 283 / 194，下缘 39（参考 10.9% 屏高）
+       上排 右缘 257 / 168，下缘 111（参考 30.8% 屏高）
+     四格是**斜排平行四边形**：上排整体右移 26，行距 72、列距 89。
+     上一版把它当"底排两格 + 右缘竖排两格"，竖排那两格其实是动作键 ——
+     所以右下角一直挤，而 A/B 斜上方该有的两格始终空着。 */
+  /* 空格写「未装备」（WO-003 的裁定，比「空」明确），但 44px 的格子放 3 个字
+     要单独压字号：12 × 3 + 字距 = 38px，会贴到边框上。 */
+  #stage.touch .slot.empty{font-size:calc(10px / var(--s));letter-spacing:0}
+  #stage.touch #slotw1{right:calc(283px / var(--s));bottom:calc(39px / var(--s) + var(--sb))}
+  #stage.touch #slotw2{right:calc(194px / var(--s));bottom:calc(39px / var(--s) + var(--sb))}
+  #stage.touch #slotred{right:calc(257px / var(--s));bottom:calc(111px / var(--s) + var(--sb))}
+  #stage.touch #slotblue{right:calc(168px / var(--s));bottom:calc(111px / var(--s) + var(--sb))}
+  /* 触屏横屏高度本来就紧，菜单内边距收一收 —— 页签和滚动区都要放得下 */
+  /* 左边让出 58px（**视口**像素，所以要除以 --s）：触屏的「匣」按钮浮在
+     左上（fixed，44px + 10px 边距），菜单标题原来正好被它压住 ——
+     第一行字就是"魂 之 匣"，被压掉一半。 */
+  #stage.touch #menu{padding:30px 38px 16px calc(58px / var(--s))}
+
+  /* ================= 布局编辑（WO-004） =================
+     白哥的要求是"位置完全照《重生细胞》，并且玩家可调（像王者）"。
+     默认值负责"照抄"，这一块负责"可调"。
+
+     为什么编辑态只加虚线框、不加箭头/手柄：要改的是位置，不是形状。
+     手柄会让四个格子看起来像可以单独改维度，而我们只允许整体改大小
+     （四格是一个装备栏，大小不一就不成一组）。
+
+     为什么编辑时要把摇杆区的指针事件关掉：它铺了左下 46%×74%，
+     会把往那边拖的手势全吃掉 —— 玩家会觉得"格子拖不动"，
+     但其实是被一块看不见的层截走了。 */
+  #slots.editing .slot{border-style:dashed;border-color:rgba(255,215,94,.85);
+    box-shadow:0 0 0 3px rgba(255,215,94,.18),0 2px 10px rgba(0,0,0,.45);cursor:grab}
+  #slots.editing .slot.drag{cursor:grabbing;filter:brightness(1.25);z-index:5}
+  /* 只给 #acts 里的三个键（跳/冲刺/交互）挂编辑框。
+     「匣」也是 .pb，但它不可拖（理由见 mobile.js 的 LAY 注释）——
+     给它画出可拖的样子，玩家会去拖它，然后发现纹丝不动。 */
+  #pad.editing #acts .pb{border-style:dashed;border-color:rgba(255,215,94,.85);cursor:grab}
+  #pad.editing #acts .pb.drag{cursor:grabbing;filter:brightness(1.25)}
+  #pad.editing #stickzone{pointer-events:none}
+  #pad.editing #comboTip{display:none}
+
+  /* 编辑条贴在屏幕顶端正中：右上角是快门、右下是三键和四格、左下是摇杆区，
+     只有顶上这条横带在任何布局下都空着。position:fixed 的理由见 HTML 注释。 */
+  #laybar{position:fixed;left:50%;top:10px;transform:translate(-50%,-180%);
+    display:flex;align-items:center;gap:10px;padding:7px 13px;border-radius:10px;
+    background:rgba(8,7,12,.93);border:1px solid rgba(255,215,94,.34);
+    font-size:12px;color:#d8cdb2;white-space:nowrap;pointer-events:none;
+    opacity:0;transition:opacity .18s,transform .18s;z-index:62}
+  /* 没有 .show 时必须是 pointer-events:none —— 一条隐形但可点的横条
+     压在屏幕顶端，是那种"偶尔点不动"的来源，而且查起来极难。 */
+  #laybar.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+  #laybar b{letter-spacing:2px;color:#ffe9a8;font-size:12px}
+  #laybar span{color:#8d8474;font-size:11px}
+  #laybar label{display:flex;align-items:center;gap:6px;color:#a89f8f;font-size:11px}
+  #laybar input[type=range]{width:88px;accent-color:#ffd75e}
+  #laybar .btn{padding:4px 10px}
+
+  /* 「操作」页里的布局入口。和触屏说明的 .oprow 同一套节奏 —— 换行不同而已：
+     它右边有按钮，所以不能用 flex:1 的 span。 */
+  .layrow{display:flex;align-items:baseline;gap:8px;font-size:12px;color:#a89f8f;
+    margin:0 0 8px;line-height:1.5}
+  .layrow b{min-width:78px;color:#d8cdb2;font-weight:600;letter-spacing:.5px}
+  .layrow span{flex:1}
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="cv" width="960" height="540" tabindex="0"></canvas>
+
+  <div id="top">
+    <div id="title">二向箔 <small>DEMO · 装裱的长廊</small></div>
+    <div id="skinwrap">
+      <span id="skinlabel">相册里的一张</span>
+      <button class="btn" id="skinbtn">按快门</button>
+      <button class="btn" id="skinreset">换回名片</button>
+      <input type="file" id="skinf" accept="image/*" hidden>
+    </div>
+  </div>
+
+  <!-- ================= 血瓶（照参考图左上角） =================
+       参考图在血条和数值行的**正下方**、而且比四格小一号：
+       (38,77)-(95,135) = 57×58，折算 960 逻辑约 28×29。
+       位置照抄，尺寸取 40（可点下限）—— 和四格同一条纪律：锚点不动，尺寸放大。
+       次数用右下角的小徽章，不写在瓶身上 —— 瓶身只有 40px，写数字会糊。 -->
+  <button type="button" id="flask" aria-label="喝血瓶">
+    <span id="flaskico"><i></i></span>
+    <b id="flaskn">3</b>
+  </button>
+
+  <!-- ================= 小地图（照参考图右上角） =================
+       参考图 1920×887 上量到 (1572,63)-(1663,143)：91×80，折算 960 逻辑是 46×40。
+       那个尺寸在桌面上只能看清"有个东西"，所以**位置照抄、尺寸放大到 120**。
+       画法也照参考图：把房间的**实心部分**涂成蓝紫色块（不是画可走区）——
+       横版关卡的可走区几乎占满整屏，涂出来是一块大方块；涂实心才像"房间剪影"。 -->
+  <canvas id="mm" width="240" height="200"></canvas>
+
+  <div id="bars">
+    <div class="barlabel">HP</div>
+    <div class="bar"><i id="hpfill" style="width:100%"></i><i id="hprally"></i><span class="barnum" id="hpnum">100 / 100</span></div>
+    <!-- 蓝条（MP）删掉了（白哥 2026-11-24）：魂和装备一个性质，只走冷却。
+         玩家头顶只剩一条命 + 一条墨（墨是侧身的燃料，不属于魂）。 -->
+    <div id="inkrow">
+      <div class="barlabel">墨</div>
+      <div class="bar"><i id="inkfill" style="width:100%"></i></div>
+    </div>
+  </div>
+  <div id="roomname">废墟回廊</div>
+
+  <!-- ============ 四格装备栏（照《重生细胞》手机版）============
+       2 装备（剑 / 纸）+ 2 道具（红魂 / 蓝魂），格子点一下就使用。
+       为什么是 2+2 而不是 1+3：死细的四个格子本身就是"两把武器 + 两个技能"，
+       它右边那三个动作键之所以空得下来，是因为**攻击被装进了武器格子**。
+       我们要照抄位置，就得连这个分工一起抄，否则第四个格子会永远空着。
+       位置是默认值（截图实测比例），玩家拖过之后由 --lx / --ly 覆盖。 -->
+  <div id="slots">
+    <button type="button" class="slot gear" id="slotw1" data-slot="w1">剑</button>
+    <button type="button" class="slot gear" id="slotw2" data-slot="w2">纸</button>
+    <button type="button" class="slot soul slot-red" id="slotred" data-slot="red">空</button>
+    <button type="button" class="slot soul slot-blue" id="slotblue" data-slot="blue">空</button>
+  </div>
+
+  <div id="keys">
+    <!-- 内容由 game.js 的 LEGEND 表生成。这里**不留手写文案**：
+         上一版手写的这行把 WASD 揉成"移动 · 蹲 · 抬头"，滑铲和穿板根本没写，
+         结果按键和图例各说一套。样式见 #keys .ent -->
+  </div>
+
+  <div id="menu">
+    <h2>魂 之 匣</h2>
+    <!-- 两个页签：魂槽 / 操作。键盘玩家按 O 进来，想知道"怎么按"就不必猜。 -->
+    <div class="tabs">
+      <button class="tab on" data-pane="Souls" type="button">魂 槽</button>
+      <button class="tab" data-pane="Ops" type="button">操 作</button>
+    </div>
+    <div class="pane on" id="paneSouls">
+      <div class="sub">红/蓝 各装一个；黄魂是被动，银魂拿到就永久生效。点一下装备，再点一下卸下。</div>
+      <div id="menucount">已收 0 / 5</div>
+      <div id="souls"></div>
+    </div>
+    <div class="pane" id="paneOps">
+      <!-- 布局入口放最前：触屏玩家点进「操作」十有八九是来改按键的，
+           不是来读键位表的。桌面玩家也用它 —— 一个入口，两条路。 -->
+      <div class="grp">布 局</div>
+      <div class="layrow">
+        <b>调 整 位 置</b>
+        <span>四格和三个圆键都能拖，松手就记住；大小只影响四格</span>
+        <button class="btn" id="layedit" type="button">调 整</button>
+      </div>
+      <!-- 完整键位表：主界面只留四个高频动作（裁定 Q3），其余在这里 -->
+      <div id="fullkeys"></div>
+      <!-- 触屏时由 mobile.js 填：按 移动/战斗/纸/魂 分组，标 点按 / 按住 -->
+      <div id="touchops"></div>
+      <!-- 触屏时由 mobile.js 填：换照片 / 声音 -->
+      <div id="touchfoot"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 布局编辑条（WO-004）。只在「调 整」之后出现。
+     **必须在 #stage 外面**：舞台整块被 transform:scale() 缩过，手机上约 0.72，
+     放进去之后 12px 的字会变成 8.6px、44px 的按钮变成 32px —— 正是那种
+     "看得见但按不到"的按钮。它和 #pad 一样直接挂在 body 上，1:1 走屏幕像素。
+     里面只放退出这段编辑的三个必要件：大小、恢复默认、完成。不放"保存" ——
+     松手就已经落盘，再要一次确认只会让人怀疑没存上。 -->
+<div id="laybar">
+  <b>调 整 位 置</b>
+  <span>拖格子 / 拖圆键</span>
+  <label>格子 <input type="range" id="laysz" min="48" max="96" step="4"></label>
+  <button class="btn" id="layreset" type="button">恢复默认</button>
+  <button class="btn" id="laydone" type="button">完 成</button>
+</div>
+
+<script id="atlas-man" type="application/json">__MAN__</script>
+<script>window.ATLAS_MAN = JSON.parse(document.getElementById('atlas-man').textContent);</script>
+<script>window.ATLAS_B64 = "__B64__";</script>
+<script>
+__AUDIO__
+</script>
+<script>
+__GAME__
+</script>
+<script>
+__MOBILE__
+</script>
+</body>
+</html>

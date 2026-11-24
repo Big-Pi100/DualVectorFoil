@@ -1,0 +1,56 @@
+{
+  "walk": {
+    "playerDraws": 34,
+    "walkPhase": 4.72,
+    "pass": true
+  },
+  "slide": {
+    "seqHead": "slide0.62 slide0.59 slide0.56 slide0.55 slide0.54 slide0.53",
+    "tailStates": "crouch,crouch,crouch,crouch,crouch,crouch",
+    "sawSlide": true,
+    "coreJitter": 0,
+    "flickerPattern": false,
+    "pass": true
+  },
+  "keys": {
+    "攻击 J": {
+      "changedPixels": 9105,
+      "pass": true
+    },
+    "红魂 U": {
+      "changedPixels": 6204,
+      "pass": true
+    },
+    "抬头 ↑": {
+      "changedPixels": 79673,
+      "pass": true
+    },
+    "蹲 ↓": {
+      "changedPixels": 7115,
+      "pass": true
+    },
+    "蓝魂 L": {
+      "changedPixels": 8687,
+      "pass": true
+    }
+  },
+  "arc": {
+    "baselineMax": 648,
+    "peakMax": 707,
+    "gain": 59,
+    "pass": true
+  },
+  "lookUpCam": {
+    "before": 324,
+    "after": 241,
+    "delta": -83,
+    "pass": true
+  },
+  "crouchWalkOut": {
+    "crouched": "crouch",
+    "after": "walk",
+    "dx": 95,
+    "pass": true
+  },
+  "errors": []
+}

@@ -1,0 +1,200 @@
+{
+  "errors": [],
+  "throttle": "none",
+  "dirs": {
+    "D 右": {
+      "dx": 45,
+      "dy": 0,
+      "state": "walk",
+      "simMs": 175,
+      "wallMs": 160,
+      "pass": true
+    },
+    "A 左": {
+      "dx": -42.8,
+      "dy": 0,
+      "state": "walk",
+      "simMs": 167,
+      "wallMs": 167,
+      "pass": true
+    },
+    "W 上（不动）": {
+      "dy": 0,
+      "state": "stand",
+      "pass": true
+    },
+    "S 下（蹲）": {
+      "dx": 0,
+      "state": "crouch",
+      "simMs": 17,
+      "pass": true
+    }
+  },
+  "lookUp": {
+    "before": 324,
+    "after": 300.28089332580566,
+    "dy": -23.7,
+    "simMs": 42,
+    "pass": true
+  },
+  "atk": {
+    "state": "attack",
+    "lock": 0.27,
+    "simMs": 33,
+    "pass": true
+  },
+  "jump": {
+    "vy": -912,
+    "onGround": false,
+    "simMs": 33,
+    "pass": true
+  },
+  "redKey": {
+    "n": 1,
+    "cd": 1.58,
+    "wallMs": 27,
+    "pass": true
+  },
+  "back": {
+    "dx": -61.3,
+    "state": "dash",
+    "dashSeen": true,
+    "invulnInDash": 0.103,
+    "pass": true
+  },
+  "blueKey": {
+    "hint": "没有装备蓝魂（O 打开魂匣）",
+    "hits": 1,
+    "pass": true
+  },
+  "combo": {
+    "before": {
+      "state": "stand",
+      "cd": 0
+    },
+    "state": "cast",
+    "n": 1,
+    "cd": 1.5333333333333337,
+    "pass": true
+  },
+  "plainAtk": {
+    "state": "attack",
+    "n": 0,
+    "simMs": 17,
+    "pass": true
+  },
+  "reloadGuard": {
+    "xBefore": 477,
+    "xAfter": 477,
+    "hint": "再按一次 R 重开",
+    "hit": 1,
+    "pass": true
+  },
+  "menuKey": {
+    "open": true,
+    "closed": true,
+    "pass": true
+  },
+  "touch": {
+    "vw": 844,
+    "vh": 390,
+    "btns": {
+      "pbJump": {
+        "x": 711,
+        "y": 317,
+        "w": 50,
+        "h": 50
+      },
+      "pbRoll": {
+        "x": 727,
+        "y": 213,
+        "w": 50,
+        "h": 50
+      },
+      "pbUse": {
+        "x": 743,
+        "y": 132,
+        "w": 50,
+        "h": 50
+      },
+      "pbMenu": {
+        "x": 10,
+        "y": 8,
+        "w": 44,
+        "h": 44
+      },
+      "slotw1": {
+        "x": 517,
+        "y": 307,
+        "w": 44,
+        "h": 44
+      },
+      "slotw2": {
+        "x": 606,
+        "y": 307,
+        "w": 44,
+        "h": 44
+      },
+      "slotred": {
+        "x": 543,
+        "y": 235,
+        "w": 44,
+        "h": 44
+      },
+      "slotblue": {
+        "x": 632,
+        "y": 235,
+        "w": 44,
+        "h": 44
+      }
+    },
+    "overlaps": [],
+    "outOfScreen": [],
+    "tooSmall": [],
+    "pass": true
+  },
+  "touchJump": {
+    "state": "jump",
+    "vy": -873,
+    "onGround": false,
+    "held": {
+      "jump": 1
+    },
+    "wallMs": 14,
+    "pass": true
+  },
+  "touchAtk": {
+    "state": "attack",
+    "lock": 0.26,
+    "wallMs": 3,
+    "pass": true
+  },
+  "touchEmptySlot": {
+    "state": "stand",
+    "sameAsBefore": true,
+    "pass": true
+  },
+  "touchBack": {
+    "state": "dash",
+    "invuln": 0.09,
+    "wallMs": 11,
+    "pass": true
+  },
+  "touchStick": {
+    "dx": 29,
+    "stateRight": "walk",
+    "stateDown": "crouch",
+    "pass": true
+  },
+  "touchMenu": {
+    "open": true,
+    "closed": true,
+    "pass": true
+  },
+  "persist": {
+    "first": "tower",
+    "afterReload": "tower",
+    "bytes": 140,
+    "pass": true
+  }
+}

@@ -1,0 +1,94 @@
+{
+ "vw": 844,
+ "vh": 390,
+ "els": {
+  "pbMenu": {
+   "x": 10,
+   "y": 8,
+   "w": 44,
+   "h": 44,
+   "right": 790,
+   "bottom": 338,
+   "cls": "pb",
+   "txt": "匣",
+   "br": "9px"
+  },
+  "slotw1": {
+   "x": 596.8,
+   "y": 305,
+   "w": 44,
+   "h": 44,
+   "right": 203.2,
+   "bottom": 41,
+   "cls": "slot gear",
+   "txt": "剑",
+   "br": "8px"
+  },
+  "slotw2": {
+   "x": 504.8,
+   "y": 305,
+   "w": 44,
+   "h": 44,
+   "right": 295.2,
+   "bottom": 41,
+   "cls": "slot gear",
+   "txt": "纸",
+   "br": "8px"
+  },
+  "slotred": {
+   "x": 743.8,
+   "y": 122,
+   "w": 44,
+   "h": 44,
+   "right": 56.2,
+   "bottom": 224,
+   "cls": "slot soul slot-red",
+   "txt": "炎魔",
+   "br": "8px"
+  },
+  "slotblue": {
+   "x": 732.8,
+   "y": 208,
+   "w": 44,
+   "h": 44,
+   "right": 67.2,
+   "bottom": 138,
+   "cls": "slot soul slot-blue empty",
+   "txt": "未装备",
+   "br": "8px"
+  },
+  "pbJump": {
+   "x": 714,
+   "y": 322,
+   "w": 50,
+   "h": 50,
+   "right": 80,
+   "bottom": 18,
+   "cls": "pb",
+   "txt": "跳",
+   "br": "9px"
+  },
+  "pbRoll": {
+   "x": 660,
+   "y": 326,
+   "w": 44,
+   "h": 44,
+   "right": 140,
+   "bottom": 20,
+   "cls": "pb",
+   "txt": "翻滚",
+   "br": "9px"
+  },
+  "pbUse": {
+   "x": 716,
+   "y": 268,
+   "w": 44,
+   "h": 44,
+   "right": 84,
+   "bottom": 78,
+   "cls": "pb",
+   "txt": "交互",
+   "br": "9px"
+  }
+ }
+}

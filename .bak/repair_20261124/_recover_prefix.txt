@@ -1,0 +1,1039 @@
+/* 魂之城 · Soul Keep
+ * AoS（晓月圆舞曲）模式的玩法内核原型
+ * ------------------------------------------------------------------
+ * 只做三件事，每件都要能换成真素材：
+ *   1. 房间探索 + 能力门（拿魂 → 解锁 → 回头开门）
+ *   2. 三类魂装备（红/蓝/黄）+ 银魂（能力魂，永久）
+ *   3. 皮肤包（skin pack）：主角/怪物的视觉可整体替换，碰撞体不变
+ * 美术默认用名片管线导出的 atlas（同一份 atlas.json），换照片走 dyn 包。
+ */
+'use strict';
+
+// ============================ 常量 ============================
+const TILE = 48;
+/* 逻辑分辨率：高度锁 540，宽度跟着设备走。
+ * 手机横屏是 19.5:9（2.16），比 16:9 更长；如果硬锁 960 宽，左右各留 75px 黑边。
+ * 与其裁掉视野，不如让它多看一段 —— 触屏本来就该多看。 */
+let VIEW_W = 960;
+const VIEW_H = 540;
+/* 逻辑分辨率固定 960×540，实际像素密度跟着屏幕走：
+ * 手机 Retina 上 960 的backing store 会被放大成糊的，所以对外留一个 RS（渲染倍率），
+ * 触屏层按 缩放×DPR 设它，render() 起手 setTransform(RS) —— 全部绘制逻辑仍写逻辑坐标。 */
+let RS = 1;
+/* 通用的重力/落速上限：敌人和死亡动画在用。
+ * 玩家正常跳跃**不走这两个** —— 见下面的 P_GRAV，否则调手教会把怪一起改了。 */
+const GRAV = 2000, MAX_FALL = 950;
+
+/* ==================== 手感预设 ====================
+ * 恶魔城（晓月）和现代平台游戏不是"参数大小"的区别，是设计哲学的区别。
+ *
+ * ── 有据可查的四条 ──
+ * castlevaniaspeedruns.com/AoS/Movement 与 TASVideos 的 AoS 页：
+ *   1. Soma 走路 1.5 像素/帧（@60fps = 90 px/s），**没有加速度**
+ *      —— 按下就是满速，松手就停，不存在"爬升"
+ *   2. 跳跃期间水平速度不变（跳起来不会变慢）
+ *   3. 按住 A 更久跳更高（可变跳跃高度）
+ * sotn-decomp/src/ric/pl_steps.c（月下反编译，同世代手感）：
+ *   4. 松手时上升速度被硬压到 -1.0 像素/帧，是**绝对值切断**，不是乘系数
+ *   5. 走路每帧先 RicDecelerateX(FIX(0.125)) 再 RicSetSpeedX(FIX(1.25)) ——
+ *      恒速是"每帧重设"，不是"没有摩擦"。松手后仍在减速，要 10 帧才停。
+ *   6. 空中减速是地面的一半（FIX(0.0625)）
+ *
+ * ── 恶魔城没有的东西 ──
+ * 土狼时间、跳跃缓冲、顶点重力打折。这三个都是后来的游戏为了让玩家"别摔死"
+ * 加的宽容设计，GBA 上的恶魔城一个都没有。去掉了操作会变"硬" —— 那正是它的手感。
+ *
+ * ── 换算（全部按 1 格 = 16px → 我们 48px，倍数 3）──
+ *   走速     1.5 × 3 × 60 = 270 px/s        （AoS Soma 1.5px/帧）
+ *   地面减速 0.125 × 3 × 3600 = 1350 px/s²  → 270 减到 0 要 12 帧、滑 29px
+ *   空中减速 0.0625 × 3 × 3600 =  675 px/s² → 滑行距离是地面的两倍
+ *   重力     0.21875 × 3 × 3600 = 2362 px/s²
+ *   起跳     5.4375 × 3 × 60 = 979 px/s     → 跳高 67.6×3 = 203px = 4.22 格
+ *            （979 是连续解；离散积分每步都少一点，实际给的 971.3 才落到 203.8px。
+ *              971.3 不是凑的：见下面 P_JUMP_V 那行的注释。）
+ *
+ * **跳高 203px（4.22 格）是照真实比例来的，不是凑的。** 上一版是 161px
+ * （3.35 格），比原版矮了 21% —— 因为当时我是照"1.6 倍身高"倒推的，
+ * 而反编译里身高比和格子比的换算结果其实是 2 倍身高。改成 203 之后
+ * 能力门必须跟着抬（192px 会被单跳过），关卡的平台高度也相应调过。
+ *
+ * 松手切断值**没有**照搬 -1.0 px/帧：那个数在我们的尺度下只能再升 6px，
+ * 轻点跳不到半格，手机上等于"按了没反应"。按"轻点刚好上一格台阶"定 400px/s。
+ * 质地（松手立刻掐断上升）保留了，幅度是按可玩性定的 —— 这是全套参数里
+ * 唯一一个主动偏离原版的地方。
+ *
+ * ── modern ──
+ * 上一版：117ms 加速爬升 + 100ms 土狼时间 + 130ms 跳跃缓冲 + 顶点重力打折。
+ * 留着是为了能随时切回去做对比（`?feel=modern`），不是给玩家选的。
+ */
+const FEELS = {
+  aos: {
+    ACC_G: 1e6, ACC_A: 1e6,          // 一帧到满速（数学上的无穷大，不是偷懒）
+    FRIC_G: 1350, FRIC_A: 675,       // 月下真实摩擦：地面 0.125、空中 0.0625 px/帧²
+    TURN_MUL: 1,                     // 没有"转身加倍"，因为本来就没有加速过程
+    COYOTE_T: 0, JBUF_TICKS: 3,      // 恶魔城没有土狼时间；跳跃缓冲 1.5 帧 = 25ms（3 个物理步）
+    /* 顶点窗口是**非对称**的，这不是调参调出来的：pl_collision.c:18-26
+     * 条件是 `vy < FIX(3/8) && vy > FIX(-1/8)`，即 -0.125 ~ +0.375 px/帧。
+     * 换算 ×3 格 ×60 帧 = -22.5 ~ +67.5 px/s。窗口内且**按住跳键**时，
+     * 重力从 28/128 掉到 5.6/128 —— 正好 1/5。这就是原版的"顶点滞空"。 */
+    APEX_LO: -22.5, APEX_HI: 67.5, APEX_MUL: 0.2,
+    CUT_V: 400, CUT_MUL: 0,          // 松手：上升速度压到 400px/s（≈ 轻点跳一格）
+    SPD_RUN: 270, SPD_AIR: 270,      // 1.5 px/帧 × 3 × 60
+    P_JUMP_V: 971.3, P_DJUMP_V: 792.7,
+    /* 961/783 是按 60fps 可变 dt 标定的。改成 120Hz 定步长后同一速度只跳到
+     * 199.72px（步长减半 → 半隐式欧拉每步欠的位移变小，整段少了 2%）。
+     * 这不是"更准所以更高"，而是**换了积分器就要重新标定**：
+     * 二分扫到 971.3 时，30/60/120/144Hz 全部落在 203.79~203.80px ——
+     * 和旧循环 60fps 实测的 203.73 是同一个数（差 0.06px）。
+     * 二段跳同理：增量从 136.34 掉到 133.24，补到 792.7 后回到 136.34。
+     * 标定脚本的结论写在这里，改数之前先看 S1_S3_REPORT.md 第二节。 */
+    P_GRAV: 2362, P_MAX_FALL: 1260,  // 0.21875 px/帧² × 3 × 3600；终速 FIX(7)=7px/帧
+    VY_CEIL: -45,                    // 撞顶压到 -0.25 px/帧
+  },
+  modern: {
+    ACC_G: 2600, ACC_A: 1500, FRIC_G: 3000, FRIC_A: 600, TURN_MUL: 2.0,
+    COYOTE_T: 0.10, JBUF_TICKS: 16,   // 133ms（原来是 0.13s，换算成整步数）
+    APEX_LO: -120, APEX_HI: 120, APEX_MUL: 0.60,
+    CUT_V: 0, CUT_MUL: 0.42,
+    SPD_RUN: 290, SPD_AIR: 300,
+    P_JUMP_V: 815, P_DJUMP_V: 650, P_GRAV: 2000, P_MAX_FALL: 950,
+    VY_CEIL: -180,
+  },
+};
+
+let FEEL_NAME = 'aos';
+let ACC_G, ACC_A, FRIC_G, FRIC_A, TURN_MUL, COYOTE_T, JBUF_TICKS;
+let APEX_LO, APEX_HI, APEX_MUL, CUT_V, CUT_MUL, SPD_RUN, SPD_AIR, VY_CEIL;
+let P_JUMP_V, P_DJUMP_V, P_GRAV, P_MAX_FALL;
+
+function setFeel(name) {
+  const key = FEELS[name] ? name : 'aos';
+  const p = FEELS[key];
+  FEEL_NAME = key;
+  ACC_G = p.ACC_G; ACC_A = p.ACC_A; FRIC_G = p.FRIC_G; FRIC_A = p.FRIC_A;
+  TURN_MUL = p.TURN_MUL; COYOTE_T = p.COYOTE_T; JBUF_TICKS = p.JBUF_TICKS;
+  APEX_LO = p.APEX_LO; APEX_HI = p.APEX_HI; APEX_MUL = p.APEX_MUL;
+  CUT_V = p.CUT_V; CUT_MUL = p.CUT_MUL;
+  SPD_RUN = p.SPD_RUN; SPD_AIR = p.SPD_AIR; VY_CEIL = p.VY_CEIL;
+  P_JUMP_V = p.P_JUMP_V; P_DJUMP_V = p.P_DJUMP_V;
+  P_GRAV = p.P_GRAV; P_MAX_FALL = p.P_MAX_FALL;
+}
+setFeel('aos');
+if (typeof location !== 'undefined' && location.search) {
+  try {
+    const want = new URLSearchParams(location.search).get('feel');
+    if (want) setFeel(want);
+  } catch (e) { /* file:// 下拿不到就用手感默认 */ }
+}
+
+/* 松手切断上升：两种机制二选一。
+ * CUT_V > 0 → 绝对值切断（恶魔城：直接压到某个速度）
+ * CUT_V = 0 → 乘系数（现代：留一点余味） */
+function cutJump() {
+  if (P.vy >= 0) return;
+  if (CUT_V > 0) { if (P.vy < -CUT_V) P.vy = -CUT_V; }
+  else P.vy *= CUT_MUL;
+  P.cutOK = false;
+}
+
+const P_W = 28, P_H = 100, P_SPRITE_H = 128;
+/* ── 侧身（Flatten，S4）──
+ * 世界被拍平过一次，所以人也只是"少了一层厚度"：28px 宽的身体只剩 6px。
+ * 高度不变 —— 侧身不是变小，是转了个面。 */
+const FLAT_W = 6;
+/* 比这个更薄的东西才塞得进纸缝（'|'）。用**宽度**判而不是"你是不是玩家、是不是 flat 状态"：
+ * 碰撞该问的是"这个身体过得去吗"，不是"你是谁"。于是敌人（46 宽）永远过不去，
+ * 而任何一个薄到 12px 以内的东西都能过 —— 规则只用记一条。 */
+const PAPER_W = 12;
+/* 当前碰撞宽度。只有侧身会改它，其余时刻恒等于 P_W。
+ * 为什么不直接改 P_W：它是 const，而且"玩家的宽度"和"玩家现在的厚度"
+ * 是两个概念，混成一个之后，所有读 P_W 的地方都得重新想一遍。 */
+let P_CW = P_W;
+/* 侧身的移动速度系数：侧着走是"蹭过去"，不是跑。也给"压扁很贵"一点体感。 */
+const FLAT_SPD = 0.55;
+/* 墨：侧身要烧墨，只有灯能补。数值是这一版定的（原型里唯一的经济约束），
+ * 26/s 意味着满墨能连续侧身约 3.8 秒 —— 够过一次缝、不够赖在里面。 */
+const FLAT_DRAIN = 26, INK_REFILL = 70, INK_NEAR = 78;
+
+// ============================ 魂表 ============================
+// red=主动耗蓝 / blue=持续耗蓝 / yellow=被动 / silver=能力魂（永久）
+/* 主键名的**唯一来源**。SOULS 的说明文字、魂菜单的分组标题、手机端按钮
+ * 全都要引用它 —— 上一版这些文案里写死了字母，键位一改文案就烂：
+ * 说明书上写着「按住 K 减缓下落」，而 K 现在是跳，玩家照着按会原地起跳。
+ * 文案是界面的一部分，不能靠手抄。 */
+const KEY_OF = { atk:'j', jump:'k', red:'u', blue:'l', back:'i', menu:'o', flat:'f' };
+const keyName = a => KEY_OF[a].toUpperCase();
+
+const SOULS = {
+  fire:  { type:'red',    name:'炎魔之魂', cost:12, desc:'向前掷出火球（' + keyName('red') + '）' },
+  axe:   { type:'red',    name:'飞斧之魂', cost:10, desc:'回旋飞斧，可穿透（' + keyName('red') + '）' },
+  glide: { type:'blue',   name:'翼魔之魂', drain:9,  desc:'按住 ' + keyName('blue') + ' 减缓下落' },
+  sight: { type:'yellow', name:'识破之魂', desc:'看见可破坏的墙，普攻可击碎' },
+  djump: { type:'silver', name:'双跃之魂', desc:'空中可再跳一次，打开够不到的路' },
+};
+
+// ============================ 房间 ============================
+function mkRoom(id, name, w, h) {
+  const g = [];
+  for (let y = 0; y < h; y++) g.push(new Array(w).fill('.'));
+  return { id, name, w, h, g, spawn:{x:0,y:0}, enemies:[], items:[], portals:[] };
+}
+function fill(r, x, y, w, h, ch) {
+  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+    const yy = y + j, xx = x + i;
+    if (yy >= 0 && yy < r.h && xx >= 0 && xx < r.w) r.g[yy][xx] = ch;
+  }
+}
+function put(r, x, y, ch) { if (y >= 0 && y < r.h && x >= 0 && x < r.w) r.g[y][x] = ch; }
+function border(r) {
+  fill(r, 0, 0, r.w, 1, '#'); fill(r, 0, r.h - 1, r.w, 1, '#');
+  fill(r, 0, 0, 1, r.h, '#'); fill(r, r.w - 1, 0, 1, r.h, '#');
+}
+const px = t => t * TILE;
+
+// ---- 回廊 ----
+const hall = mkRoom('hall', '废墟回廊', 32, 18);
+border(hall);
+fill(hall, 0, 15, 32, 3, '#');             // 地面
+/* 左高台 = 能力门。跳高按真实比例改成 203px（4.22 格）之后，
+ * 原来的 192px 单跳就能上，门等于没了 —— 抬到 288px（6 格）：
+ * 单跳 203 差 85px 上不去，二段跳 ~340 余 52px 能上。 */
+fill(hall, 1, 9, 5, 1, '=');               // 左高台：离地 288px
+/* 中间平台原来写在 y=11（离地 192px），和注释里的 144px 差了一格 ——
+ * 满跳只有 161px，所以玩家从地面根本上不去，也就走不到密室顶、进不了塔。
+ * 左高台那 192px 是故意留给双跃的，这两个不是。改到 y=12 才是 144px。 */
+fill(hall, 12, 12, 4, 1, '=');             // 中间平台：离地 144px，满跳能上
+fill(hall, 20, 12, 4, 1, '=');             // 同上 —— 上塔的必经跳板
+/* 密室整体左移一格（x26..29），在 x30 留出一条竖直通道。
+ * 原来顶盖铺到 x30（紧贴右边界），角色走到顶端就贴着墙 ——
+ * 贴着墙时身体上部那一格算实心，连纵向起跳都会被它按住，人下不来。 */
+fill(hall, 26, 10, 4, 1, '=');             // 密室顶（堵掉"从上面跳进去"的抄近路）
+fill(hall, 26, 11, 1, 4, 'H');             // 隐藏墙：识破才看见，普攻可碎
+put(hall, 2, 8, 'D');                      // 高台上的门（跟着平台抬两格）
+/* 通往钟塔的门洞要开 3 格高（144px）：角色 100px 站在地面上时头顶落在格 12 里，
+ * 只开 y=13,14 两格的话，头顶那一格还是墙 —— 门就在眼前但走不进去。 */
+put(hall, 31, 12, '.'); put(hall, 31, 13, '.'); put(hall, 31, 14, '.');
+hall.spawn = { x: px(7), y: px(15) };
+hall.enemies = [
+  { type:'slime', x: px(12), y: px(15), min: px(10), max: px(14), soul:'fire' },
+  { type:'slime', x: px(18), y: px(15), min: px(15), max: px(21), soul:'fire' },
+  { type:'slime', x: px(13), y: px(11), min: px(12), max: px(15), soul:'fire' },
+];
+hall.items = [
+  { id:'axe', x: px(29), y: px(15), soul:'axe' },   // 藏在识破墙后面
+];
+hall.portals = [
+  { x:31, y:13, w:1, h:2, to:'tower', spawn:'left' },
+  { x:2,  y:10, w:1, h:1, to:'ending' },
+];
+// 展厅：被拍平的人贴在墙上，标着编号。纯装饰，不参与碰撞。
+hall.portraits = [
+  { tx:6.2,  ty:15, n:'07' }, { tx:8.8,  ty:15, n:'08' }, { tx:15.4, ty:15, n:'11' },
+  { tx:18.6, ty:15, n:'12' }, { tx:22.4, ty:15, n:'19' }, { tx:25.2, ty:15, n:'20' },
+];
+
+// ---- 钟塔 ----
+const tower = mkRoom('tower', '崩落钟塔', 32, 36);
+border(tower);
+fill(tower, 0, 34, 32, 2, '#');
+/* 每级间隔 3 格（144px），5 格宽。
+ * 错开距离从 8 格收到 7 格：8 格时相邻平台的水平间隙是 144px，
+ * 而这一跳要"升 144px 的同时横跨 144px" —— 满跳 161px 的高度够，
+ * 但水平只有在下落回原高度的那个瞬间才够，余量不到一帧，真人根本按不出来。
+ * 收到 7 格后间隙 96px，容错回到能玩的范围。 */
+[[1,31],[8,28],[15,25],[1,22],[8,19],[15,16],[8,13],[15,10,11]].forEach(p => {
+  fill(tower, p[0], p[1], p[2] || 5, 1, '=');
+});
+/* 回廊的门洞同理：tower 地面在 y=34，角色站上去头顶在格 31.9，
+ * 只开 y=33 一格的话门洞比人矮，进不来。 */
+put(tower, 0, 31, '.'); put(tower, 0, 32, '.'); put(tower, 0, 33, '.');
+tower.spawn = { x: px(2), y: px(34) };
+tower.enemies = [
+  { type:'bat', x: px(14), y: px(28), cy: px(28), amp: 90, soul:'sight' },
+  { type:'bat', x: px(20), y: px(20), cy: px(20), amp: 110 },
+  { type:'slime', x: px(10), y: px(28), min: px(9),  max: px(13) },
+  { type:'slime', x: px(18), y: px(25), min: px(17), max: px(21) },
+  { type:'boss',  x: px(22), y: px(10), soul:'djump' },
+];
+tower.items = [{ id:'glide', x: px(11), y: px(28), soul:'glide' }];
+tower.portals = [{ x:0, y:33, w:1, h:1, to:'hall', spawn:'right' }];
+
+// ---- 显影室：S4 的实验室，一间房，只回答一个问题 ----
+/* 这一间房不是"关卡"，是**测量工具**。结构从左到右：
+ *   出生点 → 灯 → [可选壁龛：纸缝 + 墨囊 + 史莱姆] → 走廊史莱姆 → 纸镖蝙蝠
+ *          → [必经纸缝] → 灯 → 尽头（可以走回去）
+ *
+ * 为什么必需段放在后半：如果一进门就必须侧身，"会不会自己发现"这个数就没了。
+ * 前 20 格是纯观察窗 —— 玩家要么在壁龛那儿自己试出来，要么一路走到墙前面卡住。
+ * 全房没有一句文字提示（连 say 都没有），墙上有缝就是唯一的提示。
+ */
+const paper = mkRoom('paper', '显影室', 40, 18);
+border(paper);
+fill(paper, 0, 15, 40, 3, '#');                 // 地面
+paper.spawn = { x: px(2), y: px(15) };
+paper.lamps = [{ x: px(4), y: px(15) }, { x: px(34), y: px(15) }];
+
+/* 可选壁龛：x12..16 一整块墙，里面挖出 3×3 的空腔（144px 高）。
+ * 左墙是 3 格高的纸缝；上面接一块单向平台，跳上去能直接从墙顶走过去 ——
+ * 这就是"可选"：会侧身的人抄近路，不会的人照样能过去，两条路都通。 */
+fill(paper, 12, 11, 5, 4, '#');
+fill(paper, 13, 12, 3, 3, '.');
+fill(paper, 12, 12, 1, 3, '|');
+fill(paper, 9, 11, 3, 1, '=');
+
+/* 必经纸缝：x28 一堵通顶的墙，只留齐人高的一道缝。没有第二条路 ——
+ * 想往前，只能把自己变薄。这是"强制教一次"的那一步。 */
+fill(paper, 28, 0, 1, 15, '#');
+fill(paper, 28, 12, 1, 3, '|');
+paper.gateX = px(29);
+
+paper.enemies = [
+  /* 壁龛里的守卫：接触打不到侧身的人（这是机制要证明的第一件事） */
+  { type:'slime', x: px(14), y: px(15), min: px(13) + 6, max: px(16) - 6, soul:'fire' },
+  /* 走廊里的巡逻：逼玩家在"直接压扁冲过去"和"绕开"之间做选择 */
+  { type:'slime', x: px(21), y: px(15), min: px(18), max: px(25) },
+  /* 会吐纸镖的蝙蝠（同一张纸，多一个动作）：证明"侧身不是无敌" ——
+   * 同平面的身体打不到你，迎面对着飞来的东西照样破。 */
+  { type:'bat',   x: px(24), y: px(14), cy: px(14), amp: 34, shoots: true },
+];
+/* 壁龛里的东西：涨墨量上限。给"进去一次"一个具体的理由，
+ * 而不是只放一句"这里有条缝哦"。 */
+paper.items = [{ id:'inkvial', x: px(14), y: px(14), ink: 20 }];
+
+const ROOMS = { hall, tower, paper };
+
+// ============================ 皮肤包 ============================
+const PACK_ATLAS = {
+  kind:'atlas', label:'名片角色（默认）',
+  /* 状态名对齐源码的 step：stand / walk / jump / fall / crouch / slide / attack / cast / hurt。
+   * 名片管线只有 idle/walk/attack/wave/hit 五组动画，缺的走 fallback（jump→idle 等），
+   * 这是皮肤包本来的设计 —— 一张照片生成 1 帧也能玩。 */
+  /* map.walk 必须指向**真实存在的动画**。上一版写 'walk'，而名片管线只导出
+   * idle/wave/attack/kick/hit 五组 —— animFrames('walk') 返回空数组，drawAtlasFrame
+   * 在 `!frames.length` 那里直接 return，于是**一走路整个人就消失了**。
+   * 这个 bug 很阴：站着正常、跳正常、只有走的时候没有，会让人以为"走路状态坏了"。
+   * 现在走 idle 帧 + 程序化步态（见 renderPlayer 的 walkPhase），缺素材也能读成"在走"。 */
+  map: { stand:'idle', idle:'idle', walk:'idle', jump:'idle', fall:'idle',
+         crouch:'idle', slide:'idle', attack:'attack', cast:'wave', hurt:'hit',
+         dash:'idle' },
+};
+let atlasImg = null, atlasMan = null;
+
+function animFrames(n) { const a = atlasMan && atlasMan.animations[n]; return a ? a.frames : []; }
+function animFps(n)    { const a = atlasMan && atlasMan.animations[n]; return a ? a.fps : 6; }
+
+function drawAtlasFrame(ctx, anim, t, feetX, feetY, height, flip, fixIdx) {
+  if (!atlasImg || !atlasMan) return;
+  const frames = animFrames(anim);
+  if (!frames.length) return;
+  let i;
+  if (fixIdx != null) i = Math.min(fixIdx, frames.length - 1);
+  else {
+    const loop = atlasMan.animations[anim].loop;
+    i = Math.floor(t * animFps(anim));
+    i = loop ? i % frames.length : Math.min(i, frames.length - 1);
+  }
+  const fr = atlasMan.frames[frames[i]].frame;
+  const k = height / fr.h;
+  const pv = atlasMan.meta.pivot;
+  const ax = flip ? (fr.w - pv.x) : pv.x;
+  const dx = feetX - ax * k, dy = feetY - pv.y * k;
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  if (flip) { ctx.translate(feetX, 0); ctx.scale(-1, 1); ctx.translate(-feetX, 0); }
+  ctx.drawImage(atlasImg, fr.x, fr.y, fr.w, fr.h, dx, dy, fr.w * k, fr.h * k);
+  ctx.restore();
+}
+
+// ---- 照片包：运行时像素化（真产品这里换成 AI 管线，接口一致） ----
+const PACK_PHOTO = { kind:'dyn', label:'你拍的（本地显影）', canvas:null, w:0, h:0 };
+
+function buildPhotoPack(file, done) {
+  const img = new Image();
+  img.onload = () => {
+    const H = 96;
+    const W = Math.max(1, Math.round(img.width * (H / img.height)));
+    const off = document.createElement('canvas');
+    off.width = W; off.height = H;
+    const c = off.getContext('2d');
+    c.imageSmoothingEnabled = false;
+    c.drawImage(img, 0, 0, W, H);
+    const im = c.getImageData(0, 0, W, H), d = im.data;
+    const cAt = i => [d[i], d[i+1], d[i+2]];
+    const cs = [cAt(0), cAt((W-1)*4), cAt((H-1)*W*4), cAt(((H-1)*W+W-1)*4)];
+    const bg = [0,1,2].map(ch => Math.round(cs.reduce((s,v)=>s+v[ch],0)/4));
+    let minX = W, maxX = 0, minY = H, maxY = 0;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const i = (y*W + x) * 4;
+      const dist = Math.abs(d[i]-bg[0]) + Math.abs(d[i+1]-bg[1]) + Math.abs(d[i+2]-bg[2]);
+      if (dist < 60) { d[i+3] = 0; continue; }
+      d[i] &= 0xE0; d[i+1] &= 0xE0; d[i+2] &= 0xE0; d[i+3] = 255;
+      if (x < minX) minX = x; if (x > maxX) maxX = x;
+      if (y < minY) minY = y; if (y > maxY) maxY = y;
+    }
+    if (maxX >= minX) {
+      const w2 = maxX - minX + 1, h2 = maxY - minY + 1;
+      const cut = document.createElement('canvas');
+      cut.width = w2; cut.height = h2;
+      cut.getContext('2d').putImageData(c.getImageData(minX, minY, w2, h2), 0, 0);
+      PACK_PHOTO.canvas = cut; PACK_PHOTO.w = w2; PACK_PHOTO.h = h2;
+    } else {
+      PACK_PHOTO.canvas = off; PACK_PHOTO.w = W; PACK_PHOTO.h = H;
+    }
+    done && done(true);
+  };
+  img.onerror = () => done && done(false);
+  img.src = URL.createObjectURL(file);
+}
+
+function drawPhotoFrame(ctx, feetX, feetY, height, flip, state, t) {
+  const c = PACK_PHOTO.canvas;
+  if (!c) return;
+  const k = height / PACK_PHOTO.h;
+  let bob = 0, sq = 1;
+  if (state === 'walk') { bob = -Math.abs(Math.sin(t * 10)) * 4; sq = 1 + Math.sin(t * 20) * 0.02; }
+  if (state === 'attack') { bob = -3; }
+  if (state === 'hurt') { bob = 2; }
+  const w = PACK_PHOTO.w * k * sq, h = PACK_PHOTO.h * k / sq;
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  if (flip) { ctx.translate(feetX, 0); ctx.scale(-1, 1); ctx.translate(-feetX, 0); }
+  ctx.drawImage(c, feetX - w/2, feetY - h + bob, w, h);
+  ctx.restore();
+}
+
+// ============================ 状态 ============================
+let room = hall;
+let camX = 0, camY = 0;
+
+/* ---- 定步长（S1）--------------------------------------------------
+ * 物理永远按 1/120 秒走一步，**和屏幕刷新率脱钩**。
+ * 改之前：dt 是 RAF 的真实间隔（钳位 0.05），每帧一步半隐式欧拉。
+ * 于是 30fps 的机器每步算 33ms、60fps 算 16.7ms，同一个跳跃在两台机器上
+ * 落点不同（实测低帧率偏高 8.4%，而且中途卡一下会随机偏 1~3%）。
+ * 手感参数是按 60fps 调的，别人拿在手里跑的是另一个游戏 —— 这才是最贵的一条。
+ *
+ * 现在：一帧里跑 N 个 8.33ms 的整步，剩下的零头留给渲染插值。
+ * 顶点高度只取决于步数，和帧率无关。
+ */
+const SIM_HZ = 120, FIXED_DT = 1 / SIM_HZ;
+/* 单帧最多补 12 步（=100ms）。切回标签页时 RAF 可能隔了几十秒，
+ * 不设上限就是一次算几千步、卡死几秒 —— 玩家看到的是"游戏崩了"。 */
+const MAX_SUBSTEPS = 12;
+let acc = 0;               // 未消耗的时间
+/* 上一个物理步之前的位置/镜头。渲染时在这两者之间取点，
+ * 让画面永远是"连续"的，而不是每帧跳 2~4 个物理步。 */
+let prevX = 0, prevY = 0, prevCamX = 0, prevCamY = 0;
+function snapInterp() { prevX = P.x; prevY = P.y; prevCamX = camX; prevCamY = camY; }
+let shakeT = 0, shakeAmp = 0;          // 震屏：剩余时长 + 幅度，分开存才能"大震不因为短而看不见"
+let hitStop = 0;                       // 顿帧：打中的那一瞬整体停 40~60ms，是打击感的主要来源
+let playerPack = PACK_ATLAS;
+let ended = false, msg = '', msgT = 0, msgPrio = 0;
+/* 最近几条 say()，只给测试读。存在的理由见 say() 的注释：
+ * 屏幕上只有一行字，读"现在是什么"会漏掉"刚才出现过什么"。 */
+const SAY_LOG = [];
+let enemies = [], projectiles = [], particles = [], pickups = [];
+
+// 浮尘：纯装饰，一直存在，跟着画面缓慢漂浮
+const DUST = Array.from({ length: 36 }, () => ({
+  x: Math.random() * 1400, y: Math.random() * 700,
+  r: 0.8 + Math.random() * 1.6, a: 0.05 + Math.random() * 0.20,
+  vy: -(3 + Math.random() * 9), vx: (Math.random() - 0.5) * 9,
+}));
+
+function shakeIt(t, amp) { shakeT = Math.max(shakeT, t); shakeAmp = Math.max(shakeAmp, amp); }
+
+const P = {
+  x:0, y:0, vx:0, vy:0, face:1, onGround:false, jumps:0,
+  hp:120, hpMax:120, mp:60, mpMax:60,
+  /* 墨：侧身的燃料。只有灯能补（见 INK_REFILL），不自然回复 ——
+   * 「压扁很便宜」就会变成免伤外挂，这条资源是唯一的价格。 */
+  ink:100, inkMax:100,
+  state:'stand', t:0, animT:0, invuln:0, atkCd:0, castCd:0,
+  lock:0, ceilHit:false, ceilBump:false, lookUp:false, landVy:0,
+  hitSet:null, atkPending:0, dead:false, deadT:0,
+  coyote:0, jumpBuf:0, cutOK:false, sq:1, landT:0, stepT:0,
+  /* 步态相位：按**走过的距离**累加，不按时间。站着不动时它不涨，
+   * 所以"停下"就真的停下，不会在原地虚空踏步。单位=步。 */
+  walkPhase:0, walkW:0,        // walkW = 步态权重（0..1），起停都平滑，避免停下的瞬间人「弹」4px
+  /* 姿态目标压缩值。为什么要有它：蹲=0.66、滑铲=0.52 以前是在渲染里用
+   * Math.min 硬切的，滑铲结束那帧 ↓ 还按着 → 0.52 → 1.0 → 0.66 三帧内跳两下，
+   * 屏幕上就是"闪烁"。改成"状态只写目标，P.sq 每帧追过去"，压缩永远连续。 */
+  poseSq:1,
+  /* 穿板窗口：从单向平台按"下+攻击"掉下去之后，0.2s 内不许再把 '=' 当脚下地面，
+   * 否则下一帧传感器又把人按回平台上，人卡在板里抖。 */
+  dropT:0,
+  /* 本段滞空的最低点（y 越小越高）。只在起跳时重置，落地后仍保留，
+   * 于是"最高点 - 起跳点"就是一次跳的真实高度。 */
+  airMinY: 1e9,
+  /* 按下侧身那一刻最近的敌人距离。用来区分"主动躲"和"顺手压扁正好躲开"：
+   * 这个值只在按下时记一次，之后不再更新 —— 它是**意图的代理**，不是状态。 */
+  flatThreat: 999,
+};
+
+const SAVE = {
+  owned: new Set(['fire']),
+  equipped: { red:'fire', blue:null, yellow:null },
+  flags: new Set(),
+  luck: 12,
+};
+
+// ============================ 存档（S2） ============================
+/* 为什么要存档：在它之前，这个「可玩构建」刷新一次就全归零 ——
+ * 拿到二段跳、砍开的墙、打死过的史莱姆，全都不算数。
+ * 于是评审没法说"你从钟塔顶重打一遍 Boss"，玩家也没法说"我卡在哪"。
+ * 一个连重试都要从头开始的版本，测不出任何关于玩法的问题。
+ *
+ * 设计只有三条，多一条都是负担：
+ *   1. 版本化：`v` 不符就整份作废。宁可重开，也不要读一份结构变了的旧档
+ *      （半读成功的档比没档更糟：装备在、进度不在，玩家会以为是 bug）。
+ *   2. 只在**事件**写：进房间、打掉敌人、捡到魂、改装备。不按时间轮询 ——
+ *      localStorage 是同步 IO，每帧写会卡住渲染。
+ *   3. 读档失败一律当"没有存档"。隐私模式、file://、写满配额都会抛，
+ *      每种都吞掉：不能因为存不了档就进不去游戏。
+ */
+const SAVE_KEY = 'dvf.save';
+const SAVE_VER = 1;
+
+/* 探测一次可用性。Safari 无痕模式下 localStorage 存在但 setItem 直接抛，
+ * 所以必须**真的写一次**，不能只判 typeof。 */
+const STORE = (() => {
+  try {
+    const ls = (typeof localStorage !== 'undefined') ? localStorage : null;
+    if (!ls) return null;
+    ls.setItem(SAVE_KEY + '.probe', '1');
+    ls.removeItem(SAVE_KEY + '.probe');
+    return ls;
+  } catch (e) { return null; }
+})();
+
+/* ── 实验埋点（S4）──
+ * 这三个数就是"这个机制到底成不成立"的全部证据，所以从第一天就记，
+ * 而不是事后凭印象写。判定标准见 AUDIT_001_DVF.md §7：
+ * 必经段之后**自发复用**的人不到一半，这个动词就是装饰。
+ *
+ * 全部按**游戏时间**（P.t）记，不按墙钟：压测/后台切回来都不会污染。
+ */
+const MET = {
+  room: '',             // 这份数据属于哪个房间（换房间才清空）
+  spawnT: 0,            // 出生（进房间）那一刻的 P.t
+  firstFlatAt: -1,      // 第一次侧身的 P.t（-1 = 从没按过）
+  flatUses: 0,          // 侧身次数（按下算一次，按住不重复计）
+  flatMs: 0,            // 累计侧身时长
+  gateT: -1,            // 第一次穿过必经缝的 P.t
+  reuseAfterGate: 0,    // 过了必经缝之后，又主动侧身了几次
+  contactsSuppressed: 0,// 被"侧身"消掉的接触次数（打不到 = 机制在起作用）
+  defensiveSaves: 0,    // 其中按下时敌人已经在 160px 以内的（主动躲，不是顺手）
+  shotsHit: 0,          // 被投掷物打中的次数（对照：侧身挡不住飞来的东西）
+};
+function metReset() {
+  MET.spawnT = P.t; MET.firstFlatAt = -1; MET.flatUses = 0; MET.flatMs = 0;
+  MET.gateT = -1; MET.reuseAfterGate = 0; MET.contactsSuppressed = 0;
+  MET.defensiveSaves = 0; MET.shotsHit = 0;
+}
+let savedAt = 0;          // 上次落盘的理由，仅调试用
+let lastSaveReason = '';
+const num = (v, lo, hi, dflt) =>
+  (typeof v === 'number' && isFinite(v)) ? Math.max(lo, Math.min(hi, v)) : dflt;
+
+function saveGame(reason) {
+  if (!STORE) return false;
+  try {
+    STORE.setItem(SAVE_KEY, JSON.stringify({
+      v: SAVE_VER,
+      room: (room && room.id) || 'hall',
+      hp: Math.round(P.hp), mp: Math.round(P.mp),
+      luck: SAVE.luck,
+      owned: [...SAVE.owned],
+      equipped: { red:SAVE.equipped.red, blue:SAVE.equipped.blue, yellow:SAVE.equipped.yellow },
+      flags: [...SAVE.flags],
+      at: Date.now(),
+    }));
+    savedAt = 1;
+    lastSaveReason = reason || '';
+    return true;
+  } catch (e) {
+    return false;   // 配额满 / 被策略拦：玩下去比存下来重要
+  }
+}
+
+/* 读档。返回 false 表示"当作新游戏"，此时 SAVE/P 保持默认值。
+ * 注意：这里**不改房间**，只把状态填好并返回起始房间，由 boot 决定怎么进。 */
+function loadGame() {
+  if (!STORE) return null;
+  let raw = null;
+  try { raw = STORE.getItem(SAVE_KEY); } catch (e) { return null; }
+  if (!raw) return null;
+
+  let d = null;
+  try { d = JSON.parse(raw); } catch (e) { return null; }
+  if (!d || typeof d !== 'object' || Array.isArray(d)) return null;
+  if (d.v !== SAVE_VER) return null;                       // 版本不符：整份作废
+  if (!Array.isArray(d.owned) || !Array.isArray(d.flags) ||
+      !d.equipped || typeof d.equipped !== 'object') return null;
+
+  /* 逐项白名单：存档是**外部输入**，和玩家按键一样不可信。
+   * 一个不存在的魂 id 进到 SAVE.owned 里，菜单会读 SOULS[id].name 直接崩。 */
+  const owned = new Set(d.owned.filter(s => typeof s === 'string' && SOULS[s]));
+  if (!owned.size) owned.add('fire');                      // 红魂是初始魂，永远在
+  const eq = {};
+  for (const tp of ['red', 'blue', 'yellow']) {
+    const s = d.equipped[tp];
+    eq[tp] = (typeof s === 'string' && owned.has(s) && SOULS[s] && SOULS[s].type === tp) ? s : null;
+  }
+  if (!eq.red) eq.red = [...owned].find(s => SOULS[s].type === 'red') || null;
+
+  SAVE.owned = owned;
+  SAVE.equipped = eq;
+  SAVE.flags = new Set(d.flags.filter(x => typeof x === 'string' && x.length < 64));
+  SAVE.luck = num(d.luck, 0, 999, 12);
+
+  P.hp = num(d.hp, 1, P.hpMax, P.hpMax);
+  P.mp = num(d.mp, 0, P.mpMax, P.mpMax);
+
+  const rid = (typeof d.room === 'string' && ROOMS[d.room]) ? d.room : 'hall';
+  return { room: rid };
+}
+
+/* 进度事件统一入口。写在一个地方，将来要做"存盘图标闪一下"只改这里。 */
+function onProgress(reason) { return saveGame(reason); }
+
+// ============================ 输入（照 sotn 的三态模型） ============================
+/* 月下 RicMain 用的不是"按下/松开"两个量，是三个（pl_main.c:499-513）：
+ *   padHeld    = 上一帧的状态        —— "一直按着"
+ *   padPressed = 本帧的状态          —— "现在按着"
+ *   padTapped  = padPressed & (padHeld ^ padPressed)  —— **本帧新按下**
+ *
+ * 为什么必须分开：原版判断"按住×键所以跳更高"用 padPressed，
+ * 判断"这一下按了攻击"用 padTapped。混用会出两种毛病 ——
+ * 按住攻击键每帧重复出招；或者按住跳键每帧被当成新按下。
+ *
+ * 键位也按原版：× 是跳，□ 是攻击，△ 是副武器，↑ 是"上"（抬头/进门），**不是跳**。 */
+
+/* ---- 动作层（S3）--------------------------------------------------
+ * 上层（玩法代码、触屏层、测试脚本）只说**动作**：jump / atk / left …
+ * 只有这一小段知道"动作"和"物理键 / 手指"的对应关系。
+ *
+ * 改之前的两份真相：game.js 的 K 表说 l 是蓝魂，mobile.js 里还写着
+ * bind(pbBlue, 'l') —— 键位一改，键盘对了手机错位，而且桌面上测不出来。
+ * 现在 mobile.js 只会说 press('blue')，它再也不知道也不关心蓝魂在哪个键上。
+ *
+ * 为什么用"来源令牌"而不是布尔量：同一个动作可能有两个来源（W 和 ↑ 同时按着，
+ * 或者手机上左手摇杆 + 右手按钮）。布尔量会在松开其中一个时把动作整个关掉 ——
+ * 表现为"两个键都按着，走两步突然停"。
+ */
+const held = Object.create(null);   // 动作 -> 按住它的来源数
+const taps = Object.create(null);   // 动作 -> 本步新按下（每个物理步末清空）
+const src  = Object.create(null);   // 来源令牌 -> 动作
+
+function actPress(a, token) {
+  const tk = token || ('t:' + a);
+  if (src[tk]) return;              // 同一来源重复按下（系统连发 keydown）不算新按下
+  src[tk] = a;
+  if (!held[a]) taps[a] = true;     // 0 -> 1 才算一次"这一下按了"
+  held[a] = (held[a] || 0) + 1;
+}
+function actRelease(token) {
+  const a = src[token];
+  if (!a) return;
+  delete src[token];
+  held[a] = Math.max(0, (held[a] || 0) - 1);
+}
+function actReleaseAll() {
+  for (const tk in src) delete src[tk];
+  for (const a in held) held[a] = 0;
+}
+/* 只松触屏来源。开菜单时摇杆会被藏起来（hideplay），
+ * 藏起来之后 pointerup 收不到 —— 手指还按着，动作会一直"按住"。
+ * 但**键盘不能一起松**：桌面上按住 D 开一下魂匣再关掉，
+ * 人应该继续走；把键盘来源也清掉就是"开着菜单回来，人不动了，得重新按一次"。 */
+function actReleaseTouch() {
+  for (const tk in src) {
+    if (tk.slice(0, 2) !== 't:') continue;
+    const a = src[tk];
+    delete src[tk];
+    held[a] = Math.max(0, (held[a] || 0) - 1);
+  }
+}
+
+/* 键位表 —— 左手 WASD 管方向，右手 JKL / UIO 两排管动作。
+ *
+ * 为什么是这六个键（AoS 的物理键只有六个，正好对上）：
+ *
+ *   动作键   我们     AoS 的物理键 / 原版触发方式
+ *   ────────────────────────────────────────────
+ *   攻击     J        B
+ *   红魂     U        上 + B        ← 原版没有独立的"魔法键"
+ *   跳跃     K        A
+ *   后跃     I        L（能力键）
+ *   蓝魂     L        R（按住持续）
+ *   菜单     O        START
+ *
+ * 真正决定排布的不是"手够不够得着"，是**同一个手指管一对语义**：
+ *   食指  J / U = 打出去（普攻 / 魔法）
+ *   中指  K / I = 位移（往前跳 / 往后跃）
+ *   无名指 L / O = 状态（按住的能力 / 系统菜单）
+ * 这样"上排高频、下排配对"就有了解释，而不是六个格子随便填 ——
+ * 上一版 J 攻 / K 跳 / L 红 / I 蓝 的问题不是按不到，是没有任何分组逻辑，
+ * 玩家记不住"蓝魂为什么在食指下排"。
+ *
+ * 别名只留通行习惯：方向键（←→↑↓）和空格（跳）。别名越多、冲突面越大，
+ * 上一版 'k' 同时是跳和蓝魂，手机上按蓝魂会起跳，就是这么来的。 */
+const K = {
+  left:  ['arrowleft','a'],
+  right: ['arrowright','d'],
+  up:    ['arrowup','w'],            // 抬头 / 进门 / "上+B" 的组合修饰
+  down:  ['arrowdown','s'],          // 蹲 / "下+A" 滑铲 / "下+B" 穿板
+  atk:   [KEY_OF.atk],               // B
+  jump:  [KEY_OF.jump, ' '],         // A（空格是通行别名）
+  red:   [KEY_OF.red],               // 上+B（红魂）——独立键，等价于按住 W 再按 J
+  blue:  [KEY_OF.blue],              // R（按住持续）
+  back:  [KEY_OF.back],              // L（后跃）
+  flat:  [KEY_OF.flat],              // 侧身（按住；这是这一版的新动词）
+};
+const menuKeyOf = ['tab','o'];       // START
+
+/* 键 -> 动作 的反查表。**这是唯一知道物理键名的地方**。
+ * 键盘监听、preventDefault 白名单、手机层都不再各自维护一份。 */
+const KEYMAP = Object.create(null);
+for (const a in K) for (const k of K[a]) KEYMAP[k] = a;
+for (const k of menuKeyOf) KEYMAP[k] = 'menu';
+
+addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  const a = KEYMAP[k];
+  if (a) e.preventDefault();        // Tab 会跳焦点、空格会滚页，都得挡住
+  if (a) actPress(a, k);            // 令牌 = 物理键：同一个键连发不会重复触发
+});
+addEventListener('keyup', e => {
+  const k = e.key.toLowerCase();
+  if (KEYMAP[k]) actRelease(k);
+});
+
+// 音效统一走这个口子：node 测试里没有 audio.js，静默降级而不是抛错
+function sfx(n) {
+  const a = (typeof window !== 'undefined') && window.__sfx;
+  // 音频永远不许弄坏玩法：设备不支持、音频上下文被杀、iOS 静音开关 —— 都吞掉
+  if (typeof a === 'function') { try { a(n); } catch (e) { /* 静默 */ } }
+}
+/* 语义化包装：读代码时不用记具体键 */
+const padDown = (act) => (held[act] || 0) > 0;
+const padTap  = (act) => !!taps[act];                        // 本步新按下
+/* 每个物理步末清空 tap。等价于原版 padTapped = padPressed & (padHeld ^ padPressed)，
+ * 但抗"同一步里按下又松开"—— 那种情况原版会丢，我们不该丢。 */
+function latchPad() { for (const a in taps) delete taps[a]; }
+
+/* 给触屏层用的口子：只认**动作名**，不认键名。
+ * once 由物理步末清空，所以按住不会连跳 —— 和键盘行为完全一致。 */
+window.__sk = {
+  press(a)   { actPress(a, 't:' + a); },
+  release(a) { actRelease('t:' + a); },
+  releaseAll(){ actReleaseAll(); },
+  setRS(v)   { RS = v; },
+  setViewW(w){ VIEW_W = w; },
+  /* 动作层的只读快照：手机层"按得动"的测试靠它，
+   * 否则只能截图看按钮有没有高亮 —— 那是 CSS，不是输入。 */
+  input() {
+    const o = {};
+    for (const a in held) if (held[a]) o[a] = 1;
+    return o;
+  },
+  /* 只读快照：手感回归测试和调参用，不参与任何逻辑，也不改任何状态。
+   * 为什么需要它：手感的量（加速度爬升帧数、土狼窗口、可变跳跃衰减）
+   * 在假 canvas 的 vm 里测不出来 —— 那里没有真实的 RAF 和真实键盘事件。 */
+  state() {
+    return {
+      x:P.x, y:P.y, vx:P.vx, vy:P.vy, face:P.face, onGround:P.onGround,
+      jumps:P.jumps, state:P.state, coyote:P.coyote, jumpBuf:P.jumpBuf,
+      hp:P.hp, mp:P.mp, dead:P.dead, sq:P.sq, room:(room && room.id) || '',
+      /* 侧身（S4）的验收量：厚度、墨、以及"是不是在 flat 状态" */
+      ink:P.ink, inkMax:P.inkMax, cw:P_CW,
+      dt:lastDt, clamped:lastDt >= 0.0499,
+      /* 定步长的验收量：airMinY 是本段滞空的最低点（y 越小越高）。
+       * 采样帧率会骗人（30fps 采不到顶点），这个由物理步自己记，采不到也准。 */
+      airMinY:P.airMinY, stepDt:FIXED_DT, simT:P.t,
+      lock:P.lock, ceilBump:P.ceilBump,
+      invuln:P.invuln,
+      lookUp:P.lookUp, walkPhase:P.walkPhase,
+      camY:camY,
+    };
+  },
+  /* ---- 存档相关的调试口子（S2）----
+   * store() 读的是**磁盘上那份字符串**，不是内存状态 ——
+   * 只回读内存等于自己跟自己握手，"存进去了吗"这个问题它答不了。 */
+  save()     { return saveGame('manual'); },
+  load()     { return loadGame(); },
+  store()    { try { return STORE ? STORE.getItem(SAVE_KEY) : null; } catch (e) { return null; } },
+  storeOK()  { return !!STORE; },
+  wipe()     { try { if (STORE) STORE.removeItem(SAVE_KEY); } catch (e) {} },
+  progress() {
+    return {
+      room:(room && room.id) || '', hp:P.hp, mp:P.mp, luck:SAVE.luck,
+      owned:[...SAVE.owned].sort(),
+      equipped:{ red:SAVE.equipped.red, blue:SAVE.equipped.blue, yellow:SAVE.equipped.yellow },
+      flags:[...SAVE.flags].sort(),
+      lastSave:lastSaveReason,
+    };
+  },
+  /* 只读：S4 实验的三个指标 + 让它们可判定的复合量。
+   * 数量少是刻意的：能用一个数回答的问题，不要用五个。 */
+  /* 只读：房间的 ASCII 网格。关卡形状靠肉眼看截图会骗人（缩放、视差、暗部），
+   * 一格一格打印出来才敢说"这里真的有一条缝、那里真的是实心"。 */
+  grid() { return room.g.map(r => r.join('')); },
+  metrics() {
+    const since = P.t - MET.spawnT;
+    return {
+      room: (room && room.id) || '',
+      elapsed: +since.toFixed(2),
+      timeToFirstFlat: MET.firstFlatAt < 0 ? null : +(MET.firstFlatAt - MET.spawnT).toFixed(2),
+      flatUses: MET.flatUses,
+      flatSeconds: +(MET.flatMs / 1000).toFixed(2),
+      gateTime: MET.gateT < 0 ? null : +(MET.gateT - MET.spawnT).toFixed(2),
+      reuseAfterGate: MET.reuseAfterGate,
+      contactsSuppressed: MET.contactsSuppressed,
+      defensiveSaves: MET.defensiveSaves,
+      shotsHit: MET.shotsHit,
+      /* 判定用：过了必经缝之后，还自己压扁过没有（这是"动词成立"的唯一判据） */
+      voluntarilyReused: MET.gateT >= 0 && MET.reuseAfterGate > 0,
+    };
+  },
+  /* 只读：敌人与投射物快照，给战斗回归测试用。不改任何状态。 */
+  enemies() { return enemies.map(e => ({ idx:e.idx, type:e.def.type, x:e.x, y:e.y, w:e.w, h:e.h, hp:e.hp, dead:e.dead })); },
+  projectiles() { return projectiles.map(p => ({ x:p.x, y:p.y, kind:p.kind, dmg:p.dmg })); },
+  /* 相机是「↑ 抬头」唯一的证据：抬头不产生任何位移，只有镜头在动。
+   * 没有这个口子就只能靠截图肉眼比对 —— 而截图要几百毫秒，读不出 700ms 的趋势。 */
+  cam() { return { x:camX, y:camY }; },
+  /* say() 是画在 canvas 上的一行字，不进 DOM —— 于是"按键有没有回声"
+   * 这件事从 DOM 侧完全看不见（上一版验证脚本读 #log，读到的是初始教程，
+   * 于是给了一个假阳性）。要验"按键有回应"，就必须能读到这行字本身。 */
+  msg() { return { text: msg, t: msgT }; },
+  /* 屏幕那一行字的**历史**。单行 HUD 上"现在是什么"会被后一条消息覆盖，
+   * 于是"按了有没有回声"这个问题不能靠读当前值回答 —— 读历史才是问题本身。 */
+  says() { return SAY_LOG.slice(); },
+  /* 只读：特效快照。砸了半天弧线不出现，得先能看见"粒子到底有没有被 push"，
+   * 否则就只能在渲染和逻辑之间瞎猜。 */
+  fx() { return particles.map(p => ({ arc:!!p.arc, x:p.x, y:p.y, life:p.life, lifeMax:p.lifeMax, c:p.c, r:p.r, dir:p.dir })); },
+  /** 只读：给自动化测试看某格是什么、以及某个矩形会撞上哪些格 */
+  tile(tx, ty) {
+    if (!room || ty < 0 || ty >= room.h || tx < 0 || tx >= room.w) return '#';
+    return room.g[ty][tx];
+  },
+  probe(x, y, w, h) {
+    const x0 = Math.floor(x / TILE), x1 = Math.floor((x + w - 1) / TILE);
+    const y0 = Math.floor(y / TILE), y1 = Math.floor((y + h - 1) / TILE);
+    const out = [];
+    for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) {
+      const ch = (ty < 0 || ty >= room.h || tx < 0 || tx >= room.w) ? '#' : room.g[ty][tx];
+      if (ch !== '.') out.push({ tx, ty, ch });
+    }
+    return out;
+  },
+};
+
+// ============================ 碰撞 ============================
+/* '=' 是单向平台，'#' 和 'H' 是实心。
+ * 为什么要有单向：角色高 100px，站在地面时头顶正好落在格 12 的下沿。
+ * 平台放格 12 → 从侧面把地面上的角色卡死；放格 11 → 离地 192px，满跳 161 上不去。
+ * 两个高度都不对 —— 这不是数字没调好，是这种地形本来就不该四面实心。
+ * 单向规则：横向能穿、往上能穿，只有"从上面落下来"才站住。 */
+function isSolid(ch) { return ch === '#' || ch === '=' || ch === 'H'; }
+
+/* 单向平台唯一的正确判据：**脚从上方跨过平台顶面**。
+ * 曾经用"身体是否碰到平台格"来判断，结果是：跳不到平台顶面（高度不够）时，
+ * 身体横跨平台格 → 下落那一帧判成"撞进平台内部" → vy 清零 → 人永远悬在
+ * 平台中间，落不下去也上不来。砸掉整条路，而且要跳到半途才发现。
+ * 改判据之后，够不到就正常落回地面，够到了才站住。 */
+function platformTop(b, dy) {
+  const footBefore = b.y + b.h, footAfter = footBefore + dy;
+  const x0 = Math.floor(b.x / TILE), x1 = Math.floor((b.x + b.w - 1) / TILE);
+  for (let ty = Math.floor(footBefore / TILE); ty <= Math.floor(footAfter / TILE); ty++) {
+    if (ty < 0 || ty >= room.h) continue;
+    const top = ty * TILE;
+    if (top < footBefore || top > footAfter) continue;   // 没真的跨过这一行顶面
+    for (let tx = x0; tx <= x1; tx++) {
+      if (tx >= 0 && tx < room.w && room.g[ty][tx] === '=') return top;
+    }
+  }
+  return -1;
+}
+
+function solidBox(b) {
+  const x0 = Math.floor(b.x / TILE), x1 = Math.floor((b.x + b.w - 1) / TILE);
+  const y0 = Math.floor(b.y / TILE), y1 = Math.floor((b.y + b.h - 1) / TILE);
+  for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) {
+    if (tx < 0 || ty < 0 || tx >= room.w || ty >= room.h) return true;
+    const ch = room.g[ty][tx];
+    if (ch === '#' || ch === 'H') return true;
+    /* 纸缝：比缝厚的东西一律当墙。侧身之后身体只有 6px，
+     * 同一段代码自然就放行了 —— 不需要"如果玩家在 flat 状态"这种特判。 */
+    if (ch === '|' && b.w > PAPER_W) return true;
+  }
+  return false;
+}
+
+/** 亚像素位移 + 只在真的贴上时退到 1px 步进 */
+function moveBody(b, dx, dy) {
+  let hitX = false, hitY = false;
+  if (dx) {
+    b.x += dx;
+    if (solidBox(b)) {
+      b.x -= dx;
+      const n = Math.ceil(Math.abs(dx)), s = Math.sign(dx);
+      for (let i = 0; i < n; i++) { b.x += s; if (solidBox(b)) { b.x -= s; hitX = true; break; } }
+    }
+  }
+  if (dy) {
+    if (dy > 0) {
+      const top = platformTop(b, dy);
+      if (top >= 0) { b.y = top - b.h; return { hitX, hitY: true }; }
+    }
+    b.y += dy;
+    if (solidBox(b)) {
+      b.y -= dy;
+      const n = Math.ceil(Math.abs(dy)), s = Math.sign(dy);
+      for (let i = 0; i < n; i++) { b.y += s; if (solidBox(b)) { b.y -= s; hitY = true; break; } }
+    }
+  }
+  return { hitX, hitY };
+}
+
+function overlap(a, b) {
+  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+}
+/** 从 (x,y) 往下找第一个实心面，返回距离（找不到就返回 999）。投影要用。 */
+function groundBelow(x, y) {
+  for (let d = 0; d < 420; d += 6) if (isSolid(tileAt(x, y + d))) return d;
+  return 999;
+}
+function tileAt(x, y) {
+  const tx = Math.floor(x / TILE), ty = Math.floor(y / TILE);
+  if (tx < 0 || ty < 0 || tx >= room.w || ty >= room.h) return '#';
+  return room.g[ty][tx];
+}
+
+// ============================ 房间装载 ============================
+/* 地形烘焙：整张房间的静态瓦片只画一次，之后每帧一次 drawImage。
+ * 之前每帧要发几千个 fillRect（每格 4 行砖 × 3 次 fill × 噪声点），
+ * 桌面看不出来，iPhone 上会掉帧 —— 这是移动端最容易被忽略的一笔账。
+ * 'H' 隐藏墙不进缓存：它的外观随装备变化，而且是少数，每帧现画。 */
+let tileCache = null, tileCacheKey = '';
+
+function buildTileCache() {
+  const W = px(room.w), H = px(room.h);
+  const cv2 = document.createElement('canvas');
+  cv2.width = W; cv2.height = H;
+  const c2 = cv2.getContext('2d');
+  for (let y = 0; y < room.h; y++) for (let x = 0; x < room.w; x++) {
+    const ch = room.g[y][x];
+    if (ch !== '.' && ch !== 'H') drawTile(c2, ch, x * TILE, y * TILE);
+  }
+  tileCache = cv2;
+  tileCacheKey = room.id;
+}
+
+function invalidateTiles() { tileCache = null; }
+
+function loadRoom(id, spawnKey, announce) {
+  room = ROOMS[id] || hall;
+  invalidateTiles();
+  enemies = []; projectiles = []; particles = []; pickups = [];
+  room.enemies.forEach((e, i) => {
+    if (SAVE.flags.has('dead_' + room.id + '_' + i)) return;
+    enemies.push(makeEnemy(e, i));
+  });
+  room.items.forEach(it => {
+    if (SAVE.flags.has('took_' + room.id + '_' + it.id)) return;
+    pickups.push({ x:it.x, y:it.y, soul:it.soul, ink:it.ink || 0, id:it.id, t:0, got:false });
+  });
+  if (spawnKey === 'left')       { P.x = px(2);  P.y = px(34) - P_H; }
+  else if (spawnKey === 'right') { P.x = px(25); P.y = px(15) - P_H; }
+  else                           { P.x = room.spawn.x; P.y = room.spawn.y - P_H; }
+  P.vx = P.vy = 0; P.jumps = 0; P.state = 'stand'; P.animT = 0; P.invuln = 0.6;
+  P.lock = 0; P.ceilBump = false; P.lookUp = false;
+  /* 换房间时把侧身彻底清掉：带着 6px 的碰撞宽度进新房间，
+   * 会在第一帧就开始"卡墙"（而屏幕上什么异常都看不到）。 */
+  P_CW = P_W; P.ink = P.inkMax;
+  /* 埋点只在**换房间**时重记，复活不重记 —— 死了重来是同一场实验的一部分，
+   * 死了就把"他到过必经缝"抹掉，等于把最贵的那个数扔了。 */
+  if (MET.room !== room.id) { MET.room = room.id; metReset(); }
+  camX = P.x + P_CW/2 - VIEW_W/2;
+  camY = P.y + P_H/2 - VIEW_H/2;
+  clampCam();
+  /* 换房间 = 瞬移。插值基点必须跟着跳，否则渲染会在"旧房间的坐标"和
+   * "新房间的坐标"之间连一条线 —— 一帧横穿整张地图的残影。 */
+  P.airMinY = P.y;
+  snapInterp();
+  if (announce) say(room.name);
+  /* 换房间就是检查点。为什么存这里而不是"存盘点"：
+   * 这版没有存盘房，玩家唯一的进度边界就是门。不在这里存，
+   * 死了重开就得从头打 —— 那正是"没法重试 Boss"的根源。 */
+  saveGame('room');
+}
+
+function clampCam() {
+  const W = px(room.w), H = px(room.h);
+  camX = Math.max(0, Math.min(W - VIEW_W, camX));
+  camY = Math.max(0, Math.min(H - VIEW_H, camY));
+  if (W < VIEW_W) camX = (W - VIEW_W) / 2;
+  if (H < VIEW_H) camY = (H - VIEW_H) / 2;
+}
+
+// ============================ 敌人 ============================
+function makeEnemy(def, idx) {
+  const e = { def, idx, t: Math.random() * 3, hp: 40, hpMax: 40, vx:0, vy:0,
+              onGround:false, dead:false, hurtT:0, dir:1, dmg:8 };
+  if (def.type === 'slime') { e.w = 46; e.h = 38; e.hp = e.hpMax = 44; e.dmg = 10; }
+  if (def.type === 'bat')   { e.w = 46; e.h = 32; e.hp = e.hpMax = 30; e.dmg = 12; }
+  if (def.type === 'boss')  { e.w = 150; e.h = 150; e.hp = e.hpMax = 320; e.dmg = 20; }
+  e.x = def.x - e.w / 2;
+  e.y = def.y - e.h;
+  e.spawnX = e.x; e.spawnY = e.y;
+  return e;
+}
+const ebox = e => ({ x:e.x, y:e.y, w:e.w, h:e.h });
+
+function updateEnemy(e, dt) {
+  e.t += dt;
+  if (e.hurtT > 0) e.hurtT -= dt;
+  const dxp = (P.x + P_CW/2) - (e.x + e.w/2);
+
+  if (e.def.type === 'slime') {
+    if (e.x < e.def.min) e.dir = 1;
+    if (e.x + e.w > e.def.max) e.dir = -1;
+    const r = moveBody(e, e.dir * 55 * dt, 0);
+    if (r.hitX) e.dir *= -1;
+    moveBody(e, 0, GRAV * 0.8 * dt);
+  } else if (e.def.type === 'bat') {
+    e.y = e.spawnY + Math.sin(e.t * 2.2) * (e.def.amp || 80);
+    const chase = Math.abs(dxp) < 320 ? Math.sign(dxp) * 60 : 0;
+    moveBody(e, (Math.sin(e.t * 1.1) * 50 + chase) * dt, 0);
+    /* 会吐纸镖的蝙蝠（def.shoots，只在实验房里开）。
+     * 为什么不是"新敌人类型"：它还是同一张纸，只是多了一个"吐出自己一角"的动作。
+     * 实验需要它，因为"侧身躲得掉身体、躲不掉飞来的东西"这条规则
+     * 光靠史莱姆证明不了 —— 没有投掷物，这条机制就只是个免伤开关。 */
+    if (e.def.shoots) {
+      e.shotT = (e.shotT || 0) + dt;
+      if (e.shotT > 1.9 && Math.abs(dxp) < 470) {
+        e.shotT = 0;
+        const d = Math.sign(dxp) || 1;
+        projectiles.push({ x:e.x + e.w/2 + d*14, y:e.y + e.h*0.5, vx:d*260, vy:0,
+                           life:1.9, dmg:e.def.shotDmg || 8, kind:'dart', foe:true,
+                           pierce:false, hits:new Set() });
+        sfx('swing');
+      }
+    }
+  } else if (e.def.type === 'boss') {
+    e.vy = Math.min(MAX_FALL, e.vy + GRAV * dt);
+    const r = moveBody(e, e.vx * dt, e.vy * dt);
+    if (r.hitY) { e.vy = 0; e.onGround = true; } else e.onGround = false;
+    e.jumpT = (e.jumpT || 0) + dt;
+    if (e.onGround && e.jumpT > 1.6) {
+      e.jumpT = 0;
+      e.vx = Math.sign(dxp) * 170;
+      e.vy = -620;
+      e.onGround = false;
+      shakeIt(0.18, 5); sfx('slam');
+    }
+    if (e.onGround) e.vx *= 0.85;
+  }
+

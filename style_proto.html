@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>N1 配方原型 v3 · 明快自然 + 风衣礼帽持刀人</title>
+<style>
+  html,body{margin:0;height:100%;background:#0d1014;overflow:hidden}
+  canvas{display:block;width:100vw;height:100vh}
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<script>
+'use strict';
+/* ========================================================================
+   N1 配方原型 v3（2026-11-25）
+
+   v3 的核心改动只有一条，但它比前面所有修饰都重要：
+     **把主角放到最亮的地方（天空）前面。**
+   v2 里主角站在深绿树冠前，明度差被吃掉，怎么加描边都救不回来。
+   冒险岛真正在用的不是"厚描边"，是"背景亮／前景暗"的固定分工。
+
+   其余修复：去掉白色外描边（v2 里像贴了一圈白纸）／帽子收小露脸／
+   斜撑改真三角／草改成簇而不是齿／光束柔化／血条改暖色（绿色在绿背景上隐形）
+   ======================================================================== */
+
+const W=1280, H=720;
+const cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+function fit(){
+  const dpr=Math.min(2, window.devicePixelRatio||1);
+  cv.width=W*dpr; cv.height=H*dpr;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  cv.style.width='100vw'; cv.style.height='100vh';
+}
+fit(); addEventListener('resize', fit);
+
+const C = {
+  skyTop:'#a6dbee', skyMid:'#d7eef0', skyBot:'#ffefd2',
+  far:'#a3c3c1', farLit:'#bcd7d1',
+  mid:'#5c9a6c', midLit:'#8cc183', midDark:'#3a7452',
+  near:'#2b6a43', nearLit:'#58a35c', nearDark:'#1a4a30',
+  grassC:'#4aa74b', grassLit:'#8ed164', grassSun:'#bde27c', grassDark:'#2a6b3c',
+  wood:'#b17d4d', woodTop:'#d9a46c', woodDark:'#7a5230',
+  ink:'#12222a',
+  coat:'#31435e', coatLit:'#5a76a2', coatDark:'#1d2b3d',
+  skin:'#ecc79f', hat:'#1a2431',
+  foe:'#6c4a7d', foeLit:'#ac7fc1', foeDark:'#3f2b4d',
+  gem:'#ffcf5e', gemCore:'#fffbe8',
+  hp:'#c8452f', hpHi:'#f0764f'
+};
+const TAU=Math.PI*2;
+
+/* ---------------- 形状 ---------------- */
+function rr(x,y,w,h,r){
+  const p=new Path2D();
+  p.moveTo(x+r,y); p.lineTo(x+w-r,y); p.quadraticCurveTo(x+w,y,x+w,y+r);
+  p.lineTo(x+w,y+h-r); p.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  p.lineTo(x+r,y+h); p.quadraticCurveTo(x,y+h,x,y+h-r);
+  p.lineTo(x,y+r); p.quadraticCurveTo(x,y,x+r,y); p.closePath();
+  return p;
+}
+function cluster(cx,cy,R,n,seed,jit){
+  const p=new Path2D();
+  let s=seed*9301;
+  const rnd=()=>{ s=(s*9301+49297)%233280; return s/233280; };
+  for(let i=0;i<n;i++){
+    const a=(i/n)*TAU+rnd()*0.9;
+    const rr2=R*(0.34+rnd()*0.34);
+    const dx=Math.cos(a)*R*0.62*(0.6+rnd()*0.7);
+    const dy=Math.sin(a)*R*0.38*(0.6+rnd()*0.7);
+    p.moveTo(cx+dx+rr2*jit, cy+dy); p.arc(cx+dx, cy+dy, rr2*jit, 0, TAU);
+  }
+  p.moveTo(cx+R*0.70*jit, cy); p.arc(cx, cy, R*0.72*jit, 0, TAU);
+  return p;
+}
+/* 只在最外圈出边：同形状向 10 个方向平移各填一遍（≈3px 膨胀）。
+   直接 stroke 会把每个子圆的内圈也描出来 —— 树冠立刻变成一堆圆环。 */
+function block(path, fill, lw, inkColor){
+  const ink=inkColor||C.ink, r=(lw||3)*0.85, N=10;
+  ctx.save(); ctx.fillStyle=ink;
+  for(let i=0;i<N;i++){
+    const a=i/N*TAU;
+    ctx.save(); ctx.translate(Math.cos(a)*r, Math.sin(a)*r); ctx.fill(path); ctx.restore();
+  }
+  ctx.restore();
+  ctx.fillStyle=fill; ctx.fill(path);
+}
+function grad(x0,y0,x1,y1,stops){
+  const g=ctx.createLinearGradient(x0,y0,x1,y1);
+  stops.forEach(s=>g.addColorStop(s[0],s[1]));
+  return g;
+}
+
+/* ---------------- 主角 ---------------- */
+const HS=1.5;
+function drawHero(x,y,t,atk){
+  ctx.save(); ctx.translate(x,y); ctx.scale(HS,HS);
+  ctx.translate(0,Math.sin(t*2.6)*1.1);
+
+  ctx.save(); ctx.globalAlpha=.22; ctx.fillStyle='#24512f';
+  ctx.beginPath(); ctx.ellipse(0,1,25,5,0,0,TAU); ctx.fill(); ctx.restore();
+
+  const legL=new Path2D();
+  legL.moveTo(-9,-48); legL.lineTo(-1,-48); legL.lineTo(-4,-4); legL.lineTo(-13,-4); legL.closePath();
+  const legR=new Path2D();
+  legR.moveTo(1,-48); legR.lineTo(9,-48); legR.lineTo(13,-4); legR.lineTo(4,-4); legR.closePath();
+  block(legL,C.coatDark,3); block(legR,C.coatDark,3);
+  block(rr(-17,-9,15,9,3.5),'#0d1620',3);
+  block(rr(3,-9,16,9,3.5),'#0d1620',3);
+
+  /* 下摆中间开一道衩：不开衩的话腿全被盖住，人看起来像个钟 */
+  const coat=new Path2D();
+  coat.moveTo(-14,-90);
+  coat.bezierCurveTo(-26,-74,-31,-44,-35,-6);
+  coat.lineTo(-14,-20);
+  coat.lineTo(-8,-44);
+  coat.lineTo(3,-44);
+  coat.lineTo(9,-20);
+  coat.lineTo(35,-20);
+  coat.bezierCurveTo(31,-44,26,-74,14,-90);
+  coat.closePath();
+  const coatFill=grad(-32,-92,24,-6,[[0,C.coatLit],[0.42,C.coat],[1,C.coatDark]]);
+  block(coat,coatFill,3.4);
+  ctx.save(); ctx.clip(coat);
+  ctx.strokeStyle='rgba(10,18,30,.40)'; ctx.lineWidth=2.6;
+  [-15,0,15].forEach(dx=>{
+    ctx.beginPath(); ctx.moveTo(dx*0.45,-88); ctx.quadraticCurveTo(dx*0.95,-46,dx*1.55,-8); ctx.stroke();
+  });
+  ctx.fillStyle='rgba(8,14,24,.45)'; ctx.fillRect(-40,-26,80,10);
+  ctx.restore();
+  ctx.beginPath(); ctx.moveTo(-1,-90); ctx.lineTo(7,-44); ctx.lineTo(1,-8); ctx.lineTo(-9,-8); ctx.lineTo(-10,-46); ctx.closePath();
+  ctx.fillStyle='#1d2a3f'; ctx.fill();
+  ctx.strokeStyle='rgba(16,26,40,.55)'; ctx.lineWidth=1.6; ctx.stroke();
+
+  const armB=new Path2D();
+  armB.moveTo(-13,-86); armB.lineTo(-5,-84); armB.lineTo(-9,-58); armB.lineTo(-18,-60); armB.closePath();
+  block(armB,C.coatDark,3);
+
+  const head=new Path2D(); head.ellipse(0,-102,10,11.5,0,0,TAU);
+  block(head,C.skin,3);
+  ctx.save(); ctx.clip(head);
+  ctx.fillStyle='rgba(46,28,32,.34)'; ctx.fillRect(-12,-112,24,8);
+  ctx.restore();
+  ctx.save(); ctx.globalAlpha=.20; ctx.fillStyle='#4a2f1e';
+  ctx.beginPath(); ctx.ellipse(2,-96,8.5,3.6,0,0,TAU); ctx.fill(); ctx.restore();
+  /* 五官：这个尺寸画眼白会糊，只给两道短横 + 一点鼻影，读起来就有"脸" */
+  ctx.strokeStyle='rgba(38,26,24,.72)'; ctx.lineWidth=1.9; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(-6.2,-102.5); ctx.lineTo(-1.6,-102.5); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(2.0,-102.5); ctx.lineTo(6.6,-102.5); ctx.stroke();
+  ctx.strokeStyle='rgba(120,80,60,.45)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(3.4,-100); ctx.lineTo(3.4,-96.5); ctx.stroke();
+
+  const brim=rr(-19,-116,38,6.5,3);
+  block(brim,C.hat,3,'#0a1118');
+  const crown=new Path2D();
+  crown.moveTo(-11,-115); crown.lineTo(-10,-132); crown.quadraticCurveTo(0,-135,10,-132);
+  crown.lineTo(11,-115); crown.closePath();
+  block(crown,grad(-11,-134,11,-115,[[0,'#31445c'],[1,C.hat]]),3,'#0a1118');
+  ctx.fillStyle='#482a34'; ctx.fillRect(-11,-120,22,4);
+
+  const ang = atk ? atk.ang : -0.30;
+  ctx.save();
+  ctx.translate(8,-86); ctx.rotate(ang);
+  const armF=new Path2D();
+  armF.moveTo(-4.5,-2); armF.lineTo(5.5,-1); armF.lineTo(8.5,19); armF.lineTo(-1.5,19); armF.closePath();
+  block(armF,C.coat,3);
+  const blade=new Path2D();
+  blade.moveTo(0.5,17); blade.lineTo(10,17); blade.lineTo(11.5,58); blade.lineTo(5.5,69); blade.lineTo(-0.5,58); blade.closePath();
+  block(blade,grad(0,18,11,74,[[0,'#ffffff'],[0.45,'#e3edf3'],[1,'#a7bac7']]),2.6,'#0e1822');
+  ctx.strokeStyle='rgba(255,255,255,.92)'; ctx.lineWidth=1.7;
+  ctx.beginPath(); ctx.moveTo(5.4,22); ctx.lineTo(6,63); ctx.stroke();
+  block(rr(-2,14.5,15,4,2),'#9a7142',2.4);
+  ctx.restore();
+
+  ctx.restore();
+}
+
+/* ---------------- 敌人 ---------------- */
+function drawFoe(x,y,t,s){
+  ctx.save(); ctx.translate(x,y); ctx.scale(s||1,s||1);
+  ctx.translate(0,Math.sin(t*3.4+x*0.01)*1.8);
+  ctx.save(); ctx.globalAlpha=.24; ctx.fillStyle='#24512f';
+  ctx.beginPath(); ctx.ellipse(0,1,22,4.6,0,0,TAU); ctx.fill(); ctx.restore();
+
+  const body=new Path2D();
+  body.moveTo(-20,0); body.bezierCurveTo(-23,-26,-13,-39,0,-39);
+  body.bezierCurveTo(13,-39,23,-26,20,0); body.closePath();
+  block(body,grad(0,-39,0,0,[[0,C.foeLit],[0.45,C.foe],[1,C.foeDark]]),3);
+
+  [[-10,-35],[10,-35]].forEach(([hx,hy],i)=>{
+    const horn=new Path2D();
+    horn.moveTo(hx-4.5,hy); horn.lineTo(hx+(i?4.5:-4.5),hy-13); horn.lineTo(hx+4.5,hy); horn.closePath();
+    block(horn,'#efe4ce',2.2);
+  });
+  [[-7.5,-22],[7.5,-22]].forEach(([ex,ey])=>{
+    ctx.beginPath(); ctx.ellipse(ex,ey,5.2,6.2,0,0,TAU);
+    ctx.fillStyle='#fcf8ec'; ctx.fill(); ctx.strokeStyle=C.ink; ctx.lineWidth=2; ctx.stroke();
+    ctx.beginPath(); ctx.arc(ex+(ex<0?1.2:-1.2),ey+1.2,2.4,0,TAU);
+    ctx.fillStyle='#141d24'; ctx.fill();
+  });
+  ctx.beginPath(); ctx.moveTo(-4.5,-11); ctx.quadraticCurveTo(0,-7.5,4.5,-11);
+  ctx.strokeStyle=C.ink; ctx.lineWidth=2; ctx.stroke();
+  ctx.restore();
+}
+
+/* ---------------- 刀光（亮底：深核 + 白热线 + 外发光） ---------------- */
+function drawSlash(cx,cy,ang,prog){
+  if(prog<=0||prog>=1) return;
+  const R=98, half=1.02, fade=Math.pow(1-prog,0.65), sweep=0.5+prog*0.5;
+  ctx.save(); ctx.translate(cx,cy);
+  ctx.save(); ctx.globalAlpha=.45*fade;
+  ctx.shadowColor='rgba(255,252,226,.95)'; ctx.shadowBlur=32;
+  ctx.beginPath(); ctx.arc(0,0,R,ang-half*sweep,ang+half*sweep);
+  ctx.strokeStyle='rgba(255,250,224,.8)'; ctx.lineWidth=22; ctx.lineCap='round'; ctx.stroke();
+  ctx.restore();
+  ctx.beginPath(); ctx.arc(0,0,R*0.97,ang-half*sweep,ang+half*sweep);
+  ctx.strokeStyle='rgba(14,10,30,'+(0.92*fade)+')'; ctx.lineWidth=14; ctx.lineCap='round'; ctx.stroke();
+  ctx.beginPath(); ctx.arc(0,0,R*0.97,ang-half*sweep,ang+half*sweep);
+  ctx.strokeStyle='rgba(255,255,255,'+(0.95*fade)+')'; ctx.lineWidth=3.6; ctx.lineCap='round'; ctx.stroke();
+  ctx.restore();
+}
+
+/* ---------------- 场景 ---------------- */
+const GY=568;
+const HERO={x:392,y:GY};
+const PLAT={x:660,y:404,w:286,h:22};
+
+function drawScene(t,atk){
+  const cam=Math.sin(t*0.13)*44;
+
+  ctx.fillStyle=grad(0,0,0,GY,[[0,C.skyTop],[0.46,C.skyMid],[1,C.skyBot]]);
+  ctx.fillRect(0,0,W,GY+6);
+
+  const sx=HERO.x+66, sy=210;
+  const sg=ctx.createRadialGradient(sx,sy,6,sx,sy,420);
+  sg.addColorStop(0,'rgba(255,253,236,.95)');
+  sg.addColorStop(0.16,'rgba(255,246,204,.55)');
+  sg.addColorStop(0.5,'rgba(255,240,196,.18)');
+  sg.addColorStop(1,'rgba(255,238,196,0)');
+  ctx.fillStyle=sg; ctx.fillRect(0,0,W,H);
+
+  ctx.save(); ctx.filter='blur(2.4px)';
+  const hills=new Path2D();
+  hills.moveTo(-140,486);
+  for(let i=0;i<=12;i++){
+    const x=-140+i*132-cam*0.10;
+    hills.quadraticCurveTo(x+66,486-(i%2?84:126), x+132,486);
+  }
+  hills.lineTo(W+240,H); hills.lineTo(-140,H); hills.closePath();
+  ctx.fillStyle=C.far; ctx.fill(hills);
+  for(let i=0;i<17;i++){
+    const bx=-70+i*92-cam*0.17;
+    const bh=104+((i*47)%66);
+    ctx.fillStyle=(i%3===0)?C.farLit:C.far;
+    ctx.fill(cluster(bx,478-bh*0.5,42,6,i+3,1));
+  }
+  ctx.restore();
+  ctx.fillStyle='rgba(206,236,238,.36)';
+  ctx.fillRect(0,0,W,GY);
+
+  /* 中景树：主角左侧故意留天空缺口 */
+  const trees=[[70,300,96],[232,262,74],[520,318,88],[690,268,80],[880,306,100],[1080,272,86]];
+  trees.forEach(([bx0,by,R],i)=>{
+    const bx=bx0-cam*0.40;
+    const trunk=new Path2D();
+    trunk.moveTo(bx-12,by+R*0.5); trunk.lineTo(bx-7,540);
+    trunk.lineTo(bx+7,540); trunk.lineTo(bx+12,by+R*0.5); trunk.closePath();
+    block(trunk,grad(bx,by,bx,540,[[0,'#8a6a4a'],[1,'#57402b']]),2.6,'#20402f');
+    const p=cluster(bx,by,R,7,i+11,1);
+    block(p,grad(bx-R,by-R,bx+R*0.5,by+R,[[0,C.midLit],[0.52,C.mid],[1,C.midDark]]),2.6,'#1e3f2e');
+    // 副冠：同一棵树再挂一小团，位置偏移 —— 一棵树只有一团就成了棒棒糖
+    const q=cluster(bx+R*0.55,by-R*0.30,R*0.55,5,i+23,1);
+    block(q,grad(bx,by-R,bx+R,by,[[0,C.midLit],[1,C.mid]],2,0),2.2,'#1e3f2e');
+  });
+
+  /* 灌木层：贴着地面，把树干根部藏起来（否则一排细杆像电线杆） */
+  for(let i=0;i<14;i++){
+    const bx=-40+i*98-cam*0.6;
+    const R=34+((i*29)%22);
+    const p=cluster(bx,GY-14,R,6,i+51,1);
+    block(p,grad(0,GY-R,0,GY,[[0,'#5f9e5e'],[1,'#2f6a3e']]),2.4,'#1b4229');
+  }
+
+  /* 光束：只留 3 道，且必须模糊 —— 硬边三角一眼假 */
+  ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.filter='blur(16px)';
+  for(let i=0;i<3;i++){
+    const lx=300+i*118-cam*0.26;
+    const g2=ctx.createLinearGradient(lx,30,lx+320,GY);
+    g2.addColorStop(0,'rgba(255,251,222,.13)');
+    g2.addColorStop(0.55,'rgba(255,251,222,.06)');
+    g2.addColorStop(1,'rgba(255,251,222,0)');
+    ctx.fillStyle=g2;
+    ctx.beginPath();
+    ctx.moveTo(lx,20); ctx.lineTo(lx+52,20);
+    ctx.lineTo(lx+300,GY); ctx.lineTo(lx+196,GY); ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+
+  [[150,-70,180],[620,-110,150],[1010,-60,190]].forEach(([cx,cy,R],i)=>{
+    const p=cluster(cx-cam*0.55,cy,R,8,21+i*7,1);
+    block(p,grad(0,cy-R,0,cy+R,[[0,C.nearLit],[0.62,C.near],[1,C.nearDark]]),3.2,'#123020');
+  });
+
+  const gpx=new Path2D();
+  gpx.moveTo(-10,GY);
+  gpx.quadraticCurveTo(W*0.30,GY-13,W*0.62,GY-2);
+  gpx.quadraticCurveTo(W*0.86,GY+5,W+10,GY-5);
+  gpx.lineTo(W+10,H); gpx.lineTo(-10,H); gpx.closePath();
+  block(gpx,grad(0,GY,0,H,[[0,C.grassSun],[0.10,C.grassLit],[0.20,C.grassC],[0.55,C.grassDark],[1,'#1d4a2e']]),3.4,'#123020');
+
+  /* 草：成簇、高低错落、不描边 */
+  for(let i=0;i<26;i++){
+    const base=-30+i*54-cam*0.95+((i*29)%23);
+    const gy=GY+2+((i*13)%9);
+    const k=0.7+((i*37)%40)/50;
+    const n=3+(i%3);
+    for(let j=0;j<n;j++){
+      const ox=(j-(n-1)/2)*4.5;
+      const hh=(13+(j*5)%11)*k;
+      ctx.beginPath();
+      ctx.moveTo(base+ox-2.2,gy);
+      ctx.quadraticCurveTo(base+ox+((j%2)?3.2:-3.2), gy-hh*0.62, base+ox+((j%2)?4.4:-4.4), gy-hh);
+      ctx.quadraticCurveTo(base+ox+1.4, gy-hh*0.35, base+ox+1.2,gy);
+      ctx.closePath();
+      ctx.fillStyle=j%2?C.grassLit:C.grassSun;
+      ctx.fill();
+    }
+  }
+
+  /* 地面的暗色草丛与石块：没有这些，草地就是一块纯色板 */
+  for(let i=0;i<9;i++){
+    const bx=-60+i*158-cam*0.9;
+    const by=GY+16+((i*23)%26);
+    ctx.save(); ctx.globalAlpha=.26; ctx.filter='blur(6px)'; ctx.fillStyle='#1d5330';
+    ctx.beginPath(); ctx.ellipse(bx,by,52+((i*17)%26),11+((i*13)%7),0,0,TAU); ctx.fill();
+    ctx.restore();
+  }
+  [[152,GY+30,1.0],[-20,GY+58,0.8],[W-90,GY+44,0.9]].forEach(([rx,ry,k])=>{
+    ctx.save(); ctx.translate(rx-cam*0.9,ry); ctx.scale(k,k);
+    const rock=new Path2D();
+    rock.moveTo(-17,0); rock.quadraticCurveTo(-15,-13,0,-14);
+    rock.quadraticCurveTo(15,-13,18,0); rock.closePath();
+    block(rock,grad(0,-14,0,0,[[0,'#b9b3a2'],[1,'#7d7869']]),2.4,'#3d4a3a');
+    ctx.restore();
+  });
+  for(let i=0;i<7;i++){
+    const fx=-30+i*186-cam*0.95;
+    const fy=GY+22+((i*31)%18);
+    [[0,'#f2f0e2'],[5,'#f7d95e']].forEach(([dx,col],j)=>{
+      ctx.beginPath(); ctx.arc(fx+dx,fy-6-j*3,2.1,0,TAU);
+      ctx.fillStyle=col; ctx.fill();
+    });
+  }
+
+  const px=PLAT.x-cam, py=PLAT.y;
+  [[px+26],[px+246]].forEach(([sx2])=>{
+    block(rr(sx2,py+16,18,120,4),
+          grad(sx2,py+16,sx2+18,py+136,[[0,C.wood],[1,C.woodDark]]),3);
+    ctx.strokeStyle='rgba(60,38,20,.42)'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(sx2+6,py+24); ctx.lineTo(sx2+6,py+128); ctx.stroke();
+  });
+  [[px+44,px+246],[px+228,px+44]].forEach(([xi,xo])=>{
+    const br=new Path2D();
+    br.moveTo(xi,py+22); br.lineTo(xo,py+130); br.lineTo(xo-9,py+130); br.lineTo(xi-9,py+22); br.closePath();
+    block(br,'#6d4a2c',2.6,'#123020');
+  });
+  const plankPath=rr(px,py,PLAT.w,PLAT.h,5);
+  block(plankPath,grad(0,py,0,py+PLAT.h,[[0,C.woodTop],[0.42,C.wood],[1,C.woodDark]]),3.4);
+  ctx.save(); ctx.clip(plankPath);
+  ctx.strokeStyle='rgba(70,44,22,.42)'; ctx.lineWidth=2;
+  [px+72,px+144,px+216].forEach(x=>{ ctx.beginPath(); ctx.moveTo(x,py); ctx.lineTo(x,py+PLAT.h); ctx.stroke(); });
+  ctx.fillStyle='rgba(56,34,16,.26)'; ctx.fillRect(px,py+PLAT.h-4,PLAT.w,4);
+  ctx.restore();
+
+  [[px+20,py-1,1.0],[px+266,py-3,0.8]].forEach(([mx,my,k])=>{
+    ctx.save(); ctx.translate(mx,my); ctx.scale(k,k);
+    const stem=new Path2D();
+    stem.moveTo(-10,0); stem.lineTo(-7.5,-11); stem.lineTo(7.5,-11); stem.lineTo(10,0); stem.closePath();
+    block(stem,'#f7eed9',2.4,'#5a3a2c');
+    const cap=new Path2D(); cap.ellipse(0,-11,13,7.2,0,Math.PI,TAU); cap.closePath();
+    block(cap,'#dd5448',2.4,'#5a3a2c');
+    ctx.fillStyle='#fff5e4';
+    [[-5,-14],[4,-16],[8,-12]].forEach(([dx,dy])=>{ ctx.beginPath(); ctx.arc(dx,dy,1.8,0,TAU); ctx.fill(); });
+    ctx.restore();
+  });
+
+  const gx=px+148, gy=py-30+Math.sin(t*2.2)*4;
+  ctx.save(); ctx.shadowColor='rgba(255,206,84,.95)'; ctx.shadowBlur=26;
+  const gem=new Path2D();
+  gem.moveTo(gx,gy-12); gem.lineTo(gx+9,gy); gem.lineTo(gx,gy+12); gem.lineTo(gx-9,gy); gem.closePath();
+  ctx.fillStyle=C.gem; ctx.fill(gem); ctx.restore();
+  ctx.strokeStyle='#5a3a15'; ctx.lineWidth=2.2;
+  ctx.beginPath(); ctx.moveTo(gx,gy-12); ctx.lineTo(gx+9,gy); ctx.lineTo(gx,gy+12); ctx.lineTo(gx-9,gy); ctx.closePath(); ctx.stroke();
+  ctx.beginPath(); ctx.arc(gx-2.4,gy-4,2.3,0,TAU); ctx.fillStyle=C.gemCore; ctx.fill();
+
+  drawFoe(px+214,py,t+1.4,0.9);
+  drawFoe(px+392,GY+1,t,1.05);
+
+  drawHero(HERO.x-cam,GY,t,atk?{ang:atk.ang}:null);
+  if(atk) drawSlash(HERO.x-cam+10, GY-128, atk.ang, atk.prog);
+
+  for(let i=0;i<44;i++){
+    const ph=(t*0.16+i*0.37)%1;
+    const bx=((i*151)%W)+Math.sin(t*0.9+i)*20-cam*0.45;
+    const by=150+ph*420-Math.sin(t*0.7+i)*9;
+    ctx.globalAlpha=0.22+0.5*Math.abs(Math.sin(t*1.3+i));
+    ctx.fillStyle=i%4?'#fff9d6':'#ffffff';
+    ctx.beginPath(); ctx.arc(bx,by,1.2+(i%3)*0.7,0,TAU); ctx.fill();
+  }
+  ctx.globalAlpha=1;
+
+  ctx.save(); ctx.filter='blur(12px)'; ctx.globalAlpha=.5;
+  [[-190,370,150],[-120,660,130],[W+180,390,165]].forEach(([fx,fy,R],i)=>{
+    ctx.fillStyle='#0e3a26';
+    ctx.fill(cluster(fx-cam*1.4,fy,R,6,41+i*3,1));
+  });
+  ctx.restore();
+
+  block(rr(30,28,236,16,8),'rgba(12,26,20,.55)',2.6,'rgba(8,18,14,.85)');
+  const fp=0.78;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(33,31,230*fp,10); ctx.clip();
+  ctx.fillStyle=grad(33,31,263,41,[[0,C.hpHi],[1,C.hp]]);
+  ctx.fillRect(33,31,230*fp,10);
+  ctx.restore();
+  ctx.strokeStyle='rgba(255,240,220,.30)'; ctx.lineWidth=1.2;
+  ctx.beginPath(); ctx.moveTo(35,32.5); ctx.lineTo(35+226*fp,32.5); ctx.stroke();
+}
+
+/* ---------------- 循环 ---------------- */
+const ATK_DUR=0.30, ATK_WINDUP=0.09;
+let atkT=-1, t0=performance.now(), last=performance.now();
+let lockT=null, lockAtk=null;
+
+function frame(now){
+  if(lockT!==null) return;
+  const dt=Math.min(0.05,(now-last)/1000); last=now;
+  const t=(now-t0)/1000;
+  let atk=null;
+  if(atkT>=0){
+    atkT+=dt;
+    if(atkT>ATK_DUR+0.30) atkT=-1;
+    else{
+      const p=Math.min(1,atkT/ATK_DUR);
+      const ang = atkT<ATK_WINDUP ? -1.95+(atkT/ATK_WINDUP)*0.25
+                                  : -1.70+((atkT-ATK_WINDUP)/(ATK_DUR-ATK_WINDUP))*2.6;
+      atk={ang,prog:p};
+    }
+  } else if((t%1.7)<0.016) atkT=0;
+  drawScene(t,atk);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+window.__proto={
+  freezeAt(t,a){
+    lockT=t;
+    if(a===null||a===undefined) lockAtk=null;
+    else{
+      const p=Math.min(1,a/ATK_DUR);
+      const ang = a<ATK_WINDUP ? -1.95+(a/ATK_WINDUP)*0.25
+                               : -1.70+((a-ATK_WINDUP)/(ATK_DUR-ATK_WINDUP))*2.6;
+      lockAtk={ang,prog:p};
+    }
+    drawScene(lockT,lockAtk);
+    return {t:lockT,atk:!!lockAtk};
+  },
+  resume(){ lockT=null; lockAtk=null; last=performance.now(); requestAnimationFrame(frame); }
+};
+</script>
+</body>
+</html>

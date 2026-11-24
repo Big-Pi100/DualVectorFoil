@@ -1,0 +1,172 @@
+{
+  "errors": [],
+  "dirs": {
+    "D 右": {
+      "dx": 92.3,
+      "dy": 0,
+      "state": "walk",
+      "camY": 0,
+      "pass": true
+    },
+    "A 左": {
+      "dx": -81,
+      "dy": 0,
+      "state": "walk",
+      "camY": 0,
+      "pass": true
+    },
+    "W 上（不动）": {
+      "dx": 0,
+      "dy": 0,
+      "state": "stand",
+      "camY": 0,
+      "pass": true
+    },
+    "S 下（蹲）": {
+      "dx": 0,
+      "dy": 0,
+      "state": "crouch",
+      "camY": 0,
+      "pass": true
+    }
+  },
+  "lookUp": {
+    "before": 324,
+    "after": 238.33421675762364,
+    "dy": -85.7,
+    "pass": true
+  },
+  "atk": {
+    "state": "attack",
+    "lock": 0.17,
+    "pass": true
+  },
+  "jump": {
+    "vy": -469,
+    "onGround": false,
+    "pass": true
+  },
+  "redKey": {
+    "n": 1,
+    "mp": 48,
+    "pass": true
+  },
+  "back": {
+    "dx": -93.3,
+    "state": "stand",
+    "invulnAt50ms": 0.053,
+    "pass": true
+  },
+  "blueKey": {
+    "hint": "没有装备蓝魂（Tab 打开魂菜单）",
+    "pass": true
+  },
+  "combo": {
+    "before": {
+      "state": "stand",
+      "mp": 60
+    },
+    "state": "cast",
+    "n": 1,
+    "mp": 48,
+    "pass": true
+  },
+  "plainAtk": {
+    "state": "attack",
+    "n": 0,
+    "pass": true
+  },
+  "reloadGuard": {
+    "xBefore": 470,
+    "xAfter": 470,
+    "hint": "再按一次 R 重开",
+    "pass": true
+  },
+  "menuKey": {
+    "open": true,
+    "closed": true,
+    "pass": true
+  },
+  "touch": {
+    "vw": 844,
+    "vh": 390,
+    "btns": {
+      "pbJump": {
+        "x": 744,
+        "y": 290,
+        "w": 92,
+        "h": 92
+      },
+      "pbAtk": {
+        "x": 656,
+        "y": 294,
+        "w": 80,
+        "h": 80
+      },
+      "pbRed": {
+        "x": 668,
+        "y": 222,
+        "w": 64,
+        "h": 64
+      },
+      "pbBlue": {
+        "x": 742,
+        "y": 214,
+        "w": 64,
+        "h": 64
+      },
+      "pbBack": {
+        "x": 724,
+        "y": 154,
+        "w": 52,
+        "h": 52
+      },
+      "pbMenu": {
+        "x": 784,
+        "y": 0,
+        "w": 46,
+        "h": 46
+      }
+    },
+    "overlaps": [],
+    "outOfScreen": [],
+    "tooSmall": [],
+    "pass": true
+  },
+  "touchJump": {
+    "state": "jump",
+    "vy": -430,
+    "onGround": false,
+    "held": {
+      "jump": 1
+    },
+    "pass": true
+  },
+  "touchAtk": {
+    "state": "attack",
+    "lock": 0.18,
+    "pass": true
+  },
+  "touchBack": {
+    "state": "dash",
+    "invuln": 0,
+    "pass": true
+  },
+  "touchStick": {
+    "dx": 124,
+    "stateRight": "walk",
+    "stateDown": "crouch",
+    "pass": true
+  },
+  "touchMenu": {
+    "open": true,
+    "closed": true,
+    "pass": true
+  },
+  "persist": {
+    "first": "tower",
+    "afterReload": "tower",
+    "bytes": 148,
+    "pass": true
+  }
+}
