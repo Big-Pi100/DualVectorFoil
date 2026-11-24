@@ -37,7 +37,7 @@ game-soulkeep/
 ├─ src/          游戏代码（game.js / mobile.js / audio.js / index.html）
 ├─ art/          生图素材
 │   ├─ src/      原始生图（含品红底，体积大）
-│   └─ out/      抠好的成品（hero_idle / layer_* / mood_target）
+│   └─ out/      抠好的成品（card_painted 角色卡基准 / layer_* 背景层）
 ├─ shots/        截图与视觉证据（189 张，按日期命名）
 ├─ *.js          17 套回归 + 探针脚本（根目录平铺）
 └─ .bak/         历史实验备份（pre_unflat 等）

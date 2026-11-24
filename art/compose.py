@@ -5,6 +5,7 @@ from PIL import Image, ImageFilter, ImageEnhance
 
 W, H = 1280, 720
 GROUND_Y = 566          # 可站立面
+HERO_H = 100            # 运行时主角身高（代码 P_H 的真实值，不是 150）
 MAGENTA = (255, 0, 255)
 
 
@@ -79,8 +80,8 @@ def make(bg_path, ground_path, hero_path, out_path, tree_width=1720, tree_y=578,
     place(canvas, ground, -60, GROUND_Y + round(gh * 0.40), width=gw)
 
     hero = load_rgba(hero_path)
-    r = 150 / hero.height
-    hero = hero.resize((round(hero.width * r), 150), Image.LANCZOS)
+    r = HERO_H / hero.height
+    hero = hero.resize((round(hero.width * r), HERO_H), Image.LANCZOS)
     canvas.alpha_composite(hero, (392, GROUND_Y - hero.height + 2))
 
     canvas.convert('RGB').save(out_path)
@@ -91,5 +92,5 @@ if __name__ == '__main__':
     S = 'art/src/'
     make(S + 'PRODUCTION_BACKGROUND_LAYER____2026-11-24T17-42-20.png',
          S + 'PRODUCTION_GROUND_LAYER___the__2026-11-24T17-42-57.png',
-         'art/out/hero_v3.png',
+         'art/out/card_painted.png',
          'art/out/composite_v1.png')
