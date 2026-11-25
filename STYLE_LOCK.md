@@ -2,7 +2,7 @@
 
 > 状态：**已锁定**（白哥 2026-11-25 02:58 定方向："最相反的最好"）
 > 本文件是美术执行参数。与 `CANON.md` §6 冲突时以本文件为准，改本文件必须同步 §6。
-> 依据：`docs/ref/STYLE_CANDIDATES.md` P6 + `art/style_test2/p6_crayon.png`
+> 依据：`docs/ref/STYLE_CANDIDATES.md` P6 + `art/ref/p6_crayon.png`
 
 ---
 

@@ -199,7 +199,7 @@
 
 ## 10. 效果对照
 
-`art/style_test3/ui_before_after.png`
+`art/ref/ui_before_after.png`
 
 上半：现在的 CSS 血条（渐变矩形）+ 槽位（1px 虚线框 + 四个字「未装备」）
 下半：同一世界的材料（木刻）—— 血条＝8 格刻痕量条，槽位＝雕刻板 + 铸印图标，全图零文字
