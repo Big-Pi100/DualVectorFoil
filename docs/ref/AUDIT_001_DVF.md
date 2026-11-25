@@ -137,7 +137,7 @@ so the shape can change during prototyping. Half a session.
 ### 4.3 P0 — the keymap lives in five places, and it had already rotted ✅ (found and fixed)
 
 Where a key name exists today: `KEY_OF/K` (game.js), `bind(...)` calls (mobile.js), the hint bar
-(index.html), `README.md`, `LOOP.md`, **and ~130 raw key literals inside the test scripts**.
+(index.html), `README.md`, `./LOOP.md`, **and ~130 raw key literals inside the test scripts**.
 
 The rot was already user-visible. The soul menu said:
 

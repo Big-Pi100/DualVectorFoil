@@ -4,12 +4,23 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 OUT  = os.path.join(os.path.dirname(HERE), 'SoulKeep_code_WO4_20261124.zip')
 
 ROOT_DOCS = [
-    'PACKAGE_README.md', 'README.md', 'DOC_CONTROLS.md',
-    'S5_REPORT.md', 'S4_REPORT.md', 'S1_S3_REPORT.md',
-    'STORY.md', 'LOOP.md', 'NIGHTFALL_REVIEW.md',
-    'AUDIT_001_DVF.md', 'CONSULT_001_controls_hud_art.md',
-    'WO3_REPORT.md', 'WO3_1_REPORT.md', 'WO4_REPORT.md',
-    'REF_DEADCELLS.md', 'ACTION_CHAIN.md', 'DESIGN_A.md', 'PROJECT_MAP.md',
+    'README.md', 'DOC_CONTROLS.md', 'STORY.md',
+    'ACTION_CHAIN.md', 'DESIGN_A.md', 'PROJECT_MAP.md',
+    'INDEX.md', 'DEV_FLOW.md', 'CANON.md', 'STYLE_LOCK.md', 'MOVESET.md',
+]
+SUB_DOCS = [
+    ('docs/history/PACKAGE_README.md', 'PACKAGE_README.md'),
+    ('docs/history/S5_REPORT.md', 'S5_REPORT.md'),
+    ('docs/history/S4_REPORT.md', 'S4_REPORT.md'),
+    ('docs/history/S1_S3_REPORT.md', 'S1_S3_REPORT.md'),
+    ('docs/history/WO3_REPORT.md', 'WO3_REPORT.md'),
+    ('docs/history/WO3_1_REPORT.md', 'WO3_1_REPORT.md'),
+    ('docs/history/WO4_REPORT.md', 'WO4_REPORT.md'),
+    ('docs/ref/LOOP.md', 'LOOP.md'),
+    ('docs/ref/NIGHTFALL_REVIEW.md', 'NIGHTFALL_REVIEW.md'),
+    ('docs/ref/AUDIT_001_DVF.md', 'AUDIT_001_DVF.md'),
+    ('docs/ref/CONSULT_001_controls_hud_art.md', 'CONSULT_001_controls_hud_art.md'),
+    ('docs/ref/REF_DEADCELLS.md', 'REF_DEADCELLS.md'),
 ]
 ROOT_CODE = ['SoulKeep.html', 'build.py']
 SRC = ['game.js', 'index.html', 'mobile.js', 'audio.js']
@@ -35,6 +46,9 @@ items = []
 for f in ROOT_DOCS:
     p = os.path.join(HERE, f)
     if os.path.exists(p): items.append((p, f))
+for rel, arc in SUB_DOCS:
+    p = os.path.join(HERE, rel)
+    if os.path.exists(p): items.append((p, arc))
 for f in ROOT_CODE:
     p = os.path.join(HERE, f)
     if os.path.exists(p): items.append((p, f))

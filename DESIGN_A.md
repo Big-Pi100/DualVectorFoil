@@ -111,11 +111,11 @@ P3/P4 是内容量，等手感定稿再开。
 
 ## 6. 与现有文档的关系
 
-- `REF_DEADCELLS.md`：控件与 HUD 的对照（2026-11-24 早）。**仍然有效**，但它只比"有什么"。
+- `docs/ref/REF_DEADCELLS.md`：控件与 HUD 的对照（2026-11-24 早）。**仍然有效**，但它只比"有什么"。
 - `ACTION_CHAIN.md`：**操作-动作链**（输入 → 动作 → 判定 → 反馈）。判据 1「动作能连起来」
   的真正依据在这里，不在 REF_DEADCELLS §2。2026-11-24 白哥指出对照表缺这一层之后补的。
 - `DOC_CONTROLS.md`：操作说明。P1 落地后要补「取消」「夺回」「一击保护」三条。
-- `WO4_REPORT.md`：界面与 HUD 的返工记录。与本文无关，不改。
+- `docs/history/WO4_REPORT.md`：界面与 HUD 的返工记录。与本文无关，不改。
 
 ---
 
@@ -199,7 +199,7 @@ P3/P4 是内容量，等手感定稿再开。
 |---|---|
 | `dc_feel_check.js` | 24 项全绿（含 B3b/B8 两条"画面上看得见"） |
 | `feel_table.js` | 14 项全绿，连跑三次稳定 |
-| 全量回归 | 17 套全绿（test / audio / timestep 18 / save 35 / flat 57 / interact 32 / ctrl 40 / keymap 24 / ime 50 / input_env 20 / ui 51 / layout 32 / hud 30 / dc_feel 24 / stress / verify_fix / feel_table 14） |
+| 全量回归 | **13 套 424 项**全绿（清单与项数见 `DEV_FLOW.md §4`；历史 17 套含已删的 flat/interact 旧计数） |
 | 截图 | `shots/p1_three_states.png`（满血 / 可夺回 / 剩 1 HP） |
 
 ### 8.6 补记（2026-11-25 00:0x）：P1 漏了一个动作，不是三个
@@ -280,7 +280,7 @@ DC 过窄处靠 rune 门（有没有那个符文），不靠玩家把自己压�
 ### 9.4 四格少了一格，怎么处理
 
 四格是「剑 / 纸 / 红 / 蓝」，纸删了就是「剑 / 空 / 红 / 蓝」。
-按 `REF_DEADCELLS.md` §4.3 的**方案 C** 处理：空槽显示「未装备」虚线，不硬塞凑数。
+按 `docs/ref/REF_DEADCELLS.md` §4.3 的**方案 C** 处理：空槽显示「未装备」虚线，不硬塞凑数。
 理由和当时一样 —— 承认缺，比假装有要好。
 
 ### 9.5 影响面与验收
@@ -294,7 +294,7 @@ DC 过窄处靠 rune 门（有没有那个符文），不靠玩家把自己压�
 | `keymap_check.js` | 侧身两条 → 「手机空格点了不改变状态」，24 项 |
 | `ctrl_check.js` | 图例 13→12 条、纸印 F → 冲刺印 F、F 段改测冲刺 + 旧键别名，40 项 |
 | `ui_check.js` | 50 项（原 51，删掉"纸标注为点按"） |
-| 全量 | 17 套全绿（test / audio 15 / timestep 18 / save 35 / interact 22 / ctrl 40 / keymap 24 / ime 50 / input_env 20 / ui 50 / layout 32 / hud 30 / dc_feel 28 / feel_table 14 / stress / verify_fix / probe_action_chain） |
+| 全量 | **13 套 424 项**全绿（清单见 `DEV_FLOW.md §4`） |
 
 截图：`shots/unflat_desktop.png`、`shots/unflat_touch.png`。
 

@@ -48,36 +48,44 @@
 **通关路线**：打史莱姆拿火球 → 爬钟塔拿识破 → 回廊砍碎那堵"墙"拿飞斧 →
 钟塔顶打死守关者拿双跃 → 回廊左侧 288px 高台（单跳 203px，差 85px）→ 结局。
 
-> 主循环怎么照着 `RicMain` 搭的、每个数值出自哪一行，全在 [`LOOP.md`](LOOP.md)。
+> 主循环怎么照着 `RicMain` 搭的、每个数值出自哪一行，全在 [`docs/ref/LOOP.md`](docs/ref/LOOP.md)。
 > 那一份是这次改动的依据 —— 之前的循环是我"觉得顺"排的顺序，不是源码的顺序。
 
 ## 改
 
+> **改任何东西之前先看 `DEV_FLOW.md`** —— 影响面三问、构建时机、该跑哪几套、要同步哪些文档。
+> 下面是 13 套回归 + 4 个探针的完整清单（项数以脚本实际输出为准，文档不抄死数字）。
+
 ```bash
-python build.py          # src/ → SoulKeep.html（内联 atlas.png 的 base64 + audio.js）
+python build.py          # src/ + art/ → SoulKeep.html（图集/精灵/背景/瓦片全 base64 内嵌）
+
+# ── 13 套回归 ─────────────────────────────────────────────
 node test.js             # 60 项：物理/手感/碰撞/掉落/能力门/隐藏墙/关卡可达性/主循环
 node test_audio.js       # 15 项：音频结构（假 AudioContext，抓"静默失败"）
 node timestep_check.js   # 18 项：定步长验收 —— 顶点是绝对值 203.8px，且 30/60/120/144Hz 同一值
 node save_check.js       # 35 项：存档 —— 写入/回读/版本拒绝/坏档/无存储设备
-node ctrl_check.js       # 39 项：**图例 = 规格** —— 读界面上的字，逐条按键验证（移动/抬头/蹲/滑铲/
-                         #   穿板/攻/红魂/跳/冲刺/蓝魂/魂匣），并按"灰掉的项必须真没反应"反查；
-                         #   另含 HUD 结构：日志/小地图/墨条已删、四格不空转
+node ctrl_check.js       # 40 项：**图例 = 规格** —— 读界面上的字，逐条按键验证（移动/抬头/蹲/滑铲/
+                         #   穿板/攻/红魂/跳/冲刺/蓝魂/魂匣），并按"灰掉的项必须真没反应"反查
+node keymap_check.js     # 24 项：键位映射 —— 每个物理键 → 对应动作、组合键走组合分支、
+                         #   R 防误重开、手机七键不重叠且真指针按得动
+                         #   KM_THROTTLE=20 node keymap_check.js 可以模拟 CPU 降速
+node input_env_check.js  # 20 项：输入环境 —— 桌面 / Windows 触屏本 / 真手机 / iframe 四种环境
+                         #   （防的是 maxTouchPoints 把桌面误判成手机）
+node ime_check.js        # 50 项：中文输入法 —— 用 Chrome 组词时的真实事件形态
+                         #   {key:'Process', code:'KeyD', keyCode:229, isComposing:true}
+                         #   只看 e.key 的实现会在这里全红
+node ui_check.js         # 50 项：界面验收 —— 图例字号/底衬、入口文案、空槽未装备、
+                         #   页签切换与状态保持、三个尺寸的菜单溢出、点按/按住/组合 标注
+node layout_check.js     # 32 项：布局 —— 三个尺寸下元素不重叠、不溢出
+node hud_check.js        # 30 项：HUD —— 触屏元素在屏内、血瓶真回血
+node dc_feel_check.js    # 28 项：战斗手感 —— 取消窗口、连打 CD、无 JS 异常
+node interact_check.js   # 22 项：交互链路
+
+# ── 4 个探针（取证工具，不是回归）────────────────────────────
 node probe_feel.js       # 真 Chromium + 真键盘，量手感（加速度曲线、跳跃剖面、帧率）
 node play_probe.js 90    # 脚本机器人试玩 90 秒，看会不会卡住/掉进死路
 node verify_fix.js       # "按键有没有画面反馈"：走路画没画、滑铲闪不闪、每个键改了多少像素
-node keymap_check.js     # "键位映射对不对"：每个物理键 → 对应动作、组合键走组合分支、
-                         #   R 防误重开、手机七键不重叠且真指针按得动
-                         #   KM_THROTTLE=20 node keymap_check.js 可以模拟 CPU 降速
 node stress_input.js     # 长按 / 连按 / 组合键，专门找"出不来的状态"
-node input_env_check.js  # 20 项：**输入环境** —— 桌面 / Windows 触屏本 / 真手机 / iframe 四种环境
-                         #   逐个真 Chromium 按键，验"图例看得见 + 按下去真走"
-                         #   （防的是 maxTouchPoints 把桌面误判成手机）
-node ime_check.js        # 50 项：**中文输入法** —— 用 Chrome 组词时的真实事件形态
-                         #   {key:'Process', code:'KeyD', keyCode:229, isComposing:true}
-                         #   逐个动作验按下/抬起。只看 e.key 的实现会在这里全红
-node ui_check.js         # 49 项：**WO-003 / 003.1 界面验收** —— 图例字号/底衬、入口文案、
-                         #   空槽未装备、页签切换与状态保持、三个尺寸的菜单溢出、
-                         #   触屏说明分组与 点按/按住/组合 标注、下压与组合回执
 ```
 
 > **侧身（Flatten）已删除（2026-11-25）**。原来的设计是按住 `F` 把人压成 6px，

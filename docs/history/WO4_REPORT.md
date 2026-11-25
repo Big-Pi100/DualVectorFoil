@@ -20,7 +20,7 @@
 | "取消蓝条，魂与装备的性质一样，用 CD 来控制" | 删 `P.mp/mpMax` 与蓝条；`SOULS[].cost/drain` → `cd`；四格统一用 `--cd` 画冷却幕 | `test.js`、`ctrl_check.js`、`ui_check.js` |
 | "操作布局完全照抄，槽位位置一致，**然后要让用户可调**" | `#slotw1..blue` 默认坐标照截图比例；新增布局编辑器（拖 / 缩放 / 存 / 恢复默认） | `layout_check.js`（32 项） |
 | "魂的机制对齐：**两个放置道具 + 两个装备栏**" | `#slots` = 剑 / 纸 / 红 / 蓝；攻击从独立键移进 1 号格 | `ui_check.js`、`keymap_check.js` |
-| "找《重生细胞》完整资料，最好找到复刻仓库" | `REF_DEADCELLS.md`（控件清单 + 三条关键细节 + 反面教材）；`_ref/dc-oop`、`_ref/dc-clone` 两个仓库 | 文档 |
+| "找《重生细胞》完整资料，最好找到复刻仓库" | `../ref/REF_DEADCELLS.md`（控件清单 + 三条关键细节 + 反面教材）；`_ref/dc-oop`、`_ref/dc-clone` 两个仓库 | 文档 |
 
 ---
 
