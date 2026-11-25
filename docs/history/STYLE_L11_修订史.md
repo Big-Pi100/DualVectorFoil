@@ -1,5 +1,8 @@
 # STYLE_LOCK §L11 修订史（只读）
 
+> **2026-11-25 清理**：文中提到的 `tilegen.html`~`tilegen7.html`、`probe_*.html`、
+> `art/tiles/_exp/` 变体图、`_coat_*.png` 均已删除出库。要取出请看 git 历史。
+
 > 从 `STYLE_LOCK.md §L11` 抽出的 7 次修订记录，保留作排错证据。
 > **当前规格以 `STYLE_LOCK.md §L11` 为准，本文不再更新。**
 

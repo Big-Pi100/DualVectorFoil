@@ -74,17 +74,23 @@
 | `docs/history/PACKAGE_README.md` | 代码包分发说明 |
 | `docs/history/STYLE_N1.md` | 旧的"明快自然"画风（N1），已停用，只留作配色参考 |
 
-## 🔴 已废
+## 🔴 已废（已于 2026-11-25 清理出库）
 
-| 文档/目录 | 为什么废 |
-|---|---|
-| `art/tools/tilegen.py` | 几何直线 + 纸纹针孔，不是蜡笔。已被 `art/tools/p5brush/tilegen8.html` 取代 |
-| `art/tools/p5brush/tilegen.html` ~ `tilegen7.html` | 中间尝试（整面墙瓦片 / 切半砖 / 一张图多块砖），已被 tilegen8 取代。**保留作排错证据，不要再用** |
-| `art/decal/` | 4 张贴片，只验证过，未接入游戏 |
-| `.bak/pre_unflat_20261125/` | Flatten 实验全部产物 + `flat_check.js`（57 项），已回滚 |
-| `style_lab.html` | 六格平面色块风格板，已被否 |
-| `style_proto.html` | canvas 程序化原型，含**已作废的风衣旅人**，仅留作错误追溯 |
-| `shots/style2..style5*` | 5 批共 17 张方向图，全部被否。保留作排除法证据，不删 |
+> 这些不再占仓库体积。需要追溯时从 git 历史取（`git log --diff-filter=D -- <path>`）。
+> **被推翻的方案不留文件，只留结论。** 结论写进本文或 `docs/history/`。
+
+| 文档/目录 | 为什么废 | 现状 |
+|---|---|---|
+| `art/tools/tilegen.py` | 几何直线 + 纸纹针孔，不是蜡笔 | 已删，由 `art/tools/p5brush/tilegen8.html` 取代 |
+| `art/tools/p5brush/tilegen.html` ~ `tilegen7.html` | 中间尝试（整面墙瓦片 / 切半砖 / 一张图多块砖） | 已删，结论见 `docs/history/STYLE_L11_修订史.md` |
+| `art/tools/p5brush/probe_*.html` + `cap/decal/t_width/tile.html` | 一次性机制探针，验证完即废 | 已删 |
+| `art/tiles/_exp/`（除 2 张基准图） | 涂法与排布的失败变体，共 396 张 | 已删，仅留 `art/tiles/_ref/cmp_gen_downscale.png`、`art/tiles/_ref/_ref_wall_zoom.png` |
+| `art/tiles/_coat_*.png` | 17 张涂法变体，全部被否 | 已删 |
+| `art/decal/` | 4 张贴片，只验证过，未接入游戏 | 已删 |
+| `.bak/` | 各阶段快照（文件均在 git 库中） | 已删 |
+| `style_lab.html` / `style_proto.html` | 风格板 / 含作废风衣旅人的原型 | 已删 |
+| `shots/style2..style5*` | 5 批 24 张方向图，全部被否 | 已删 |
+| `shots/01~29_*.png` + 临时调试图 | 开发过程截图 / `_crop_*`、`_dbg_*` | 已删 |
 
 ---
 

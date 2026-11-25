@@ -333,7 +333,8 @@ M / L 档（角色卡、过场）不受此限，那里该画全。
 | 5 | **墙与地是两条独立路径** | 墙走 `paintWallTiles`，地走 `paintFloorTiles`。**不许互相改写** |
 
 生成器：`art/tools/p5brush/tilegen8.html`（`render.js shot "tilegen8.html?seed=N&ss=6"`）。
-渲染出的 6 个 seed = 6 种外形，规格一致。历史版本（tilegen.html ~ tilegen7.html）已废。
+渲染出的 6 个 seed = 6 种外形，规格一致。历史版本（tilegen.html ~ tilegen7.html）已废并清理，
+失败结论见 `docs/history/STYLE_L11_修订史.md`——**不要再造"一张图多块砖"的瓦片**。
 
 ### 为什么是"单砖瓦片"
 
