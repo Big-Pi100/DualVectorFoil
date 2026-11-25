@@ -18,7 +18,7 @@ const { chromium } = require(path.join(
 const ROOT = path.resolve(__dirname, '..', '..', '..');
 const P5 = path.join(ROOT, '.deps', 'p5.brush');
 const OUT = path.join(ROOT, 'shots');
-const PORT = 8171;
+const PORT = Number(process.env.P5B_PORT || 8171);
 
 const KIND = ['moss', 'stain', 'crack', 'peel'];
 
@@ -102,8 +102,8 @@ im.save(r"${dst}")
       for (const c of COATLIST) {
         const t = Date.now();
         await page.goto(`http://127.0.0.1:${PORT}/${base}/tilegen.html?kind=wall&seed=0&coat=${c}`,
-          { waitUntil: 'load' });
-        await page.waitForFunction(() => window.__ok || window.__err, { timeout: 90000 }).catch(() => {});
+          { waitUntil: 'load', timeout: 150000 });
+        await page.waitForFunction(() => window.__ok || window.__err, { timeout: 180000 }).catch(() => {});
         const r3 = await page.evaluate(() => ({ ok: window.__ok, err: window.__err }));
         if (!r3.ok) { console.log('  ERR %s: %s', c, String(r3.err).slice(0, 300)); continue; }
         const cv = await page.$('canvas');
@@ -124,7 +124,7 @@ im.save(r"${dst}")
           const t = Date.now();
           await page.goto(
             `http://127.0.0.1:${PORT}/${base}/tilegen.html?kind=${k}&seed=${i}${cq}`,
-            { waitUntil: 'load' });
+            { waitUntil: 'load', timeout: 150000 });
           await page.waitForFunction(() => window.__ok || window.__err, { timeout: 90000 }).catch(() => {});
           const r3 = await page.evaluate(() => ({ ok: window.__ok, err: window.__err }));
           if (!r3.ok) { console.log('  ERR %s/%d', k, i, String(r3.err).slice(0, 240)); continue; }
