@@ -21,6 +21,8 @@ SUB_DOCS = [
     ('docs/ref/AUDIT_001_DVF.md', 'AUDIT_001_DVF.md'),
     ('docs/ref/CONSULT_001_controls_hud_art.md', 'CONSULT_001_controls_hud_art.md'),
     ('docs/ref/REF_DEADCELLS.md', 'REF_DEADCELLS.md'),
+    ('docs/ref/OTHERS_GDD_REVIEW.md', 'OTHERS_GDD_REVIEW.md'),
+    ('docs/history/STYLE_L11_修订史.md', 'STYLE_L11_修订史.md'),
 ]
 ROOT_CODE = ['SoulKeep.html', 'build.py']
 SRC = ['game.js', 'index.html', 'mobile.js', 'audio.js']

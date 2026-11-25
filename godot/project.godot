@@ -12,6 +12,10 @@ run/main_scene="res://scenes/main.tscn"
 config/features=PackedStringArray("4.4", "GL Compatibility")
 config/icon="res://icon.svg"
 
+[autoload]
+
+WorldState="*res://core/world_state.gd"
+
 [display]
 
 ; 和 web 原型一致：逻辑分辨率 960x540，等比缩放
@@ -71,7 +75,9 @@ common/physics_ticks_per_second=120
 
 [rendering]
 
-; 像素风：关闭纹理过滤，避免蜡笔笔触被插值糊掉
-textures/canvas_textures/default_texture_filter=0
+; 蜡笔是**连续色调**，不是像素画：必须线性过滤。
+; 之前设成 nearest（0）是按像素风配的，结果蜡笔笔触被放大时出锯齿，
+; 亚像素位移也被切成孤立跳变（沸腾线成片率只有 31%）。
+textures/canvas_textures/default_texture_filter=1
 renderer/rendering_method="gl_compatibility"
 environment/defaults/default_clear_color=Color(0.027, 0.027, 0.043, 1)

@@ -27,8 +27,9 @@
 | `MOVESET.md` | **主角 10 状态完整定义 + 31 帧全部出齐**：状态 × 帧 × 时间区间 × 判定 × 无敌 × 取消 × 反馈 × 脚滑判据，锚点统一脚底 (80,152)、检测方法 T1–T4、§7 出图工艺 | 🟢 现行 |
 | `art/prompts/sprite_prompt.py` | **出图唯一入口**：骨架锁死在 `sprite_template.txt`，只允许改四处背景句；10 状态配置 + 帧数 + fps | 🟢 现行 |
 | `art/tools/crayon.py` | **程序画的唯一入口**。受约束的蜡笔笔刷原语（stroke/fill/outline/hatch/speck），只收 12 色板名 + 有限笔宽 | 🟢 现行 |
-| `godot/` | **Godot 4.4 工程（正式发行形态）**：与 web 原型并存，目前移植了玩家移动/跳跃/5 状态动画 + 单屏测试房。用 Godot 打开这个子目录，不是仓库根 | 🟠 移植中 |
-| `godot/README.md` | Godot 工程说明：打开方式、手感标定记录、资产同步、移植顺序 | 🟢 现行 |
+| `godot/` | **Godot 4.4 工程（正式发行形态）**：与 web 原型并存。玩家移动/跳跃/5 状态动画 + 战斗组件（Hitbox/Hurtbox/局部顿帧）+ WorldState 存档 + 沸腾线 shader + 单屏测试房。用 Godot 打开这个子目录，不是仓库根 | 🟠 移植中 |
+| `godot/README.md` | Godot 工程说明：打开方式、手感标定记录、资产同步、渲染设置、移植顺序 | 🟢 现行 |
+| `docs/ref/OTHERS_GDD_REVIEW.md` | 别人那份 GDD/TDD 的逐条核对：可吸收 / 照抄会炸（4 处）/ 不适用。**再收到同类文档先看这份** | 🟢 现行 |
 | `art/tools/p5brush/tilegen8.html` | **瓦片生成器（现行）**：一张 PNG = 一块砖，64×48，6 seed 出 6 外形。渲染用 `art/tools/p5brush/render.js shot` | 🟢 现行 |
 | `art/tools/P5BRUSH.md` | **p5.brush 评估**：命令集全表、11 个内置笔刷手感、三条实测硬伤（无 wrap / 尺度绑画布 / strength 是排线密度）、尺度分工表 | 🟢 现行 |
 | `art/tools/p5brush/` | 上游 p5.brush 的**可复现调用层**。`setup.sh` 拉仓库，`render.js` 出图 | 🟢 现行 |

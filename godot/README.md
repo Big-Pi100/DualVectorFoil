@@ -23,6 +23,13 @@ E:\IdentityCard\game-soulkeep\godot\
 # 手感验证（无头，量跳高/速度，跟 web 基线对账）
 "E:/godot/Godot_v4.4.1-stable_win64_console.exe" --headless --path godot --script res://tests/feel_smoke.gd
 
+# 战斗组件 + 存档（无头）
+"E:/godot/Godot_v4.4.1-stable_win64_console.exe" --headless --path godot --script res://tests/combat_smoke.gd
+
+# 沸腾线 shader：先出两帧，再比对（比对脚本是 Python）
+"E:/godot/Godot_v4.4.1-stable_win64_console.exe" --path godot --script res://tests/boil_shot.gd
+python godot/tests/boil_check.py
+
 # 渲染快照（必须带窗口，headless 是 dummy 渲染器出不了图）
 "E:/godot/Godot_v4.4.1-stable_win64_console.exe" --path godot --script res://tests/shot.gd
 ```
@@ -35,9 +42,12 @@ E:\IdentityCard\game-soulkeep\godot\
 | 玩家：跑 / 摩擦 / 跳 / 二段跳 / 顶点滞空 / 松手切断 | ✅ 手感已标定 |
 | 动画状态机（stand/walk/jump/fall/crouch） | ✅ 5 个状态 |
 | 背景 + 地面 + 平台 + 碰撞 | ✅ 单屏测试房 |
+| 战斗组件：Hitbox / Hurtbox / 局部顿帧 | ✅ 组件就绪 + 有测试，**未接到玩家** |
+| 全局状态 + 存档（WorldState） | ✅ 逻辑就绪 + 有测试，**未接 UI** |
+| 沸腾线 shader | ✅ 已挂背景，两帧比对通过 |
 | 相机跟随 / 多房间 | ❌ |
 | 攻击 / 冲刺 / 蹲 / 滑铲 / 能力门 / 敌人 | ❌ |
-| 存档 / UI / 音频 | ❌ |
+| 存档 UI / 音频 | ❌ |
 
 ## 手感参数：为什么和 web 版不一样
 
@@ -61,18 +71,45 @@ E:\IdentityCard\game-soulkeep\godot\
 
 ```
 godot/
-├─ project.godot      工程配置（960×540 / 120Hz / nearest 过滤）
+├─ project.godot      工程配置（960×540 / 120Hz / **linear 过滤**）
+├─ core/              全局底层（新代码按此分层，旧的 scenes/ scripts/ 待统一迁）
+│  ├─ world_state.gd  Autoload：flags / unlocked / visited / steps + JSON 存档
+│  ├─ hitstop.gd      局部顿帧（不用 Engine.time_scale）
+│  └─ components/
+│     ├─ hitbox.gd    攻击判定：一次激活每个目标只结算一次
+│     └─ hurtbox.gd   受击判定：只转发，扣血交给实体
+├─ world/shaders/
+│  └─ boiling_line.gdshader   手绘沸腾线（整帧微位移）
 ├─ scenes/
 │  ├─ main.tscn       单屏测试房：背景 + 地面 + 两个平台
 │  └─ player.tscn     CharacterBody2D + Sprite2D + 碰撞盒 28×100
 ├─ scripts/player.gd  玩家控制器（aos 手感）
 ├─ tests/
 │  ├─ feel_smoke.gd   手感对账：跳高 / 水平速度 / 摩擦 / 轻点跳
+│  ├─ combat_smoke.gd 战斗组件 + 存档：单次结算 / 击退方向 / 顿帧 / 坏档
+│  ├─ boil_shot.gd    沸腾线出两帧
+│  ├─ boil_check.py   两帧比对（平坦区不动 / 边缘在动 / 无黑边）
 │  └─ shot.gd         渲染快照 → ../shots/godot_smoke.png
 └─ assets/            从 art/ 复制的 PNG（hero 10 状态 + 瓦片 + 背景）
 ```
 
 坐标约定：**节点原点 = 脚底中心**。碰撞盒在原点上方 `(0,-50)`，精灵 `offset=(0,-64)`。
+
+## 渲染设置：为什么是 linear 不是 nearest
+
+`textures/canvas_textures/default_texture_filter=1`（Linear）。
+
+蜡笔是**连续色调**，不是像素画。设成 nearest 会让笔触放大后出硬锯齿，
+亚像素位移也会被切成孤立跳变（沸腾线实测成片率只有 31%）。改 linear 后
+同一份 shader 平均差从 8.26 降到 1.90，笔触干净。
+
+## 别人的 GDD 评审
+
+收到过一份类似的 Godot 4.4 GDD/TDD（附完整 Player.gd + shader）。
+**哪些能学、哪四处照抄会炸**，见 [`../docs/ref/OTHERS_GDD_REVIEW.md`](../docs/ref/OTHERS_GDD_REVIEW.md)。
+要点：technical 骨架可学（Hitbox/Hurtbox、状态单例、数据驱动），
+但它的**跳跃数值（87px）是我们的 2.3 分之一**、顿帧用 `Engine.time_scale`、
+抓边直接改坐标、状态推进用 `await` —— 这四条搬进来会出真 bug。
 
 ## 资产同步
 

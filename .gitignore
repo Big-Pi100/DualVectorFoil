@@ -25,3 +25,7 @@ shots/ours_rect.json
 godot/.godot/
 # Godot 导出的可执行包
 godot/build/
+
+# 沸腾线 shader 测试的原始两帧：每次跑都会重生成，证据图（diff/pairs）才入库
+shots/godot_boil_a.png
+shots/godot_boil_b.png

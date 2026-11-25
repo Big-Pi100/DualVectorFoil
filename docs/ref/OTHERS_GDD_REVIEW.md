@@ -1,0 +1,199 @@
+# 别人的 GDD/TDD：能抄什么，照抄会炸什么
+
+> 2026-11-25 收到一份《色彩旅人 / Crayon Odyssey》的 GDD + TDD（Godot 4.4.1，触屏优先），
+> 附了一套完整的 `Player.gd` / `Hitbox.gd` / 沸腾线 shader。
+> 本文是逐条核对结果。**结论先行：技术骨架可学，世界观、数值、四处写法不能抄。**
+>
+> 归纳这些不是为了评价对方——那份文档是给**另一个游戏**写的，它的角色 32×48、跳高 87px、
+> 60Hz 物理，和本项目的 28×100、203.8px、120Hz 是三套不同的尺子。混用就会得到
+> "看起来像、玩起来不对"的东西，而且很难查出是哪一条数值错。
+
+---
+
+## 一、可以吸收（已落地）
+
+| 点 | 为什么值得学 | 我们怎么落地 |
+|---|---|---|
+| **Hitbox / Hurtbox 分离** | 判定框只管"打到了"和"被打到了"，扣血/无敌/护盾交给实体自己。避免每个攻击方都复刻一套伤害规则 | `core/components/hitbox.gd`、`hurtbox.gd`。加了"一次激活每个目标只结算一次" |
+| **全局状态单例** | 跨房间要活下来的才有资格进单例；房间里能重建的别放 | `core/world_state.gd`（Autoload）：flags / unlocked / visited / steps + JSON 存档 |
+| **读档要能拒绝坏档** | 静默当新游戏处理 = 玩家存档丢了还以为是 bug | `load_game()` 校验 JSON 类型 + 版本号，坏档返回 false，测试覆盖 |
+| **数据驱动 Resource** | 武器段数、作物成长步数这类东西不该写死在脚本里 | 目录先留 `data/`，等武器系统实际开工再建 .tres（现在建是空壳） |
+| **目录分层** | `core / entities / world / data / ui` 比"一个 scripts/ 装所有"抗腐 | 新代码按此放；旧路径（`scenes/player.tscn`、`scripts/player.gd`）暂不动，等文件变多再统一迁 |
+| **沸腾线 shader（思路）** | 静态手绘贴图会"死"，每 0.15s 微动一次就有手翻书呼吸感 | `world/shaders/boiling_line.gdshader`，但**重写了采样部分**（见下） |
+| **输入缓冲** | 后摇里提前按的指令要记住，手机端尤其重要 | 跳跃缓冲已有（3 物理步）；攻击/翻滚缓冲等对应动作实现时再加 |
+
+---
+
+## 二、照抄会炸（四处真炸了，五处会埋雷）
+
+### 1. 顿帧用 `Engine.time_scale` —— 会互相打架
+
+原文：
+
+```gdscript
+Engine.time_scale = 0.05
+await get_tree().create_timer(hitstop_duration, true, false, true).timeout
+Engine.time_scale = 1.0
+```
+
+三个问题：
+
+- **它是全局的。** 顿帧期间 UI、粒子、相机平滑、BGM 计时器全被拖慢，玩家感到的是"卡了一下"，不是"打中了"。
+- **两个 hitbox 同时命中会互相截断。** A 的 await 结束时把 `time_scale` 设回 1.0，B 还在等——B 的顿帧被提前掐掉。连击越密，顿帧越不可靠。
+- **恢复依赖 4 参数重载** `create_timer(t, true, false, true)`（最后一个是 `ignore_time_scale`）。写成常见的 3 参数版，`time_scale` 就永远停在 0.05——这类 bug 只在多段攻击或暂停菜单时才暴露。
+
+本项目的做法（`core/hitstop.gd`）：静态表 + `Time.get_ticks_msec()` 截止时间戳，
+只冻结**被打的那个实体**（实体自己在 `_physics_process` 第一行 `return`），动画照常播。
+不需要每帧 tick，多段命中只延长不叠加，上限 0.30s 防写错卡死。
+
+### 2. 跳跃/重力数值 —— 差 2.3 倍
+
+| | 那份文档 | 本项目 |
+|---|---|---|
+| `jump_velocity` | 480 | 991（Godot 标定值） |
+| 重力 | `default_gravity(980) × 1.35 = 1323` | 2362（照抄 aos 预设） |
+| **满跳高度** | **≈87 px** | **203.8 px（实测 203.9）** |
+| 角色碰撞盒 | 32×48 | 28×100 |
+| 物理步 | 60 Hz | 120 Hz |
+
+那套是"小人跳一格"的尺度，我们是"恶魔城"的尺度。抄过去，所有关卡的跳跃距离、
+平台间距、能力门高度全部作废——而且因为代码能跑，你不会立刻发现，**要等铺完两屏关卡才察觉**。
+
+另外它从 `ProjectSettings.get_setting("physics/2d/default_gravity")` 取重力，
+我们用常量 `P_GRAV`。两套重力源混用，改一个地方不生效，是最难查的那类 bug。
+
+### 3. 翻滚期间 `velocity.y = 0` —— 空中翻滚会悬停
+
+```gdscript
+if is_rolling:
+    velocity.x = facing_dir * roll_speed
+    velocity.y = 0.0
+```
+
+地面翻滚没问题，但本项目翻滚/冲刺允许在空中触发（`hero_dash` 3 帧）。
+一旦空中翻滚把 `velocity.y` 清零，角色会**在空中定格 0.26 秒**，落地手感完全断掉。
+
+正确做法：翻滚只接管水平轴，垂直轴继续吃重力（或按设计给一个固定下落速度），
+且"是否允许空中翻滚"是**设计决定**，不能由实现细节顺手决定。
+
+### 4. 自动抓边直接改坐标 —— 会穿墙
+
+```gdscript
+global_position.y -= 18.0
+velocity.y = -180.0
+```
+
+直接把位置往上抬 18px，**没有检查目标位置是否与碰撞体重叠**。贴着墙跳、在窄缝里跳，
+角色会被塞进墙里，然后被物理引擎弹出去或者卡死。
+
+本项目的做法：先算目标位置，用 `move_and_collide` 或 `test_move` 确认空闲再位移；
+抓边的本质是"把角色移到平台边缘上方一个安全位置"，不是"往上瞬移一段"。
+
+### 5. `await create_timer` 推进状态 —— 中断后改错状态
+
+```gdscript
+await get_tree().create_timer(roll_duration).timeout
+visuals.scale = Vector2(facing_dir, 1.0)
+is_rolling = false
+is_invincible = false
+```
+
+翻滚中被打断、死亡、切房间、暂停——await 回来的那几行照常执行，
+把**已经变化的状态改回旧值**。比如翻滚中受击进入 hurt 状态，await 回来后
+`is_invincible = false` 会把受击无敌帧覆盖掉。
+
+规则：**状态推进一律放在 `_physics_process` 里用计时器变量推进，不用 await。**
+本项目的跳跃缓冲、松手切断都是这个写法（`jump_buf`、`cut_ok`）。
+
+### 6. 翻转用 `scale.x = -1`，又用 `scale` 做翻滚挤压 —— 会错位
+
+`_set_facing()` 改 `visuals.scale.x`，翻滚时又整体赋 `visuals.scale = Vector2(facing_dir * 1.25, 0.65)`，
+恢复时写 `Vector2(facing_dir, 1.0)`。这三次写入用的是同一个属性，
+**翻滚中转身就会互相覆盖**，恢复时 `scale.x` 用的是"当前 facing"而不是"起跳时的 facing"。
+
+本项目用 `Sprite2D.flip_h` 做翻转（`player.gd` 的 `_play()`），
+`scale` 保持空闲，将来做翻滚挤压不会打架。
+
+### 7. 沸腾线 shader 的第一版是"逐像素白噪声"
+
+原文：
+
+```glsl
+vec2 offset = vec2(
+    hash(UV * 10.0 + discrete_time) - 0.5,
+    hash(UV * 10.0 + discrete_time + 42.0) - 0.5
+) * boil_strength;
+```
+
+`UV * 10.0` 让**相邻像素的 hash 完全不同**，结果是整张图沙沙响、边缘碎成雪花，
+不是"线条在抖"。实测（`godot/tests/boil_check.py`）：变化像素 54%、单点最大通道差 194。
+
+我们改成**整帧统一偏移**（每 0.15s 一次，幅度 1 纹理像素）：变化像素 29.6%，
+平坦区差异 0.27、笔触边缘差异 3.95——差异完全跟着画面结构走。
+差分图可以直接看出：变亮的只有画框、壁灯、地砖缝、墙面笔触，大片平涂区域是死的。
+
+另外原文采样 `texture(TEXTURE, UV + offset)` 不夹边界，外缘会采到图外像素导致描边缺角。
+我们夹到半像素内，实测外圈纯黑占比 0%。
+
+### 8. `nearest` 纹理过滤 + 蜡笔 = 锯齿
+
+这条不在文档里，但它是我们项目自己的坑，跟 shader 一起暴露出来：
+`project.godot` 之前设了 `default_texture_filter=0`（nearest），那是给像素画配的。
+蜡笔是**连续色调**，nearest 放大 1.33 倍后笔触边缘全是硬锯齿，亚像素位移也被切成孤立跳变。
+
+已改为 `1`（linear）。同一份 shader 在 linear 下平均差从 8.26 降到 1.90，观感正常。
+
+### 9. 视口/拉伸策略不同，别顺手改
+
+那份文档 `1280×720` + `aspect=expand`；本项目 `960×540` + `aspect=keep`。
+`expand` 在超宽屏上会露出画面外区域（需要额外做安全区），
+`keep` 会加黑边（需要设计边框美术）。**这是设计决定，不是"更好的配置"**，
+两者都合理但不能随便换——换完所有房间的构图都要重排。
+
+---
+
+## 三、不适用（那是另一个游戏）
+
+原文的策划层很完整，但和本项目无关：
+
+| 系统 | 为什么不适用 |
+|---|---|
+| 播种 / 生长 / 战力转化 | 本项目的长线驱动是**迷宫探索 + 能力门**（`DESIGN_A.md`），不是种田 |
+| 区域入侵 / 去色净化 | 视觉设定是"照片被拍扁"，去色是叙事结果，不是可重复的玩法循环 |
+| 旅行手账大地图 | 本项目用手绘房间图 + 印章，但**不承载种植/入侵状态** |
+| 触屏优先 / 3 键 HUD | 本项目当前目标是 PC 键鼠 + 手柄；移动端适配是发行阶段的事 |
+| 零惩罚失败 / 纸飞机送回 | 本项目失败回到休息点，代价是重走——这是恶魔城的核心张力，不能去掉 |
+
+**最该警惕的一条**：这份文档把"治愈长线循环"当核心支柱之一。
+本项目不是治愈系，是"把压扁的人弄出来"的孤独探索。照抄它的循环，
+会把游戏做成**另一个游戏**，而且是最难改的那种偏——玩法方向偏了，美术和关卡全要重做。
+
+---
+
+## 四、以后遇到类似文档，按这四步筛
+
+1. **先看它的"尺子"**：角色尺寸、跳高、物理步、视口。和本项目差 2 倍以上，所有数值一律不抄，只学结构。
+2. **找 `await` 和全局状态**：`Engine.time_scale`、`get_tree().paused`、`await create_timer` 改状态 —— 这三类是并发 bug 温床。
+3. **看它有没有测试**。那份文档一行测试都没有，所以 87px 跳高、穿墙抓边、shader 噪点都只能靠肉眼发现。**没有测试的实现 = 未验证的实现**，抄进来就得自己补测试。
+4. **区分"策划层"和"技术层"**。技术层是通用解法，可以学；策划层是那个游戏的心脏，抄了就不长自己的了。
+
+---
+
+## 五、本次落地的验证数据
+
+```
+feel_smoke   满跳 203.9 px（基线 203.8）  水平 270.0 px/s  摩擦归零  轻点跳 56.1 px   PASS
+combat_smoke 单次结算 / 击退方向 / 局部顿帧 / 顿帧过期 / Hurtbox 开关
+             / 存档往返 / 坏档拒绝                                               PASS
+boil_check   变化 29.64%  平均差 1.90  平坦区 0.27  边缘区 3.95  外圈纯黑 0%      PASS
+启动          --quit-after 200 无 error / 无 warning                              PASS
+```
+
+复跑：
+
+```bash
+GODOT="E:/godot/Godot_v4.4.1-stable_win64_console.exe"
+"$GODOT" --headless --path godot --script res://tests/feel_smoke.gd
+"$GODOT" --headless --path godot --script res://tests/combat_smoke.gd
+"$GODOT" --path godot --script res://tests/boil_shot.gd && python godot/tests/boil_check.py
+```
