@@ -2717,8 +2717,16 @@ function render(alpha) {
   });
   // 长廊：展厅是一堵真墙，不是虚空。
   // 没有它，画框会"浮"在背景上 —— 这是上一版最难看的地方。
-  if (room.id === 'hall' && bgPlates.hall) drawBgPlate(ctx, bgPlates.hall, 0.28);
-  if (room.id === 'hall' && !bgPlates.hall) {
+  // 三级降级：蜡笔瓦片 > 整图背景板 > 程序化绘制。
+  // 三级都留着不是为了保险，是因为钟塔还没瓦片、整图随时可能被否 ——
+  // 有降级就不用 git revert 回滚一次审美决定。
+  if (room.id === 'hall') {
+    const RW = px(room.w), floorY = px(15);
+    if (!drawTileField(ctx, 'wall', 0, 0, RW, floorY, 0.28, 11)) {
+      if (bgPlates.hall) drawBgPlate(ctx, bgPlates.hall, 0.28);
+    }
+  }
+  if (room.id === 'hall' && !bgPlates.hall && !tileImgs.wall.length) {
     const RW = px(room.w), railY = px(12.45), floorY = px(15);
     const gw = ctx.createLinearGradient(0, 0, 0, floorY);
     gw.addColorStop(0, '#100d16'); gw.addColorStop(0.55, '#1a1424'); gw.addColorStop(1, '#221a2c');
@@ -3037,7 +3045,7 @@ function render(alpha) {
 
   // 暗角
   const vg = ctx.createRadialGradient(VIEW_W/2, VIEW_H*0.52, VIEW_H*0.26, VIEW_W/2, VIEW_H*0.52, VIEW_H*0.98);
-  vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.52)');
+  vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.34)');
   ctx.fillStyle = vg; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
 
   // 相框：屏幕的四条边是玩家给这张照片装的框
@@ -3308,6 +3316,75 @@ function initTabs() {
 // ============================ 启动 ============================
 const cv = document.getElementById('cv');
 
+/* ── 蜡笔瓦片（192×192，P6 定版）───────────────────────────────────────
+ * 为什么从「一张整图背景」改成瓦片：
+ *   1) 整图把房间长度锁死了。回廊 32 格正好一张，钟塔要重出一张，
+ *      10 个房间就是 10 次"重新对齐一致性"。
+ *   2) 整图不能分视差层 —— 远近全糊在一张里，走起来背景整体平移。
+ *   3) 整图不能复用：A 房间调好的笔触，B 房间用不上。
+ * 瓦片把这三件事一次解决。重复感用"变体 + 哈希选块 + 四向翻转"压下去，
+ * 剩下的交给屏幕空间的低频 overlay（还没做）。
+ */
+const TILE_PX = 192;                 // 瓦片边长（4×4 个游戏格，TILE=48）
+const tileImgs = { wall: [], floor: [] };
+
+function loadTiles() {
+  const src = (typeof window !== 'undefined' && window.TILE_B64) || {};
+  for (const k in src) {
+    if (!Array.isArray(src[k]) || !src[k].length) continue;
+    tileImgs[k] = src[k].map((b64) => {
+      const img = new Image();
+      img.src = 'data:image/png;base64,' + b64;
+      return img;
+    });
+  }
+}
+
+/* 同一块瓦片在 3×3 邻域里不重复出现：纯哈希取模会出现"三连"，
+ * 肉眼一抓一个准。这里用一维哈希 + 与左邻/上邻比较来打散。 */
+function pickTile(list, tx, ty, salt) {
+  if (!list || !list.length) return null;
+  const n = list.length;
+  let i = Math.floor(hash2(tx, ty, salt) * n) % n;
+  const left = Math.floor(hash2(tx - 1, ty, salt) * n) % n;
+  if (n > 1 && i === left) i = (i + 1) % n;
+  const up = Math.floor(hash2(tx, ty - 1, salt) * n) % n;
+  if (n > 2 && i === up) i = (i + 2) % n;
+  return list[i];
+}
+
+/* 把一类瓦片铺满一个矩形（世界坐标）。调用方已经 translate(-camX,-camY)。 */
+function drawTileField(ctx, kind, x0, y0, w, h, par, salt) {
+  const list = tileImgs[kind];
+  if (!list || !list.length) return false;
+  const T = TILE_PX;
+  const parX = camX * (1 - par), parY = camY * (1 - par);
+  const sx = parX + x0, sy = parY + y0;      // 屏幕上一格瓦片的左上角
+  const i0 = Math.floor((camX - sx) / T) - 1;
+  const i1 = Math.ceil((camX + VIEW_W - sx) / T) + 1;
+  const j0 = Math.floor((camY - sy) / T) - 1;
+  const j1 = Math.ceil((camY + VIEW_H - sy) / T) + 1;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(x0, y0, w, h); ctx.clip();
+  for (let j = j0; j <= j1; j++) {
+    for (let i = i0; i <= i1; i++) {
+      const img = pickTile(list, i, j, salt);
+      if (!img || !img.complete || !img.naturalWidth) continue;
+      const x = sx + i * T, y = sy + j * T;
+      // 四向翻转：同一张瓦片出 4 种样子，重复周期直接×4
+      const f = Math.floor(hash2(i, j, salt + 7) * 4);
+      ctx.save();
+      ctx.translate(x + T / 2, y + T / 2);
+      if (f & 1) ctx.scale(-1, 1);
+      if (f & 2) ctx.scale(1, -1);
+      ctx.drawImage(img, -T / 2, -T / 2, T, T);
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+  return true;
+}
+
 function boot() {
   atlasMan = window.ATLAS_MAN;
   const b64 = window.ATLAS_B64 || '';
@@ -3326,6 +3403,7 @@ function boot() {
     }
   });
   loadBgPlates();
+  loadTiles();
   let start = 'hall';
   /* 读档在进房间**之前**：进房间本身会落盘，顺序反了会把刚读出来的进度
    * 用默认值盖掉（先写后读 = 存档永远停在开局）。 */

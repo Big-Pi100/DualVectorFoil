@@ -2,3 +2,6 @@ node_modules/
 __pycache__/
 *.pyc
 .tmp/
+
+# 上游参考仓库（29MB，只用于转写时查源码，不入库）
+.deps/

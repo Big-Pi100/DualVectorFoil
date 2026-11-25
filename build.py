@@ -74,12 +74,38 @@ def load_bg(d):
     return out
 
 
+DEFAULT_TILES = os.path.join(HERE, "art", "tiles")
+
+
+def load_tiles(d):
+    """→ ({kind: [b64,...]}, 总字节)；文件命名 `<kind>_<i>.png`
+
+    为什么要瓦片：一张整图把房间长度锁死了（回廊 32 格正好一张，钟塔要重出），
+    也没法分视差层。瓦片随便多长、能分层、一套资产供所有房间。
+    """
+    out, total = {}, 0
+    if not os.path.isdir(d):
+        return out, 0
+    for fn in sorted(os.listdir(d)):
+        if not fn.endswith(".png") or "_" not in fn:
+            continue
+        kind = fn.rsplit("_", 1)[0]
+        p = os.path.join(d, fn)
+        with open(p, "rb") as f:
+            raw = f.read()
+        out.setdefault(kind, []).append(base64.b64encode(raw).decode())
+        total += len(raw)
+        print("   瓦片 %-10s %4dKB" % (fn, len(raw) // 1024))
+    return out, total
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--atlas", default=DEFAULT_ATLAS)
     ap.add_argument("--man", default=DEFAULT_MAN)
     ap.add_argument("--crayon", default=DEFAULT_CRAYON)
     ap.add_argument("--bg", default=os.path.join(HERE, "art", "bg"))
+    ap.add_argument("--tiles", default=DEFAULT_TILES)
     ap.add_argument("--out", default=os.path.join(HERE, "SoulKeep.html"))
     args = ap.parse_args()
 
@@ -115,19 +141,26 @@ def main():
     if not bg:
         print("   （无）→ 房间仍用程序化背景")
 
+    print("蜡笔瓦片（%s）：" % args.tiles)
+    tiles, tbytes = load_tiles(args.tiles)
+    if not tiles:
+        print("   （无）→ 墙面退回整图/程序化绘制")
+
     html = (tpl.replace("__MAN__", json.dumps(man, ensure_ascii=False))
                .replace("__B64__", b64)
                .replace("__CRAYON__", json.dumps(crayon))
                .replace("__BG__", json.dumps(bg))
+               .replace("__TILES__", json.dumps(tiles))
                .replace("__AUDIO__", aud)
                .replace("__GAME__", game)
                .replace("__MOBILE__", mob))
     with open(args.out, "w", encoding="utf-8") as f:
         f.write(html)
-    print("→ %s  %.0fKB  (atlas %d×%d, %d 帧；蜡笔 %d 张 / %dKB；背景 %d 张)"
+    print("→ %s  %.0fKB  (atlas %d×%d, %d 帧；蜡笔 %d 张 / %dKB；背景 %d 张；瓦片 %d 类 / %dKB)"
           % (args.out, os.path.getsize(args.out) / 1024,
              man["meta"]["size"]["w"], man["meta"]["size"]["h"],
-             len(man["frames"]), len(crayon), cbytes // 1024, len(bg)))
+             len(man["frames"]), len(crayon), cbytes // 1024, len(bg),
+             len(tiles), tbytes // 1024))
 
 
 if __name__ == "__main__":
