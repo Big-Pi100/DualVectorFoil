@@ -8,6 +8,10 @@
 《二向箔》—— 一张照片被拍扁之后，你得自己走进去，把里面的人弄出来。
 横版动作，复刻《重生细胞》手感（`DESIGN_A.md`）。
 
+> **技术形态：纯 HTML5 + Canvas 2D，不是 Godot / Unity 工程。**
+> 没有 `project.godot`，没有 `.tscn`/`.gd`。`src/` 是手写 JS，`build.py` 内联成单文件 `SoulKeep.html`。
+> Godot 是规划中的**发行**目标，**尚未开始**；用 Godot 打开本目录必然失败（详见 `README.md` 技术栈表）。
+
 ## 现在到哪一步了
 
 | 环节 | 状态 |

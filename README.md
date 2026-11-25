@@ -4,7 +4,24 @@
 只借用"碎片收集 + 能力门 + 城堡探索"这套机制。
 
 > 故事设定见 [`STORY.md`](STORY.md)。一句话：**每一张照片都是一枚二向箔，这个世界被拍了一张。**
-> 代码里的 `soul` 字段仍沿用旧名，术语对照表在 `STORY.md` §11，等 Godot 版一起换。
+> 代码里的 `soul` 字段仍沿用旧名，术语对照表在 `STORY.md` §11，
+> 等真要做 Godot 版时一起换（**Godot 版还没开始**，见下表）。
+
+## 技术栈（先看这条，免得开错工具）
+
+**不是 Godot 项目，也不是 Unity。** 纯 HTML5 + Canvas 2D：
+
+| 项 | 实际情况 |
+|---|---|
+| 引擎 | 无。浏览器原生 Canvas 2D + `requestAnimationFrame` 手写循环 |
+| 语言 | JavaScript（无构建链、无 npm 依赖、无打包器） |
+| 入口 | `src/index.html` → `build.py` 把 JS/图集/音频 base64 内联成单文件 `SoulKeep.html` |
+| 跑起来 | 双击 `SoulKeep.html`，或浏览器直接开 `src/index.html` |
+| Godot | **0 个工程文件**（无 `project.godot`、无 `.tscn`/`.gd`/`.tres`）。它是规划的**发行**目标，不是当前形态 |
+
+> **Godot 里打不开这个目录是正常的** —— 它只认 `project.godot` 工程根，
+> 这里一个都没有。想移植是"重写"，不是"打开"。
+> 为什么先不移植、什么时候移植：`docs/ref/AUDIT_001_DVF.md`（"Do not port to Godot yet"）。
 
 ## 玩
 
