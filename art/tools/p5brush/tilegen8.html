@@ -1,0 +1,123 @@
+<!doctype html>
+<meta charset="utf-8">
+<body style="margin:0;background:#222">
+<script type="module">
+/* SoulKeep 墙瓦片 v8 —— 一张瓦片 = 一块砖。
+ *
+ * 白哥原话：「我让你一张瓦片只有一块砖！！！！」
+ * v3e/v6/v7 全错在一个地方：一张 192×192 PNG 里排了 4 行×3 块砖，
+ * 然后我还在里面研究半砖、错缝、边界对齐 —— 那是在做"一张墙面瓦片"，
+ * 不是"一块砖瓦片"。本版把排布循环整个删掉，只画一块。
+ *
+ * 【不改】PAPER / STONE / SEAM / shade / stonePoly 扰动 / drawStone /
+ *         底涂 —— 逐字照搬 v3e，风格一个参数没动。
+ * 【只改】画布从 192×192 缩成 64×48（v6/v7 里白哥认可的"单块砖对了"的尺寸），
+ *         循环删掉，只调用一次 stonePoly + drawStone。
+ *         砖周围 1.2px 底色 = 砖缝；平铺时两片相加 2.4px。
+ */
+import * as brush from '../../../.deps/p5.brush/dist/brush.esm.js';
+
+const q = new URLSearchParams(location.search);
+const S = +(q.get('seed') || 0);
+const SS = +(q.get('ss') || 6);
+const BW = 64, BH = 48;          // 一块砖 = 64×48 游戏像素
+const W = BW * SS, H = BH * SS;  // 6 倍超采样后降采样
+const PAPER = '#F2EAD6';
+
+/* ───────── 以下全部逐字照搬 v3e ───────── */
+const STONE = ['#9A7C5E', '#8B8278', '#99919A', '#A69A82', '#857C6E'];
+const SEAM = '#6B5A4A';
+
+let s = 1;
+const srnd = k => { s = (k >>> 0) || 1; };
+const rnd = () => { s ^= s << 13; s >>>= 0; s ^= s >> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; };
+
+function shade(hex, k) {
+  const n = parseInt(hex.slice(1), 16);
+  const c = [n >> 16, (n >> 8) & 255, n & 255].map(v =>
+    Math.max(0, Math.min(255, Math.round(v + k))));
+  return '#' + c.map(v => v.toString(16).padStart(2, '0')).join('');
+}
+
+function stonePoly(x, y, w, h) {
+  const pts = [];
+  const jitter = () => (rnd() - 0.5) * Math.min(w, h) * 0.20;
+  pts.push([x + jitter(), y + jitter()]);
+  pts.push([x + w + jitter(), y + jitter()]);
+  pts.push([x + w + jitter(), y + h + jitter()]);
+  pts.push([x + jitter(), y + h + jitter()]);
+  const out = [];
+  for (let i = 0; i < 4; i++) {
+    const a = pts[i], b = pts[(i + 1) % 4];
+    const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
+    const nx = -(b[1] - a[1]), ny = b[0] - a[0];
+    const len = Math.hypot(nx, ny) || 1;
+    const d = (rnd() - 0.35) * Math.min(w, h) * 0.22;
+    out.push(a, [mx + nx / len * d, my + ny / len * d]);
+  }
+  return out.map(([px, py]) => [
+    Math.max(x + 1.2, Math.min(x + w - 1.2, px)),
+    Math.max(y + 1.2, Math.min(y + h - 1.2, py)),
+  ]);
+}
+
+function drawStone(poly, base) {
+  brush.mass('crayon', base, {
+    strength: 0.86, precision: 0.76,
+    style: 'scribble',
+    follow: 0.35, length: 13 * SS,
+  });
+  brush.polygon(poly.map(([x, y]) => [x * SS, y * SS]));
+  brush.noMass();
+
+  const xs = poly.map(p => p[0]), ys = poly.map(p => p[1]);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs);
+  const y0 = Math.min(...ys), y1 = Math.max(...ys);
+  const n = Math.round((x1 - x0) * (y1 - y0) / 95);
+  for (let i = 0; i < n; i++) {
+    const px = x0 + rnd() * (x1 - x0), py = y0 + rnd() * (y1 - y0);
+    const a = (rnd() - 0.5) * 2.45;
+    const len = 3 + rnd() * 8;
+    const col = shade(base, rnd() < 0.5 ? -10 : 9);
+    brush.set('crayon', col, (0.5 + rnd() * 0.8) * SS);
+    brush.line(px * SS, py * SS,
+               (px + Math.cos(a) * len) * SS, (py + Math.sin(a) * len) * SS);
+  }
+
+  brush.set('crayon', SEAM, 1.0 * SS);
+  brush.wiggle(0.10);
+  for (let i = 0; i < poly.length; i++) {
+    const a = poly[i], b = poly[(i + 1) % poly.length];
+    brush.line(a[0] * SS, a[1] * SS, b[0] * SS, b[1] * SS);
+  }
+  brush.wiggle(0);
+}
+/* ───────── 风格部分照搬结束 ───────── */
+
+try {
+  brush.createCanvas(W, H);
+  brush.angleMode(brush.DEGREES);
+  brush.clear(PAPER);
+  brush.translate(-W / 2, -H / 2);
+  srnd(9101 + S * 31);
+
+  // 底涂：照搬 v3e —— 缝里是被蹭过的石色，不是生纸白
+  brush.mass('crayon', '#8E806D', {
+    strength: 0.72, precision: 0.70, style: 'scribble',
+    follow: 0.35, length: 13 * SS,
+  });
+  brush.rect(-W/2, -H/2, W, H);
+  brush.noMass();
+
+  // 一张瓦片，只有这一块砖。没有循环、没有排布、没有半砖。
+  const poly = stonePoly(1.2, 1.2, BW - 2.4, BH - 2.4);
+  drawStone(poly, STONE[Math.floor(rnd() * STONE.length)]);
+
+  brush.render();
+  window.__ok = true;
+} catch (e) {
+  window.__err = String(e && e.stack || e);
+}
+</script>
+</body>
+</html>
