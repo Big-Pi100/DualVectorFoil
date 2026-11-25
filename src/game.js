@@ -1230,15 +1230,20 @@ function tileAt(x, y) {
  * 'H' 隐藏墙不进缓存：它的外观随装备变化，而且是少数，每帧现画。 */
 let tileCache = null, tileCacheKey = '';
 
-/* 地砖瓦片：192×48（4 格宽 × 1 格高）。
- * 为什么整条平铺、而不是逐格贴一张：地砖的缝必须**跨格连续**。
- * 逐格贴等于把每格当成独立一张图，缝在格边界断开，读成"一格一格的方块" ——
- * 那正是这轮要摆脱的程序感。
- * 做法：把实心格拼成一条 clip 路径，整片瓦片铺满，格子外的自然被裁掉。 */
-const FLOOR_W = 192, FLOOR_H = 48;
+/* 墙面蜡笔砖：一张 wall PNG = 一块砖。
+ *
+ * 源图 64×48 保持高分辨率（蜡笔笔触都在里面），**缩小的是显示尺寸**：
+ * 画到游戏里只有 1/6，约 10.7×8 游戏像素。降采样交给 drawImage 的抗锯齿，
+ * 不去动 PNG 本身 —— 直接把图降采样到 12×8 会把笔触信息永久毁掉。
+ *
+ * 为什么整片铺、不逐格贴：错缝必须跨格连续。逐格贴等于每格独立一张，
+ * 缝在格边界断开，读成"一格一格"。做法同地面：把实心格拼成 clip 路径，
+ * 砖沿整片世界坐标错缝排布，格子外自然裁掉。 */
+const WALL_SRC_W = 64, WALL_SRC_H = 48;   // 源图像素（高分辨率，笔触清晰）
+const WALL_BW = WALL_SRC_W / 6, WALL_BH = WALL_SRC_H / 6;  // 显示尺寸：小 6 倍
 
-function paintFloorTiles(c2) {
-  const list = tileImgs.floor;
+function paintWallTiles(c2) {
+  const list = tileImgs.wall;
   if (!list || !list.length || typeof Path2D === 'undefined') return false;
   const W = px(room.w), H = px(room.h);
   const path = new Path2D();
@@ -1250,21 +1255,31 @@ function paintFloorTiles(c2) {
   if (!any) return false;
   c2.save();
   c2.clip(path);
-  for (let j = 0; j * FLOOR_H < H; j++) {
-    for (let i = 0; i * FLOOR_W < W; i++) {
+
+  // 砖底色 = 深棕缝，从砖与砖之间透出来
+  c2.fillStyle = '#6B5A4A';
+  c2.fillRect(0, 0, W, H);
+
+  /* 两行错缝 = 一个可平铺单元，做成 pattern 一次填满。
+   * 逐块 drawImage 要画上万次，房间烘焙会卡住主线程（测试里 sleep 都等不到落板）；
+   * pattern 把次数压到几十次，视觉完全一样。 */
+  const UNIT_COLS = 16;
+  const cell = document.createElement('canvas');
+  cell.width = Math.round(WALL_BW * UNIT_COLS); cell.height = Math.round(WALL_BH * 2);
+  const cc = cell.getContext('2d');
+  cc.fillStyle = '#6B5A4A'; cc.fillRect(0, 0, cell.width, cell.height);
+  for (let j = 0; j < 2; j++) {
+    const off = (j % 2) * (WALL_BW / 2);
+    for (let i = -1; i <= UNIT_COLS; i++) {
       const img = pickTile(list, i, j, 23);
       if (!img || !img.complete || !img.naturalWidth) continue;
-      const f = Math.floor(hash2(i, j, 31) * 2);
-      c2.save();
-      c2.translate(i * FLOOR_W + FLOOR_W / 2, j * FLOOR_H + FLOOR_H / 2);
-      if (f & 1) c2.scale(-1, 1);
-      c2.drawImage(img, -FLOOR_W / 2, -FLOOR_H / 2, FLOOR_W, FLOOR_H);
-      c2.restore();
+      cc.drawImage(img, i * WALL_BW + off, j * WALL_BH, WALL_BW, WALL_BH);
     }
   }
-  /* 地面受光：整片叠一层很淡的暖光。
-   * 墙和地现在是同一套石材，光靠 3px 亮边分不开层 ——
-   * 玩家会以为整屏都是墙，"哪里能站"要靠猜。 */
+  const pat = c2.createPattern(cell, 'repeat');
+  if (pat) { c2.fillStyle = pat; c2.fillRect(0, 0, W, H); }
+
+  /* 受光：整片叠一层很淡的暖光。墙靠 3px 亮边分出哪里能站（drawStoneEdges）。 */
   c2.fillStyle = 'rgba(255,238,205,.17)';
   c2.fill(path);
   c2.restore();
@@ -1276,10 +1291,10 @@ function buildTileCache() {
   const cv2 = document.createElement('canvas');
   cv2.width = W; cv2.height = H;
   const c2 = cv2.getContext('2d');
-  const floorTiled = paintFloorTiles(c2);
+  const wallTiled = paintWallTiles(c2);
   for (let y = 0; y < room.h; y++) for (let x = 0; x < room.w; x++) {
     const ch = room.g[y][x];
-    if (ch !== '.' && ch !== 'H') drawTile(c2, ch, x * TILE, y * TILE, floorTiled);
+    if (ch !== '.' && ch !== 'H') drawTile(c2, ch, x * TILE, y * TILE, wallTiled);
   }
   tileCache = cv2;
   tileCacheKey = room.id;
