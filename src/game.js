@@ -1230,14 +1230,56 @@ function tileAt(x, y) {
  * 'H' 隐藏墙不进缓存：它的外观随装备变化，而且是少数，每帧现画。 */
 let tileCache = null, tileCacheKey = '';
 
+/* 地砖瓦片：192×48（4 格宽 × 1 格高）。
+ * 为什么整条平铺、而不是逐格贴一张：地砖的缝必须**跨格连续**。
+ * 逐格贴等于把每格当成独立一张图，缝在格边界断开，读成"一格一格的方块" ——
+ * 那正是这轮要摆脱的程序感。
+ * 做法：把实心格拼成一条 clip 路径，整片瓦片铺满，格子外的自然被裁掉。 */
+const FLOOR_W = 192, FLOOR_H = 48;
+
+function paintFloorTiles(c2) {
+  const list = tileImgs.floor;
+  if (!list || !list.length || typeof Path2D === 'undefined') return false;
+  const W = px(room.w), H = px(room.h);
+  const path = new Path2D();
+  let any = false;
+  for (let y = 0; y < room.h; y++) for (let x = 0; x < room.w; x++) {
+    const ch = room.g[y][x];
+    if (ch === '#' || ch === 'H') { path.rect(x * TILE, y * TILE, TILE, TILE); any = true; }
+  }
+  if (!any) return false;
+  c2.save();
+  c2.clip(path);
+  for (let j = 0; j * FLOOR_H < H; j++) {
+    for (let i = 0; i * FLOOR_W < W; i++) {
+      const img = pickTile(list, i, j, 23);
+      if (!img || !img.complete || !img.naturalWidth) continue;
+      const f = Math.floor(hash2(i, j, 31) * 2);
+      c2.save();
+      c2.translate(i * FLOOR_W + FLOOR_W / 2, j * FLOOR_H + FLOOR_H / 2);
+      if (f & 1) c2.scale(-1, 1);
+      c2.drawImage(img, -FLOOR_W / 2, -FLOOR_H / 2, FLOOR_W, FLOOR_H);
+      c2.restore();
+    }
+  }
+  /* 地面受光：整片叠一层很淡的暖光。
+   * 墙和地现在是同一套石材，光靠 3px 亮边分不开层 ——
+   * 玩家会以为整屏都是墙，"哪里能站"要靠猜。 */
+  c2.fillStyle = 'rgba(255,238,205,.17)';
+  c2.fill(path);
+  c2.restore();
+  return true;
+}
+
 function buildTileCache() {
   const W = px(room.w), H = px(room.h);
   const cv2 = document.createElement('canvas');
   cv2.width = W; cv2.height = H;
   const c2 = cv2.getContext('2d');
+  const floorTiled = paintFloorTiles(c2);
   for (let y = 0; y < room.h; y++) for (let x = 0; x < room.w; x++) {
     const ch = room.g[y][x];
-    if (ch !== '.' && ch !== 'H') drawTile(c2, ch, x * TILE, y * TILE);
+    if (ch !== '.' && ch !== 'H') drawTile(c2, ch, x * TILE, y * TILE, floorTiled);
   }
   tileCache = cv2;
   tileCacheKey = room.id;
@@ -2507,8 +2549,8 @@ function drawStone(ctx, x, y, tx, ty) {
 
   // 受光顶面 / 背光底边 / 侧边压暗
   if (upOpen) {
-    ctx.fillStyle = '#8C8B84'; ctx.fillRect(x, y, TILE, 3);   // 冷灰：受光面
-    ctx.fillStyle = '#B3B1A6'; ctx.fillRect(x, y, TILE, 1);
+    ctx.fillStyle = '#A8A69B'; ctx.fillRect(x, y, TILE, 4);   // 受光面：加宽到 4px
+    ctx.fillStyle = '#C9C6B8'; ctx.fillRect(x, y, TILE, 1);   // 顶棱高光
   }
   if (dnOpen) { ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(x, y + TILE - 5, TILE, 5); }
   if (lfOpen) { ctx.fillStyle = 'rgba(0,0,0,.30)'; ctx.fillRect(x, y, 3, TILE); }
@@ -2520,6 +2562,15 @@ function drawStone(ctx, x, y, tx, ty) {
  * 想找回：.bak/pre_unflat_20261125/game.js。 */
 
 function drawSlab(ctx, x, y, tx, ty) {
+  /* 平台瓦片：48×20，一格一块，横向平铺。
+   * 一格一块是有意的 —— 台面本来就由一块块石板拼成，
+   * 逐格贴不会出现"图案在格边界断开"的问题，反而正是想要的接缝。 */
+  const list = tileImgs.slab;
+  const img = list && list.length ? pickTile(list, tx, 0, 41) : null;
+  if (img && img.complete && img.naturalWidth) {
+    ctx.drawImage(img, x, y + 4, TILE, 20);
+    return;
+  }
   // 台面：14px 厚，下面是空的（玩家能从下面走过去）
   // 配色同石头迁到 12 色板：土褐台面 + 赭金受光刃。旧值是紫灰渐变，理由见 STONE 的注释。
   ctx.fillStyle = '#2B2320'; ctx.fillRect(x, y + 4, TILE, 14);
@@ -2554,14 +2605,34 @@ function drawDoor(ctx, x, y) {
   ctx.fillStyle = 'rgba(255,196,110,.20)'; ctx.fillRect(x + 8, y + TILE - 6, TILE - 16, 6);
 }
 
-function drawTile(ctx, ch, x, y) {
+/* 只画"露在外面"的边：受光顶面 / 背光底边 / 侧边压暗。
+ * 地面已经整片贴了蜡笔瓦片，砖块本身不该再程序画一遍 ——
+ * 那会变成"瓦片上面盖一层程序砖"，两套缝对不上，比不贴还乱。
+ * 但边必须留：玩家靠"顶面那条亮线"判断哪里能站。 */
+function drawStoneEdges(ctx, x, y, tx, ty) {
+  const upOpen = !isSolid(tileAt(x + TILE * 0.5, y - 4));
+  const dnOpen = !isSolid(tileAt(x + TILE * 0.5, y + TILE + 4));
+  const lfOpen = !isSolid(tileAt(x - 4, y + TILE * 0.5));
+  const rtOpen = !isSolid(tileAt(x + TILE + 4, y + TILE * 0.5));
+  if (upOpen) {
+    ctx.fillStyle = '#A8A69B'; ctx.fillRect(x, y, TILE, 4);   // 受光面：加宽到 4px
+    ctx.fillStyle = '#C9C6B8'; ctx.fillRect(x, y, TILE, 1);   // 顶棱高光
+  }
+  if (dnOpen) { ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(x, y + TILE - 5, TILE, 5); }
+  if (lfOpen) { ctx.fillStyle = 'rgba(0,0,0,.30)'; ctx.fillRect(x, y, 3, TILE); }
+  if (rtOpen) { ctx.fillStyle = 'rgba(0,0,0,.30)'; ctx.fillRect(x + TILE - 3, y, 3, TILE); }
+}
+
+function drawTile(ctx, ch, x, y, tiled) {
   const tx = Math.floor(x / TILE), ty = Math.floor(y / TILE);
   if (ch === '#') {
-    drawStone(ctx, x, y, tx, ty);
+    if (tiled) drawStoneEdges(ctx, x, y, tx, ty);
+    else drawStone(ctx, x, y, tx, ty);
   } else if (ch === '=') {
     drawSlab(ctx, x, y, tx, ty);
   } else if (ch === 'H') {
-    drawStone(ctx, x, y, tx, ty);
+    if (tiled) drawStoneEdges(ctx, x, y, tx, ty);
+    else drawStone(ctx, x, y, tx, ty);
     if (SAVE.equipped.yellow === 'sight') {
       ctx.strokeStyle = 'rgba(216,178,74,.85)'; ctx.lineWidth = 2;
       ctx.beginPath();
@@ -2702,10 +2773,23 @@ function render(alpha) {
     const m = ((camX * p) % spacing + spacing) % spacing;
     for (let sx = -spacing - m; sx < VIEW_W + spacing; sx += spacing) fn(ctx, sx + camX, camY);
   }
+  /* 钟塔也铺石壁。
+   * ‼ 统一画法之后，"虚空"这种程序化紫黑渐变和蜡笔石壁无法共存 ——
+   *   截图里左右两侧是灰石、中间是紫黑，两种世界硬切在一起。
+   *   BG_SCOPE 的判据：各向同性的大面积渐变 p5.brush 做不了，
+   *   那就别设计它 —— 钟塔改成"石壁 + 墙上的龛 + 折痕"。
+   *   这样拱龛从"虚空里的塔影"变成"墙上凿出来的深龛"，读法反而更实。 */
+  if (room.id === 'tower') {
+    drawTileField(ctx, 'wall', 0, 0, px(room.w), px(room.h), 0.28, 13);
+  }
+
   // 远层：拱龛（越远越亮、越虚）
-  if (room.id !== 'hall') layer(0.20, 300, (c, wx, cy) => {
-    const w = 168, h = 330, top = cy + 40;
-    c.fillStyle = '#1b1726';
+  if (room.id !== 'hall') layer(0.20, 232, (c, wx, cy) => {
+    /* 龛必须"透石纹"。原来用纯色 #1b1726 铺满，盖在蜡笔石壁上就是一块
+     * 贴上去的黑纸 —— 轮廓再准也读成贴纸。降到 84% 不透明，
+     * 石头的笔触从里面透出来，它才像"凿进墙里的洞"而不是"墙上的洞的贴图"。 */
+    const w = 132, h = 300, top = cy + 40;
+    c.fillStyle = 'rgba(22,18,30,.84)';
     c.beginPath();
     c.moveTo(wx, top + h);
     c.lineTo(wx, top + w / 2);
@@ -3326,7 +3410,7 @@ const cv = document.getElementById('cv');
  * 剩下的交给屏幕空间的低频 overlay（还没做）。
  */
 const TILE_PX = 192;                 // 瓦片边长（4×4 个游戏格，TILE=48）
-const tileImgs = { wall: [], floor: [] };
+const tileImgs = { wall: [], floor: [], slab: [] };
 
 function loadTiles() {
   const src = (typeof window !== 'undefined' && window.TILE_B64) || {};
@@ -3381,6 +3465,10 @@ function drawTileField(ctx, kind, x0, y0, w, h, par, salt) {
       ctx.restore();
     }
   }
+  /* 墙面压暗一档。墙和地现在是同一套石材瓦片，只靠"地面那条亮边"分不开 ——
+   * 背景要往后退、前景要往前站，明度差是最省事也最可靠的一层。 */
+  ctx.fillStyle = 'rgba(8,6,4,.14)';
+  ctx.fillRect(x0, y0, w, h);
   ctx.restore();
   return true;
 }

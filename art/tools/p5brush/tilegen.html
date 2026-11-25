@@ -1,0 +1,241 @@
+<!doctype html>
+<meta charset="utf-8">
+<body style="margin:0">
+<script type="module">
+import * as brush from '../../../.deps/p5.brush/dist/brush.esm.js';
+/* 瓦片正式生成器：墙 / 地。
+ *
+ * ## 为什么石头是 96×96（而不是最初设计的 96×48 小砖）
+ *
+ * 这是六个变体实验得出的唯一硬结论（见 P5BRUSH §7）：
+ * `mass` 的弧线半径 = 形状的半对角线（源码 hatch/mass.js:360，
+ * `radius = dist(center, part.x1, part.y1)`），**跟画布尺寸无关，
+ * `scaleBrushes()` 也管不到它**（只改 weight/scatter/spacing）。
+ * 所以 96×48 的砖里，一道弧线就比砖还宽，只能落下两三道，读成"毛刷扫过"。
+ *
+ * 要么小砖不用 mass（改用碎笔 → 被纸白框成贴纸，见 _exp_K），
+ * 要么把石头做大，让弧线有地方施展（_exp_L）。
+ * 后者对 —— 抱石墙本来就是地牢/钟塔的合理形制，而且它解决了一个
+ * 更根本的问题：**背景元素要按"笔触能不能画得开"来定尺寸**，
+ * 不是先定尺寸再找笔。
+ *
+ * ## 无缝的三条前提（每条都踩过）
+ *   1. 相位一致：跨边界的元素必须在 0 与 192 处对齐 → 石头宽高必须整除 192
+ *   2. 笔画环绕：9 重放，且每次重放前 seed 与自研 PRNG 全部归零 → 9 份严格同像素
+ *   3. 不透明纸底：不存 RGBA（针孔露引擎底色 = 整墙结霜）
+ */
+const q = new URLSearchParams(location.search);
+const kind = q.get('kind') || 'wall';
+/* 画布宽：平台 1 格（48），墙/地 4 格（192）。 */
+const N = kind === 'slab' ? 48 : 192;
+/* 地面瓦片只有 48 高（1 格）。地面在关卡里就是 1~2 格厚的实心带，
+ * 用 192 见方的瓦片铺进去只会露出顶上一行，等于把 3/4 的画白画了。 */
+const H = kind === 'floor' ? 48 : (kind === 'slab' ? 20 : 192);
+const S = +(q.get('seed') || 0);
+
+const P = { paper:'#E8DCBE', charcoal:'#2B2320', cold:'#8C8B84',
+            umber:'#6B4B32', ochre:'#B98A2E', moss:'#4F6B3A',
+            grey_blue:'#4C6E8C', deep_blue:'#1F2E5C' };
+
+let s = 1;
+const srnd = (k) => { s = (k >>> 0) || 1; };
+const rnd = () => { s ^= s << 13; s >>>= 0; s ^= s >> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; };
+
+/* ── 一块石头 ─────────────────────────────────────────────────────────
+ * passes 决定整体深浅（同一支笔涂几遍），这是石墙唯一正确的"明暗语言"：
+ * 换颜色会读成两种材料，涂几遍才是同一块石头的光影。
+ * 缺角/崩边放在最后 —— 它是把"方正色块"打成"石头"的最后一刀。 */
+function stone(x, y, w, h, base) {
+  /* 缝宽：每块石头内缩量略有不同，缝就不是等宽的一条条。
+   * 等宽缝是"贴图"的最大破绽 —— 真砌石没有两块缝一样宽。 */
+  const pad = 0.9 + rnd() * 0.6;   // 石头边缘要压在缝线底下，否则 mass 的半压边会露一圈暖色
+  /* 石头是**四边形，不是矩形**。四个角各抖 ±3px，缝宽就自然不均匀了 ——
+   * 真砌石的缝没有一条是等宽的，等宽缝是"贴图"最大的破绽，方角是第二大的。
+   * 抖动值必须来自 srnd（9 重放一致），用 Math.random 会让 9 份错开、接缝裂开。 */
+  const jx = () => (rnd() - 0.5) * 2.2, jy = () => (rnd() - 0.5) * 2.2;
+  const pts = [
+    [x + pad + jx(),     y + pad + jy()],
+    [x + w - pad + jx(), y + pad + jy()],
+    [x + w - pad + jx(), y + h - pad + jy()],
+    [x + pad + jx(),     y + h - pad + jy()],
+  ];
+  /* 两遍，一密一稀 —— 这是"有涂过但没糊"的唯一配比。
+   * ‼ 三遍密涂（0.6+）会把排线之间填死，整块石头变成一片平灰；
+   *   只涂一遍稀的，边缘又填不满、缝会忽宽忽窄。
+   *   密的一遍负责"这块是实心的"，稀的一遍负责"看得见笔"。
+   * ‼ 也不要垫 hatch：hatch 是直线、mass 是弧线，两层一叠就是"波纹干涉"，
+   *   整面墙读成木纹。两者只能选一个当主体，选 mass（弧线是绕形状走的）。 */
+  brush.mass('crayon', base, { strength: 0.52, precision: 0.76 });
+  brush.polygon(pts);
+  brush.noMass();
+  /* 两成石头再密涂一遍 → 明显更深。同一支笔多一遍是唯一的"变深"语言，
+   * 换颜色会读成两种材料。 */
+  if (rnd() < 0.34) {
+    brush.mass('crayon', base, { strength: 0.58, precision: 0.78 });
+    brush.polygon(pts);
+    brush.noMass();
+  }
+  /* 纯冷灰，和墙同一个石场。
+   * ‼ 不要掺土褐：哪怕只有两成，铺满三条地面带之后就是"橙灰棋盘"，
+   *   而且土褐在冷灰里饱和度极高，一眼就跳出来（实拍见 shots/_tilecache.png）。
+   *   地面靠"石块横长 + 更密"来区分，不靠换颜色。 */
+  brush.mass('crayon', base, { strength: 0.30 + rnd() * 0.08, precision: 0.66 });
+  brush.polygon(pts);
+  brush.noMass();
+  /* 深浅：两成石头多涂一遍 —— 这是唯一正确的"变深"手段。
+   * ‼ 不能用低 strength 的 charcoal 当"暗角"：strength 是排线密度不是浓度，
+   *   0.2 得到的是"稀疏的全浓度黑线"，读成涂了墨，不是阴影（这一版踩过，
+   *   见 shots/wall_new.png 里那些黑毛刷）。 */
+  if (rnd() < 0.26) {
+    brush.mass('crayon', base, { strength: 0.72, precision: 0.9 });
+    brush.rect(x + pad, y + pad, w - pad * 2, h - pad * 2);
+    brush.noMass();
+  }
+  /* 短蹭痕：石头表面的"笔一道笔一道"全靠这个。
+   * mass 的笔触是绕形状中心的长弧，单独用就像水波纹；
+   * 叠几道 15~40px 的短直线，才读成"来回蹭过的石头"。 */
+  const n = 3 + Math.floor(rnd() * 3);
+  for (let i = 0; i < n; i++) {
+    const yy = y + 8 + rnd() * (h - 16);
+    const x0 = x + 5 + rnd() * (w * 0.5);
+    brush.set('crayon', rnd() < 0.08 ? P.umber : base, 1.7 + rnd() * 1.4);
+    brush.line(x0, yy, x0 + 14 + rnd() * (w * 0.38), yy + (rnd() - 0.5) * 14);
+  }
+  /* 崩边：不是画个三角，是让那块地方的笔触"塌下去"。 */
+  if (rnd() < 0.30) {
+    const cx = rnd() < 0.5 ? x + 4 : x + w - 4;
+    const cy = rnd() < 0.5 ? y + 4 : y + h - 4;
+    brush.set('crayon', P.charcoal, 2.2 + rnd() * 1.6);
+    brush.line(cx, cy, cx + (cx < x + w / 2 ? 1 : -1) * (8 + rnd() * 14),
+               cy + (cy < y + h / 2 ? 1 : -1) * (5 + rnd() * 9));
+  }
+}
+
+function paint() {
+  srnd(S * 7919 + 131);
+
+  /* 底：浅一档的排线，只为"缝里不是纯纸色"。
+   * ‼ 不要用深底当缝：石头是 mass 涂的，它在 rect 边缘会把笔触堆起来，
+   *   形成一圈比内部更亮的边 —— 正好就是"贴纸描边"的效果（上一版实拍）。
+   *   缝必须是**画上去的暗线**，不是露出来的底。 */
+  /* 不铺满底。蜡笔的质感一半来自"纸色从笔缝里透出来"，
+   * 铺一层密排线会把纸吃干净，整面墙变成"刷涂料"。
+   * 缝是深色线画上去的，所以不需要底色来兜结构。 */
+
+  if (kind === 'slab') {
+    /* 平台石板：48×20，一格一块。
+     * 顶面那条赭金是"能踩"的信号 —— 游戏里玩家靠它判断落点，
+     * 所以它必须是瓦片的一部分，不能交给程序后画（一压就没了）。
+     * 石块本身用 hatch 铺，不用 mass：20px 高画不下弧线，只会糊成一条。 */
+    brush.noStroke();
+    /* 两遍：20px 高只画得下十几道排线，一遍会露出大片纸色，
+     * 平台就成了"白色薄片"（实拍）。 */
+    brush.hatchStyle('crayon', P.cold, 1.15);
+    brush.hatch(3.0, (rnd() - 0.5) * 6, { rand: 0.4 });
+    brush.rect(1, 4, N - 2, 13);
+    brush.hatch(3.4, 2, { rand: 0.4 });
+    brush.rect(1, 4, N - 2, 13);
+    brush.noHatch();
+    /* 石块之间的接缝：一格一块，靠左右两条暗边读出来 */
+    brush.set('charcoal', P.charcoal, 1.6);
+    brush.wiggle(0.15);
+    brush.line(0.8, 4, 0.8, 17);
+    brush.line(N - 0.8, 4, N - 0.8, 17);
+    brush.noField();
+    /* 顶面：赭金亮线 + 一道更亮的细线，受光面 */
+    brush.set('crayon', P.ochre, 2.4);
+    brush.line(0, 4.6, N, 4.6);
+    /* 只留一条赭金。曾经叠一条更亮的 2B 细线，两条一起出来是"荧光条"，
+     * 平台比角色还抢眼 —— 能踩的信号要清楚，但不能发光。 */
+    brush.set('crayon', P.umber, 1.2);
+    brush.line(0, 3.4, N, 3.4);
+    /* 底边：投到空气里的暗，给厚度 */
+    brush.set('charcoal', P.charcoal, 1.6);
+    brush.line(0, 16.6, N, 16.6);
+    /* 两颗铆钉 */
+    brush.set('crayon', P.charcoal, 1.6);
+    brush.line(11, 11, 13.5, 11);
+    brush.line(N - 13.5, 11, N - 11, 11);
+  } else if (kind === 'wall') {
+    /* 抱石墙：96×96，两行，第二行错半块。
+     * 只 4 块石头 → 单张瓦片的重复感靠"6 个变体 + 四向翻转"在游戏里打散。 */
+    /* 4 行 × 96×48 小砖，隔行错半块。
+     * ‼ 中途试过"抱石墙"（96×96 大石），单看好看，进游戏整面墙读成"预制板"——
+     *   石块占 96px 屏幕，10 块就铺满一屏，既不像砖墙也压不住前景。
+     *   而且用户说的"墙丑"指的是**画法**（几何直线 + 噪点滤镜），不是砖太大。 */
+    for (let r = 0; r < 4; r++) {
+      const off = (r % 2) * 48;
+      for (let x = off - 96; x < N + 96; x += 96) stone(x, r * 48, 96, 48, P.cold);
+    }
+    /* 缝：两道 —— 一道宽炭线（沟），一道窄深线（投影）。
+     * 单线读成"描边"，两道才有"砌进去"的深度。 */
+    brush.set('charcoal', P.charcoal, 2.2);
+    brush.wiggle(0.22);
+    for (let r = 0; r <= 4; r++) brush.line(-6, r * 48, N + 6, r * 48);
+    for (let r = 0; r < 4; r++) {
+      const off = (r % 2) * 48;
+      for (let x = off; x < N + 0.1; x += 96) brush.line(x, r * 48 + 2, x, (r + 1) * 48 - 2);
+    }
+    brush.set('2B', P.charcoal, 1.8);
+    for (let r = 0; r <= 4; r++) brush.line(-6, r * 48 + 1.2, N + 6, r * 48 + 1.2);
+    brush.noField();
+
+    /* 整面脏：两三片很淡的土褐，位置随机。这是唯一"跨石头"的层，
+     * 有了它，四块石头才是一面墙而不是四块贴图。 */
+    for (let i = 0; i < 3; i++) {
+      brush.mass('crayon', P.umber,
+                 { strength: 0.16, precision: 0.3, gradient: 0.8 });
+      brush.rect(rnd() * 140, rnd() * 140, 40 + rnd() * 70, 30 + rnd() * 60);
+      brush.noMass();
+    }
+  } else {
+    /* 地面：一整行石砌，宽度组合凑满 192。
+     * 横向 192 周期（4 格）、纵向 48（1 格），所以竖缝的相位只需对齐 192，
+     * 横缝就是瓦片的上下边界本身 —— 平铺时天然连续，不用额外对齐。 */
+    const WS = [[96, 96], [96, 96], [64, 64, 64], [80, 112], [112, 80],
+                [48, 80, 64], [64, 80, 48]];
+    const ws = WS[Math.floor(rnd() * WS.length)];
+    let x = -192, wi = 0;
+    while (x < N + 192) {
+      stone(x, 0, ws[wi % ws.length], 48, P.cold);
+      x += ws[wi % ws.length]; wi++;
+    }
+    /* 竖缝 */
+    brush.set('charcoal', P.charcoal, 1.8);
+    brush.wiggle(0.18);
+    let x2 = -192, wi2 = 0;
+    while (x2 < N + 192) {
+      brush.line(x2, 2, x2, 46);
+      x2 += ws[wi2 % ws.length]; wi2++;
+    }
+    brush.noField();
+    /* 横缝：只画 y=0 这一条。y=48 由下一块瓦片的 y=0 提供，
+     * 自己再画一条会在拼接处变成双线。 */
+    brush.set('2B', P.charcoal, 1.9);
+    brush.line(-6, 0, N + 6, 0);
+    /* 地面碎屑：赭金的小点，踩出来的脏。 */
+    brush.set('crayon', P.ochre, 1.3);
+    for (let i = 0; i < 10; i++) {
+      const sx = rnd() * N, sy = rnd() * H;
+      brush.line(sx, sy, sx + 2 + rnd() * 5, sy + (rnd() - 0.5) * 2);
+    }
+  }
+}
+
+try {
+  brush.createCanvas(N, H);
+  brush.angleMode(brush.DEGREES);
+  brush.clear(P.paper);
+  brush.translate(-N / 2, -H / 2);
+  for (const [ox, oy] of [[0,0],[-N,0],[N,0],[0,-H],[0,H],[-N,-H],[-N,H],[N,-H],[N,H]]) {
+    brush.seed(3000 + S);
+    brush.noiseSeed(4000 + S);
+    brush.push();
+    brush.translate(ox, oy);
+    paint();
+    brush.pop();
+  }
+  brush.render();
+  window.__ok = true;
+} catch (e) { window.__err = String(e && e.stack || e); console.error(e); }
+</script>

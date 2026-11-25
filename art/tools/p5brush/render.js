@@ -79,6 +79,43 @@ im.save(r"${dst}")
       const cv = await page.$('canvas');
       await cv.screenshot({ path: path.join(OUT, 'p5brush_cap.png') });
       console.log('→ shots/p5brush_cap.png');
+    } else if (mode === 'tile') {
+      /* 192×192 平铺瓦片实验：A=全 hatch  B=hatch+局部 mass  C=mass 铺底（对照） */
+      const vs = process.argv.slice(3).length ? process.argv.slice(3) : ['A', 'B', 'C'];
+      await page.setViewportSize({ width: 220, height: 220 });
+      for (const v of vs) {
+        const t = Date.now();
+        await page.goto(`http://127.0.0.1:${PORT}/${base}/tile.html?variant=${v}&seed=0`,
+          { waitUntil: 'load' });
+        await page.waitForFunction(() => window.__ok || window.__err, { timeout: 60000 }).catch(() => {});
+        const r2 = await page.evaluate(() => ({ ok: window.__ok, err: window.__err }));
+        if (!r2.ok) { console.log('  ERR', String(r2.err).slice(0, 300)); continue; }
+        const cv = await page.$('canvas');
+        const p = path.join(ROOT, 'art', 'tiles', `_exp_${v}.png`);
+        fs.writeFileSync(p, await cv.screenshot());
+        console.log('→ art/tiles/_exp_%s.png  %dms', v, Date.now() - t);
+      }
+    } else if (mode === 'tileset') {
+      /* 正式瓦片：墙 6 变体 + 地 2 变体。前缀 _new_ 便于与旧版对比，
+       * 确认后用 --publish 参数写出正式名。 */
+      const pub = process.argv.includes('--publish');
+      const plan = [['wall', 6], ['floor', 6], ['slab', 6]];
+      await page.setViewportSize({ width: 220, height: 220 });
+      for (const [k, n] of plan) {
+        for (let i = 0; i < n; i++) {
+          const t = Date.now();
+          await page.goto(
+            `http://127.0.0.1:${PORT}/${base}/tilegen.html?kind=${k}&seed=${i}`,
+            { waitUntil: 'load' });
+          await page.waitForFunction(() => window.__ok || window.__err, { timeout: 90000 }).catch(() => {});
+          const r3 = await page.evaluate(() => ({ ok: window.__ok, err: window.__err }));
+          if (!r3.ok) { console.log('  ERR %s/%d', k, i, String(r3.err).slice(0, 240)); continue; }
+          const cv = await page.$('canvas');
+          const name = pub ? `${k}_${i}.png` : `_new_${k}_${i}.png`;
+          fs.writeFileSync(path.join(ROOT, 'art', 'tiles', name), await cv.screenshot());
+          console.log('→ art/tiles/%s  %dms', name, Date.now() - t);
+        }
+      }
     } else {
       const kinds = process.argv.slice(3).length ? process.argv.slice(3) : KIND;
       for (const k of kinds) {

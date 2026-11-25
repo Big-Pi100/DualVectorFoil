@@ -89,6 +89,11 @@ def load_tiles(d):
     for fn in sorted(os.listdir(d)):
         if not fn.endswith(".png") or "_" not in fn:
             continue
+        # 下划线开头 = 草稿/实验/中间产物，一律不进包。
+        # 这条是踩出来的：p5.brush 调瓦片期间生成了十几个 _exp_/_new_ 对比图，
+        # 全被当成新"类别"打进包里，单文件从 2.5MB 涨到 4.3MB。
+        if fn.startswith("_"):
+            continue
         kind = fn.rsplit("_", 1)[0]
         p = os.path.join(d, fn)
         with open(p, "rb") as f:

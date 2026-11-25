@@ -1,0 +1,329 @@
+<!doctype html>
+<meta charset="utf-8">
+<body style="margin:0">
+<script type="module">
+import * as brush from '../../../.deps/p5.brush/dist/brush.esm.js';
+/* 192×192 平铺瓦片 —— 三种画法对比。
+ *
+ * 为什么单独做这个实验：P5BRUSH.md §4 说它做不了瓦片，三条理由里
+ * 最致命的是"mass 的笔触是弧线，行程跟画布尺寸绑死"，一道排线就横跨半张图。
+ * 但 hatch 不一样 —— 它的 dist（排线间距）是我能控制的，行程由 rect 裁。
+ * 所以这个实验就是在验：**把 mass 换成 hatch，粒度是不是就对了。**
+ *
+ * wrap 的实现：9 重放。每次重放前把 seed 和自研 PRNG 都重置到同一个值，
+ * 于是 9 份是"同一份像素平移"，这才是严格的周期，而不是"画 9 遍像碰巧接上"。
+ */
+const N = 192;
+const q = new URLSearchParams(location.search);
+const variant = q.get('variant') || 'A';
+const S = +(q.get('seed') || 0);
+
+const P = { paper:'#E8DCBE', charcoal:'#2B2320', cold:'#8C8B84',
+            umber:'#6B4B32', ochre:'#B98A2E', blue:'#1F2E5C',
+            moss:'#4F6B3A', grey_blue:'#4C6E8C' };
+
+const BRICK_H = 48, BRICK_W = 96;
+
+/* 自有 PRNG：p5.brush 的 seed() 只重置它自己的 rng，管不到 Math.random()。
+ * 要把"9 份完全一致"做实，几何随机必须过这里。 */
+let s = 1;
+const srnd = (k) => { s = (k >>> 0) || 1; };
+const rnd = () => { s ^= s << 13; s >>>= 0; s ^= s >> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; };
+
+/** 一块石头：2~6 道短笔，涂法随机（长扫 / 来回蹭 / 斜涂），外加一处压深。
+ *  笔一律不越界 —— 砖的形状是"笔停在哪"决定的，不是缝切出来的。 */
+function brickPatch(x, y, w, h) {
+  const k = rnd();
+  /* 冷灰是主色（石墙的中间调），三成偏土褐（返潮/旧），一成偏蓝灰（背光）。
+   * 不给 paper：砖必须比缝暗，否则整面墙读成白格子。 */
+  const base = k < 0.56 ? P.cold : (k < 0.90 ? P.umber : P.grey_blue);
+  const n = 2 + Math.floor(rnd() * 5);
+  /* 八成是横涂（人手涂墙就是左右来回），两成斜涂 —— 斜的那几块是"破规律"的关键，
+   * 平铺时眼睛会在它们身上停一下，就不会去数格子了。 */
+  const tilt = rnd() < 0.20 ? (rnd() - 0.5) * 24 : (rnd() - 0.5) * 4;
+  for (let i = 0; i < n; i++) {
+    const yy = y + 4 + (i + 0.5) * ((h - 8) / n) + (rnd() - 0.5) * 5;
+    /* 长度也随机：有的笔从砖头扫到砖尾，有的只蹭中间一小截 */
+    const pad = rnd() < 0.35 ? 16 + rnd() * 22 : 2 + rnd() * 5;
+    const x0 = x + pad, x1 = x + w - pad - rnd() * 8;
+    if (x1 - x0 < 8) continue;
+    brush.set('crayon', base, 1.9 + rnd() * 1.6);
+    brush.line(x0, yy, x1, yy + Math.tan(tilt * Math.PI / 180) * (x1 - x0));
+  }
+  /* 压深：石头有厚度，全平涂会读成纸片。位置随机，不给规律。 */
+  if (rnd() < 0.5) {
+    const yy = y + 6 + rnd() * (h - 18);
+    const x0 = x + 4 + rnd() * (w * 0.4);
+    brush.set('crayon', P.charcoal, 1.4 + rnd() * 1.2);
+    brush.line(x0, yy, x0 + 10 + rnd() * (w * 0.45), yy + (rnd() - 0.5) * 5);
+  }
+  if (variant === 'G') {
+    /* 受光顶边 / 背光底边。这两笔让砖从"色块"变成"有厚度的石头"，
+     * 而且它们贴着缝走，等于把缝的读法补全了。 */
+    brush.set('crayon', P.paper, 1.3);
+    brush.line(x + 2, y + 1.6, x + w - 2, y + 1.6);
+    brush.set('crayon', P.charcoal, 1.5);
+    brush.line(x + 2, y + h - 1.8, x + w - 2, y + h - 1.8);
+  }
+}
+
+function paint() {
+  srnd(S * 977 + 31);
+
+  if (variant === 'D' || variant === 'E') {
+    /* D/E：每块砖自己涂几道短笔。
+     *
+     * 这是从 A 的失败里学到的：A 用整幅 hatch，排线横贯整张瓦片，
+     * 结果读成"草席"——因为**一道横线跨过砖缝时不会断**，砖块边界就消失了。
+     * 人手涂砖不会这样：手在缝那里停住，再起一笔。所以纹理必须**逐砖**生成，
+     * 砖的形状由"笔没越界"天然形成，而不是靠缝去切。
+     *
+     * E 额外加一层稀疏 hatch 打底，验证"打底有没有必要"。 */
+    if (variant === 'E') {
+      brush.noStroke();
+      brush.hatchStyle('crayon', P.cold, 0.8);
+      brush.hatch(13, 1, { rand: 0.7 });
+      brush.rect(0, 0, N, N);
+      brush.noHatch();
+    }
+    for (let r = 0; r < 4; r++) {
+      const off = (r % 2) * (BRICK_W / 2);
+      for (let x = off - BRICK_W; x < N + BRICK_W; x += BRICK_W) {
+        const k = rnd();
+        /* 色：大部分冷灰，三成偏土褐（老墙返潮），少数偏蓝。
+         * 不给纯 paper 色 —— 砖必须比缝暗，否则整个墙读成"白格子"。 */
+        const col = k < 0.62 ? P.cold : (k < 0.92 ? P.umber : P.grey_blue);
+        const n = 3 + Math.floor(rnd() * 3);
+        for (let i = 0; i < n; i++) {
+          const yy = r * BRICK_H + 5 + (i + 0.5) * ((BRICK_H - 10) / n) + (rnd() - 0.5) * 4;
+          const x0 = x + 3 + rnd() * 10;
+          const x1 = x + BRICK_W - 3 - rnd() * 12;
+          brush.set('crayon', col, 2.0 + rnd() * 1.4);
+          brush.line(x0, yy, x1, yy + (rnd() - 0.5) * 3.5);
+        }
+        /* 一块砖里挑一处压深：石头有厚度，平涂会读成纸片。 */
+        if (rnd() < 0.55) {
+          const yy = r * BRICK_H + 8 + rnd() * (BRICK_H - 22);
+          brush.set('crayon', P.charcoal, 1.6 + rnd());
+          brush.line(x + 6 + rnd() * 20, yy, x + 6 + rnd() * 60, yy + (rnd() - 0.5) * 5);
+        }
+      }
+    }
+  } else if (variant === 'F' || variant === 'G') {
+    /* F：逐砖涂 + 每行不同分割。
+     *
+     * D 的问题：每块砖都是 3~5 道等距横线，平铺后读成"一格格排线"。
+     * 真石墙每块砖的涂法都不一样 —— 有的两笔糊过去，有的七八笔来回蹭，
+     * 有的斜着涂。所以这里把"涂法"本身也做成随机量。
+     *
+     * G：在此之上给砖加受光顶边 / 背光底边（同一个几何随机序列，不会再抽一次）。
+     *
+     * ‼ 每行的砖宽必须**凑满 192**，起点必须对齐 192 的倍数。
+     *   第一版用了随机 offset(0~192)，结果同一块屏幕区域被 ox=0 和 ox=±192
+     *   两套砖同时覆盖，缝交错成一片乱线 —— 9 重放不是"画 9 遍"，是
+     *   "同一份内容平移 9 次"，内容本身必须有周期，否则平移会互相打架。 */
+    const SPLITS = [[96, 96], [96, 96], [64, 64, 64], [80, 112], [112, 80],
+                    [48, 80, 64], [64, 80, 48], [80, 48, 64], [128, 64], [64, 128]];
+    for (let r = 0; r < 4; r++) {
+      const ws = SPLITS[Math.floor(rnd() * SPLITS.length)];
+      const off = rnd() < 0.5 ? 0 : 96;      // 只许半块错缝，否则相位打架
+      let x = off - N;
+      let wi = 0;
+      while (x < N + N) {
+        const w = ws[wi % ws.length];
+        if (w === undefined) break;
+        brickPatch(x, r * BRICK_H, w, BRICK_H);
+        x += w; wi++;
+      }
+    }
+  } else if (variant === 'H' || variant === 'I' || variant === 'J') {
+    /* H/I/J：满铺底 + 逐砖 mass + 暗缝。
+     *
+     * F/G 的教训：每块砖只在自己 rect 里涂，砖之间就留下**没涂到的纸色**，
+     * 看起来像贴纸拼贴，不像砌墙。真实石墙的缝是"一道暗线"，不是"一道白沟"。
+     * 所以顺序必须是：整面先铺底 → 逐砖加深 → 最后画缝盖上去。
+     *
+     * 另一个教训：grey_blue 太饱和，一出现就是"涂了蓝色"。
+     * 石墙的深浅应该来自**同一支笔涂几遍**，而不是换颜色 —— 换颜色会读成两种材料。
+     * 只有两成砖加一层 umber 当返潮（旧墙的水渍方向）。
+     *
+     * H：mass strength .5  I：.68（更实）  J：line 短笔 + 满铺底（对照） */
+    brush.noStroke();
+    brush.hatchStyle('crayon', P.cold, 0.75);
+    brush.hatch(11, 1.5, { rand: 0.65 });
+    brush.rect(0, 0, N, N);
+    brush.hatch(13, -2, { rand: 0.65 });
+    brush.rect(0, 0, N, N);
+    brush.noHatch();
+
+    const SPLITS = [[96, 96], [96, 96], [64, 64, 64], [80, 112], [112, 80],
+                    [48, 80, 64], [64, 80, 48], [80, 48, 64], [128, 64], [64, 128]];
+    for (let r = 0; r < 4; r++) {
+      const ws = SPLITS[Math.floor(rnd() * SPLITS.length)];
+      const off = rnd() < 0.5 ? 0 : 96;
+      let x = off - N, wi = 0;
+      while (x < N + N) {
+        const w = ws[wi % ws.length];
+        if (w === undefined) break;
+        const passes = 1 + Math.floor(rnd() * 3);
+        for (let p = 0; p < passes; p++) {
+          brush.mass('crayon', P.cold,
+                     { strength: variant === 'I' ? 0.68 : 0.50, precision: 0.78 });
+          brush.rect(x + 1, r * BRICK_H + 1, w - 2, BRICK_H - 2);
+          brush.noMass();
+        }
+        if (rnd() < 0.20) {
+          brush.mass('crayon', P.umber, { strength: 0.34, precision: 0.7, gradient: 0.3 });
+          brush.rect(x + 2, r * BRICK_H + 2, w - 4, BRICK_H - 4);
+          brush.noMass();
+        }
+        x += w; wi++;
+      }
+    }
+  } else if (variant === 'K' || variant === 'L') {
+    /* K：小砖（96×48）+ 碎笔。  L：大石（96×96）+ mass。
+     *
+     * 这组是在验一个判断：**砖块尺寸本身就是设计决定，不是给定条件。**
+     * mass 的弧线半径 = 形状的半对角线，跟画布无关（源码 hatch/mass.js:360）。
+     * 所以 96×48 的砖里弧线必然粗过砖 —— 不是"参数没调好"，是几何不允许。
+     * 两条出路：① 小砖就别用 mass，改用碎笔（K）；② 把石头做大，让 mass 有地方施展（L）。
+     * 用户要的是"场景跟着工具能力设计"，L 就是那条路的实物。 */
+    const BIG = variant === 'L';
+    const BH = BIG ? 96 : 48, BW = BIG ? 96 : 96;
+    const rows = N / BH;
+
+    /* 底：横向细排线两遍，先把纸色盖掉 —— F 的白缝就是漏了这一步。 */
+    brush.noStroke();
+    brush.hatchStyle('crayon', P.cold, 0.75);
+    brush.hatch(11, 1.5, { rand: 0.65 });
+    brush.rect(0, 0, N, N);
+    brush.hatch(13, -2, { rand: 0.65 });
+    brush.rect(0, 0, N, N);
+    brush.noHatch();
+
+    for (let r = 0; r < rows; r++) {
+      const off = BIG ? (r % 2) * (BW / 2) : (Math.floor(rnd() * 2)) * (BW / 2);
+      let x = off - BW, wi = 0;
+      while (x < N + BW) {
+        const passes = 1 + Math.floor(rnd() * 3);
+        /* 逐砖底色：涂几遍决定深浅，颜色只在 cold/umber 之间摆动。
+         * 不碰 grey_blue —— 它在石头里一出现就是"涂了蓝色"，F 的教训。 */
+        for (let p = 0; p < passes; p++) {
+          if (BIG) {
+            brush.mass('crayon', P.cold, { strength: 0.62, precision: 0.8 });
+            brush.rect(x + 1, r * BH + 1, BW - 2, BH - 2);
+            brush.noMass();
+          } else {
+            brush.hatchStyle('crayon', P.cold, 0.85);
+            brush.hatch(5 + rnd() * 2.5, (rnd() - 0.5) * 16, { rand: 0.5 });
+            brush.rect(x + 1, r * BH + 1, BW - 2, BH - 2);
+            brush.noHatch();
+          }
+        }
+        if (rnd() < 0.22) {
+          brush.hatchStyle('crayon', P.umber, 0.8);
+          brush.hatch(5.5, (rnd() - 0.5) * 20, { rand: 0.5 });
+          brush.rect(x + 2, r * BH + 2, BW - 4, BH - 4);
+          brush.noHatch();
+        }
+        if (!BIG) {
+          /* 小砖：碎笔才是纹理。短、乱、互相压 —— 长横线会读成木纹。 */
+          const n = 2 + Math.floor(rnd() * 4);
+          for (let i = 0; i < n; i++) {
+            const yy = r * BH + 5 + rnd() * (BH - 10);
+            const x0 = x + 3 + rnd() * (BW * 0.4);
+            const ang = (rnd() - 0.5) * 34;
+            brush.set('crayon', rnd() < 0.25 ? P.umber : P.cold, 1.8 + rnd() * 1.6);
+            brush.line(x0, yy, x0 + 12 + rnd() * (BW * 0.45),
+                       yy + Math.tan(ang * Math.PI / 180) * 26);
+          }
+        }
+        /* 压深：贴着砖的底/侧，让石头有厚度。位置随机。 */
+        if (rnd() < 0.5) {
+          const yy = r * BH + BH * (0.5 + rnd() * 0.4);
+          brush.set('crayon', P.charcoal, 1.3 + rnd() * 1.1);
+          brush.line(x + 4 + rnd() * (BW * 0.3), yy,
+                     x + 4 + rnd() * (BW * 0.7), yy + (rnd() - 0.5) * 4);
+        }
+        x += BW; wi++;
+      }
+    }
+  } else if (variant === 'C') {
+    /* 对照组：mass 铺底。预期失败 —— 排线行程是弧线，一块砖被两道弧线抹平。 */
+    brush.noStroke();
+    brush.mass('crayon', P.cold, { strength: 0.92, precision: 0.2 });
+    brush.rect(0, 0, N, N);
+    brush.noMass();
+  } else {
+    /* 底：横向细排线，两遍轻微角度差 —— 蜡笔涂墙就是左右来回，不该有纹理方向感。
+     * dist 5 是笔距，weight 0.9 让每道排线细到 2px 上下，砖块才有"被涂过"而不是"被刷过"。 */
+    brush.noStroke();
+    brush.hatchStyle('crayon', P.cold, 0.9);
+    brush.hatch(5.0, 0, { rand: 0.55 });
+    brush.rect(0, 0, N, N);
+    brush.hatch(5.8, 3, { rand: 0.55 });
+    brush.rect(0, 0, N, N);
+    brush.noHatch();
+  }
+
+  /* 砖面差异：这才是打破重复的主力。每块砖 ±，靠"多一遍/少一遍"做深浅。 */
+  for (let r = 0; r < 4; r++) {
+    const off = (r % 2) * (BRICK_W / 2);
+    for (let x = off - BRICK_W; x < N + BRICK_W; x += BRICK_W) {
+      const k = rnd();
+      if (k < 0.30) {
+        brush.hatchStyle('crayon', P.umber, 0.8);
+        brush.hatch(4.2 + rnd() * 2, rnd() * 8 - 4, { rand: 0.5 });
+        brush.rect(x + 4, r * BRICK_H + 4, BRICK_W - 8, BRICK_H - 8);
+        brush.noHatch();
+      } else if (k > 0.86) {
+        brush.hatchStyle('crayon', P.cold, 0.7);
+        brush.hatch(3.6, 1, { rand: 0.5 });
+        brush.rect(x + 6, r * BRICK_H + 6, BRICK_W - 12, BRICK_H - 10);
+        brush.noHatch();
+      }
+    }
+  }
+
+  /* 砖缝：D/E 用 2B 加粗 —— A 的教训是 HB 1.15 在 192 上淡到看不见，
+   * 墙就塌成一片色块。缝是唯一的结构线，宁可粗一点也不能没有。
+   * 抖太多墙会变成水波（Python 版踩过），0.3 是"手画但不歪"。 */
+  const wLine = (variant === 'A' || variant === 'B' || variant === 'C') ? 1.15 : 1.9;
+  brush.set('2B', P.charcoal, wLine);
+  brush.wiggle(0.30);
+  for (let r = 0; r < 4; r++) brush.line(-6, r * BRICK_H, N + 6, r * BRICK_H);
+  for (let r = 0; r < 4; r++) {
+    const off = (r % 2) * (BRICK_W / 2);
+    for (let x = off; x < N + 0.1; x += BRICK_W)
+      brush.line(x, r * BRICK_H + 3, x, (r + 1) * BRICK_H - 3);
+  }
+  brush.noField();
+
+  /* 局部厚涂：B 变体专测"mass 在 192 上到底能不能用"。
+   * 只给一小块 40px 见方，行程再长也溢出不了多少。 */
+  if (variant === 'B') {
+    brush.noStroke();
+    brush.mass('crayon', P.umber, { strength: 0.86, precision: 0.55 });
+    brush.rect(96, 48, 40, 34);
+    brush.noMass();
+  }
+}
+
+try {
+  brush.createCanvas(N, N);
+  brush.angleMode(brush.DEGREES);
+  brush.clear(P.paper);
+  brush.translate(-N / 2, -N / 2);
+  /* 9 重放：seed 与 PRNG 都归零，9 份严格同像素。 */
+  for (const [ox, oy] of [[0,0],[-N,0],[N,0],[0,-N],[0,N],[-N,-N],[-N,N],[N,-N],[N,N]]) {
+    brush.seed(1000 + S);
+    brush.noiseSeed(2000 + S);
+    brush.push();
+    brush.translate(ox, oy);
+    paint();
+    brush.pop();
+  }
+  brush.render();
+  window.__ok = true;
+} catch (e) { window.__err = String(e && e.stack || e); console.error(e); }
+</script>
