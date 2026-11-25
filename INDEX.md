@@ -29,7 +29,7 @@
 | `art/tools/crayon.py` | **程序画的唯一入口**。受约束的蜡笔笔刷原语（stroke/fill/outline/hatch/speck），只收 12 色板名 + 有限笔宽 | 🟢 现行 |
 | `godot/` | **Godot 4.4 工程（正式发行形态）**：与 web 原型并存。玩家移动/跳跃/5 状态动画 + 战斗组件（Hitbox/Hurtbox/局部顿帧）+ WorldState 存档 + 沸腾线 shader + 单屏测试房。用 Godot 打开这个子目录，不是仓库根 | 🟠 移植中 |
 | `godot/README.md` | Godot 工程说明：打开方式、手感标定记录、资产同步、渲染设置、移植顺序 | 🟢 现行 |
-| `docs/ref/OTHERS_GDD_REVIEW.md` | 别人那份 GDD/TDD 的逐条核对：可吸收 / 照抄会炸（4 处）/ 不适用。**再收到同类文档先看这份** | 🟢 现行 |
+| `docs/ref/OTHERS_GDD_REVIEW.md` | 别人那份 GDD/TDD 的逐条核对：可吸收 / 照抄会炸（9 处）/ 不适用；**§6 说明它的数值已抄成 `F2` 对照预设的用途**。再收到同类文档先看这份 | 🟢 现行 |
 | `art/tools/p5brush/tilegen8.html` | **瓦片生成器（现行）**：一张 PNG = 一块砖，64×48，6 seed 出 6 外形。渲染用 `art/tools/p5brush/render.js shot` | 🟢 现行 |
 | `art/tools/P5BRUSH.md` | **p5.brush 评估**：命令集全表、11 个内置笔刷手感、三条实测硬伤（无 wrap / 尺度绑画布 / strength 是排线密度）、尺度分工表 | 🟢 现行 |
 | `art/tools/p5brush/` | 上游 p5.brush 的**可复现调用层**。`setup.sh` 拉仓库，`render.js` 出图 | 🟢 现行 |
@@ -63,6 +63,7 @@
 | `docs/ref/CONSULT_001_controls_hud_art.md` | 外部咨询 | 控制/HUD/美术方向问题清单 |
 | `docs/ref/AUDIT_001_DVF.md` | 外部审计 | DVF（方向/速度/感觉）评分 |
 | `docs/ref/NIGHTFALL_REVIEW.md` | 外部评审 | 技术与产品意见 |
+| `docs/ref/CRAYON_ODYSSEY_GDD.md` | 《色彩旅人》GDD/TDD **原文归档** | 数值出处（480 / 1320 / 460 / 0.14…）。已抄成 `F2` 预设，只作对照 |
 
 ## ⚪ 历史报告（`docs/history/`，只读，不再更新）
 

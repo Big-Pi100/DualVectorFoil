@@ -23,6 +23,12 @@ E:\IdentityCard\game-soulkeep\godot\
 # 手感验证（无头，量跳高/速度，跟 web 基线对账）
 "E:/godot/Godot_v4.4.1-stable_win64_console.exe" --headless --path godot --script res://tests/feel_smoke.gd
 
+# 两套预设实测对照（满跳 / 轻点跳 / 加速帧数 / 翻滚位移）
+"E:/godot/Godot_v4.4.1-stable_win64_console.exe" --headless --path godot --script res://tests/feel_compare.gd
+
+# F1 / F2 切换链路是否真的通
+"E:/godot/Godot_v4.4.1-stable_win64_console.exe" --headless --path godot --script res://tests/preset_key.gd
+
 # 战斗组件 + 存档（无头）
 "E:/godot/Godot_v4.4.1-stable_win64_console.exe" --headless --path godot --script res://tests/combat_smoke.gd
 
@@ -40,13 +46,15 @@ python godot/tests/boil_check.py
 |---|---|
 | 工程骨架 / 分辨率 960×540 / 120Hz 物理 | ✅ |
 | 玩家：跑 / 摩擦 / 跳 / 二段跳 / 顶点滞空 / 松手切断 | ✅ 手感已标定 |
+| 两套手感预设：F1 aos（定版）/ F2 crayon（参考） | ✅ 可热切换，HUD 显示实测峰值 |
+| 翻滚 / 后跃（aos=后跃、crayon=前滚） | ✅ 可玩，无敌帧未接 Hurtbox |
 | 动画状态机（stand/walk/jump/fall/crouch） | ✅ 5 个状态 |
 | 背景 + 地面 + 平台 + 碰撞 | ✅ 单屏测试房 |
 | 战斗组件：Hitbox / Hurtbox / 局部顿帧 | ✅ 组件就绪 + 有测试，**未接到玩家** |
 | 全局状态 + 存档（WorldState） | ✅ 逻辑就绪 + 有测试，**未接 UI** |
 | 沸腾线 shader | ✅ 已挂背景，两帧比对通过 |
 | 相机跟随 / 多房间 | ❌ |
-| 攻击 / 冲刺 / 蹲 / 滑铲 / 能力门 / 敌人 | ❌ |
+| 攻击 / 蹲 / 滑铲 / 冲刺 / 能力门 / 敌人 | ❌ |
 | 存档 UI / 音频 | ❌ |
 
 ## 手感参数：为什么和 web 版不一样
@@ -67,6 +75,43 @@ python godot/tests/boil_check.py
 其余参数（照抄未改）：`SPD_RUN 270`、`P_GRAV 2362`、`P_MAX_FALL 1260`、
 `FRIC_G 1350`、`FRIC_A 675`、`APEX_LO/HI -22.5/67.5`、`APEX_MUL 0.2`、`CUT_V 400`、`JBUF 3 步`。
 
+## 两套手感预设：F1 / F2
+
+`player.gd` 里有**两套完整预设**，游戏内按键直接切，HUD 左上角显示当前数值和本次跳跃最高点：
+
+| 键 | 预设 | 是什么 |
+|---|---|---|
+| `F1` | `aos` | 本项目定版，默认 |
+| `F2` | `crayon` | 《色彩旅人》GDD 的 `@export` 值，逐字抄，**只用于对比** |
+
+原文归档在 [`../docs/ref/CRAYON_ODYSSEY_GDD.md`](../docs/ref/CRAYON_ODYSSEY_GDD.md)。
+
+### 实测对照（`tests/feel_compare.gd`，120Hz）
+
+| 项目 | aos（定版） | crayon（参考） |
+|---|---|---|
+| 满跳高度 | 203.9 px | 85.2 px |
+| 轻点跳（按 4 帧） | 56.1 px | 85.2 px（无松手切断，点一下就满） |
+| 水平稳态速度 | 270 px/s | 280 px/s |
+| 0 → 满速 | 1 帧（瞬间） | 15 帧（2200 px/s²） |
+| 松手 → 停 | 24 帧 | 14 帧 |
+| 翻滚位移 | 99.1 px | 146.0 px |
+| 翻滚峰值速度 | 535（后跃，朝背后） | 460（前滚） |
+
+crayon 理论跳高 480²/(2×1323) = 87.1，实测 85.2 —— 差的是离散积分误差，不是抄错。
+
+### 差的不只是数字，还有模型
+
+- aos 是**一帧到满速 + 松手摩擦**（`accel = 0`），crayon 是**加速到满速**（`accel = 2200`）。
+  只抄 280 却保留"一帧到满速"，得到的是第三种手感，不是其中任何一套。
+- aos 有**顶点滞空**（重力 ×0.2）和**松手切断**（上升速度压到 400），crayon 都没有。
+  所以预设里带的是**开关**（`apex` / `cut` / `accel`），不是孤立数字。
+
+### 两处故意没照抄（那是 bug，不是手感）
+
+1. 翻滚时 `velocity.y = 0` —— 空中翻滚会悬停 0.26 秒。这里只在地面清零，空中继续下落。
+2. 翻滚无敌只在本体记账（`is_invincible()`），**没接到 Hurtbox** —— 现在没有敌人，接了是空转。
+
 ## 目录
 
 ```
@@ -81,11 +126,15 @@ godot/
 ├─ world/shaders/
 │  └─ boiling_line.gdshader   手绘沸腾线（整帧微位移）
 ├─ scenes/
-│  ├─ main.tscn       单屏测试房：背景 + 地面 + 两个平台
+│  ├─ main.tscn       单屏测试房：背景 + 地面 + 两个平台 + HUD
 │  └─ player.tscn     CharacterBody2D + Sprite2D + 碰撞盒 28×100
-├─ scripts/player.gd  玩家控制器（aos 手感）
+├─ scripts/
+│  ├─ player.gd       玩家控制器（两套预设：aos / crayon，F1/F2 切）
+│  └─ feel_hud.gd     左上角调试面板（英文，默认字体没有中文字形）
 ├─ tests/
 │  ├─ feel_smoke.gd   手感对账：跳高 / 水平速度 / 摩擦 / 轻点跳
+│  ├─ feel_compare.gd 两套预设实测对照
+│  ├─ preset_key.gd   F1 / F2 切换链路
 │  ├─ combat_smoke.gd 战斗组件 + 存档：单次结算 / 击退方向 / 顿帧 / 坏档
 │  ├─ boil_shot.gd    沸腾线出两帧
 │  ├─ boil_check.py   两帧比对（平坦区不动 / 边缘在动 / 无黑边）
@@ -110,6 +159,10 @@ godot/
 要点：technical 骨架可学（Hitbox/Hurtbox、状态单例、数据驱动），
 但它的**跳跃数值（87px）是我们的 2.3 分之一**、顿帧用 `Engine.time_scale`、
 抓边直接改坐标、状态推进用 `await` —— 这四条搬进来会出真 bug。
+
+**它的数值已经逐字抄成 `F2` 预设**，不是为了采用，是为了让你按键就能判断
+"这套尺子在我们关里是什么感觉"——玩一下右上那块平台（离地 102px）就明白了：
+aos 上得去，crayon 上不去。
 
 ## 资产同步
 

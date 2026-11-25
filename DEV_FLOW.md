@@ -96,6 +96,17 @@
 > **改跳跃/重力数值必须重跑**，并把新标定值同步到 `godot/README.md` 的参数表。
 > 换了积分器就要重新标定——web 的 971.3 在 Godot 里只跳到 195.8px，补到 991 才对齐。
 >
+> 改**预设 / 翻滚 / 水平加速模型**加跑这两套（一条测数据、一条测切换链路）：
+>
+> ```bash
+> "$G" --headless --path godot --script res://tests/feel_compare.gd  # aos vs crayon 实测对照
+> "$G" --headless --path godot --script res://tests/preset_key.gd    # F1/F2 是否真能切
+> ```
+>
+> `F2` 是《色彩旅人》的参考数值（满跳 85.2 px），**不是候选方案**。
+> 看到 `player.gd` 里有 480 / 1320 不要以为要换 —— 那是给人按键对比用的，
+> 理由见 `docs/ref/OTHERS_GDD_REVIEW.md` 第六节。
+>
 > 改 shader / 渲染设置（过滤、拉伸）加跑 `godot/tests/boil_shot.gd` + `godot/tests/boil_check.py`：
 > 判据是**平坦区差异 < 1.0、边缘区差异 > 1.5**。只看"有没有变化"会把白噪声判成通过。
 >
