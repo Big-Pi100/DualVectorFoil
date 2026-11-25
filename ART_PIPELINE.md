@@ -2,6 +2,10 @@
 
 > 建 2026-11-25。起因：canvas 代码绘制被判定为 programmer art，全部推翻。
 > 结论：**美术 100% 走生图；代码只做分层平移、视差、合成、动画、特效，不画任何形状。**
+>
+> **2026-11-26 补注**：瓦片曾是全项目唯一不走生图的资产（p5.brush 程序渲染），
+> 现按本行纲领归队，产线见 §4.5、规格见 `STYLE_LOCK.md §L11`。
+> 也就是说：**现在这份纲领没有例外。** 如果以后又要给某个资产开例外，先在这行登记理由。
 
 ---
 
@@ -136,6 +140,116 @@ G 通道只差 27，洋红底差 247）。这一步选错，后面要补泛洪�
 水印处理：图生模型会在右下角打"AI生成/WORKBUDDY"。
 洋红底上可直接用 `process_spritesheet.patch_watermark()`（把浅色低饱和像素涂回背景色），
 **不要用 `crop` 硬裁底部** —— 会切到靴子。旧文档写的 `crop((0,0,w,h-84))` 作废。
+
+## 4.5 瓦片生图配方（2026-11-26 起，唯一产线）
+
+> 瓦片曾走 p5.brush 程序渲染，是**全项目唯一不走生图的资产**。已退回生图，
+> 退场结论见 `STYLE_LOCK.md §L11.4`。规格定版同样在 §L11。
+
+### 4.5.1 一句话原则
+
+**模型只画"一块块散开的石头"，排布和尺寸全部由代码做。**
+
+模型擅长笔触、不擅长几何。让它画一面 4×3 的墙，缝宽不齐、砖大小不一、边界切砖，
+平铺后是歪的（v3e~v7 连错五版就是这么错的）。让它画一片散石，再让脚本切，
+两个短板都规避掉了。
+
+### 4.5.2 提示词（逐字复用，只改块数和比例）
+
+```
+A tile source sheet for a hand-drawn 2D side-scroller game.
+
+Exactly TWELVE separate stone blocks, arranged in a loose grid of 4 columns and
+3 rows, floating on a flat solid PURE SATURATED MAGENTA background RGB 255,0,255,
+bright neon magenta, edge to edge.
+
+Each stone is a BLOCKY, NEARLY RECTANGULAR masonry block — a cut ashlar stone,
+not a pebble. Its four edges are almost straight with only small hand-drawn
+wobbles and a few chipped corners. It must NOT be round, NOT oval, NOT a boulder,
+NOT a cobblestone. Width to height ratio about 1.35, so slightly wider than tall.
+
+Each stone is outlined with a wobbly dark charcoal #2B2320 contour about 3px
+thick. It is filled with flat wax crayon colour: mainly warm umber #6B4B32 and
+cool grey #8C8B84 in large calm patches, a few short strokes of ochre #B98A2E as
+highlights, and a slightly darker band along the bottom edge to sit it down.
+STRICTLY NO green, NO moss colour, NO yellow-green, NO olive. The palette is
+warm brown-grey stone, not diseased or mossy.
+
+The twelve stones differ from one another in outline shape and in where the
+crayon shading sits, but all are clearly drawn by the same hand with the same
+twelve-crayon box.
+
+CRITICAL COMPOSITION: every stone must be completely separated from every other
+stone by at least 24 pixels of clean empty magenta. No stone may touch another
+stone. No stone may touch the edge of the image.
+
+Flat 2D graphic art, orthographic front view, no perspective, no vanishing point,
+real wax crayon on paper feel, wobbly hand-drawn lines, no smooth vector curves.
+
+EXCLUDE: cast shadow, contact shadow, ambient occlusion, gradient, glow, airbrush,
+3D render, photograph, paper background, cream background, white background,
+green, text, numbers, watermark, signature, border, frame, grid lines, arrows,
+labels.
+```
+
+**参数**：`1024×1024`、`quality high`、`background opaque`。
+
+### 4.5.3 实测修订记录（两次出图，别重复踩）
+
+| 版 | 提示词差异 | 结果 | 判据 |
+|---|---|---|---|
+| 1 | "irregular rounded polygon like a hand-cut fieldstone"，色板含 moss | **像鹅卵石**。石头偏圆，四角空隙大；黄绿色占主导，平铺是"长苔的碎石地" | 外观 1.09:1、平铺后横向缝是纵向的 3 倍 |
+| 2 | 改 "BLOCKY / NEARLY RECTANGULAR / NOT round / NOT pebble"；颜色改 umber+灰主导，加 **STRICTLY NO green** | **成**。块状、褐灰、缝均匀，平铺读作砌石墙 | 见 `shots/gen_tile_tilingB.png` |
+
+两条硬经验：
+
+1. **"rounded" 一个字就能毁掉整批**。要砌石，必须写明 `nearly rectangular`、
+   并逐条否定 `NOT round / NOT oval / NOT boulder / NOT cobblestone`。
+2. **负面约束要写"STRICTLY NO"，不能只写"no"**。第 1 版写了 no moss 也没用，
+   因为同时在正向描述里给了 moss 色 —— **正向色板和负面清单必须一致**。
+
+### 4.5.4 画布比例：跟素材走，不跟"想要的尺寸"走
+
+切片脚本 `art/tools/tile_from_gen.py` 保持长宽比缩放（不拉伸），所以画布比例
+必须匹配素材比例，否则会空出一大片：
+
+```
+石头实测 176×162  →  比例 1.086
+margin 2px        →  inner_w = tw - 4,  inner_h = th - 2
+要求刚好填满      →  tw - 4 = 1.086 × (th - 2)
+th = 48           →  tw = 54
+```
+
+**不用 64 的原因**：64×48 是 4:3，装 1.086 的石头，横向会空 14px
+（每边 7px）。平铺后横向缝 14px、纵向缝 4px，整面墙是一道道竖白条。
+`shots/gen_tile_tiling.png`（错误版）与 `gen_tile_tilingB.png`（正确版）可直接对比。
+
+### 4.5.5 命令
+
+```bash
+# 1. 出图（1024×1024，洋红底，16 块散石）
+# 2. 切片 + 平铺预览（平铺预览是唯一硬判据，不是看单块）
+python art/tools/tile_from_gen.py art/tiles/gen/<源图>.png art/tiles/gen/wall --tw 54 --th 48 \
+       --preview shots/gen_tile_tilingB.png
+
+# 3. 从中挑差异最大的 6 块 → art/tiles/wall_0..5.png（贪心最大最小距离，不要随手取前 6 张）
+# 4. 重建内嵌 + 回归
+python build.py && node test.js
+```
+
+### 4.5.6 验收（四条，缺一条就是不能用）
+
+| # | 判据 | 怎么看 |
+|---|---|---|
+| 1 | 平铺后横纵缝宽一致 | `--preview` 出图，眼量。不一致 = 画布比例错 |
+| 2 | 单块读作"砖"，不是"鹅卵石" | 石头四边接近直线、只轻微起伏 |
+| 3 | 6 块之间肉眼可分 | 用贪心最大最小距离选，不取前 6 张（生图 16 块外表极像） |
+| 4 | 游戏内 9×8 还认得出 | 按 9×8 缩一次再放大 4× 看，别在高分辨率下判断 |
+
+> 已知缺陷（可接受，待改进）：每块砖的左侧和下缘会留一圈浅色边（生图的纸色描边
+> 缩小后变成亮边），平铺有轻微规律感。要压掉得在切片时做边缘暗化，或出更多 seed。
+
+---
 
 ## 5. 硬约束：生图做不出连续动画帧
 
