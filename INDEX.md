@@ -26,6 +26,9 @@
 | `art/prompts/sprite_prompt.py` | **出图唯一入口**：骨架锁死在 `sprite_template.txt`，只允许改四处背景句；10 状态配置 + 帧数 + fps。`--list` 看总表，`--json` 拿完整参数 | 🟢 现行 |
 | `art/tools/crayon.py` | **程序画的唯一入口**。受约束的蜡笔笔刷原语（stroke/fill/outline/hatch/speck），只收 12 色板名 + 有限笔宽。笔尖模型转写自 p5.brush（MIT） | 🟢 现行 |
 | `art/tools/tilegen.py` | 瓦片生成器：`wall` 6 变体 / `floor` 2 变体，192×192，`--preview` 出 4×3 平铺图验接缝 | 🟢 现行 |
+| `art/tools/P5BRUSH.md` | **p5.brush 评估**：命令集全表、11 个内置笔刷手感、三条实测硬伤（无 wrap / 尺度绑画布 / strength 是排线密度）、尺度分工表 | 🟢 现行 |
+| `art/tools/p5brush/` | 上游 p5.brush 的**可复现调用层**。`setup.sh` 拉仓库，`render.js decal\|cap` 出贴片 / 能力样张。贴片是纸底渲染 + 色差抠图（透明画布会让 stroke 发白） | 🟢 现行 |
+| `art/decal/` | 4 张 256px 透明贴片（苔藓 / 水渍 / 裂缝 / 剥落），随机贴在瓦片上打破重复 | 🟠 只验证，未接入游戏 |
 | `art/prompts/bg_prompt.md` | **背景出图配方**：与精灵表共用 Medium / 12 色板，只改三处（纸底而非洋红、无分割线、完成度翻成"世界=未完成品"） | 🟢 现行 |
 | `art/bg/bg_<room>.png` | **背景板**：960×540 整幅蜡笔背景（96 色量化），镜像拼接平铺，视差 0.28 | 🟢 现行（仅 hall） |
 | `_probe_crayon.js` | **接入验收**：脚底/地面差、蹲站身高比、离锚点、翻转横移，全出数字 | 🟢 现行 |

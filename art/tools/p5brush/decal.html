@@ -1,0 +1,95 @@
+<!doctype html>
+<meta charset="utf-8">
+<body style="margin:0">
+<script type="module">
+import * as brush from '../../../.deps/p5.brush/dist/brush.esm.js';
+/* 透明底贴片：苔藓 / 水渍 / 裂缝 / 剥落。256×256。
+ * 这是 p5.brush 该干的活 —— 有机形状、不需平铺、笔触越有性格越好。 */
+const N = 256;
+const q = new URLSearchParams(location.search);
+const kind = q.get('kind') || 'moss';
+const C = { charcoal:'#2B2320', umber:'#6B4B32', moss:'#4F6B3A',
+            slate:'#4C6E8C', ochre:'#B98A2E', blue:'#1F2E5C' };
+try {
+  brush.createCanvas(N, N);
+  brush.seed(kind.length * 97 + 13); brush.noiseSeed(kind.length * 31 + 7);
+  brush.angleMode(brush.DEGREES);
+  /* ‼ 不用透明底：实测 clear() 出透明后，stroke 的 RGB 会失准（发白），
+   * fill()（水彩）更是整块带一层白。水彩的整个模型建立在"纸"上，
+   * 抽掉纸它就没法算了。改用纸底，出图后按色差抠 —— 颜色 100% 是渲染结果。 */
+  brush.clear('#E8DCBE');
+  brush.translate(-N/2, -N/2);
+  brush.scaleBrushes(0.8);
+
+  if (kind === 'moss') {
+    // 苔藓：一团不规则斑，5~9 个重叠
+    // 16 个大小不一的团，聚成一簇 —— 上一版 7 个 r=26~60 的大圆，
+    // 叠出来是"两颗橄榄球"，不像苔藓。苔藓靠"多而小"读出来。
+    for (let i = 0; i < 16; i++) {
+      const a = Math.random() * 6.28, d = Math.pow(Math.random(), 0.6) * 74;
+      const x = 128 + Math.cos(a) * d, y = 128 + Math.sin(a) * d * 0.8;
+      const r = 10 + Math.random() * 20;
+      brush.mass('crayon', i % 4 === 0 ? C.umber : C.moss,
+                 { strength: 0.72, precision: 0.45, gradient: 0.25 });
+      brush.circle(x, y, r, 0.95);
+      brush.noMass();
+    }
+    brush.set('crayon', C.moss, 1.6);
+    for (let i = 0; i < 16; i++) {
+      const x = 50 + Math.random() * 150, y = 60 + Math.random() * 140;
+      brush.line(x, y, x + (Math.random()-0.5)*16, y + (Math.random()-0.5)*16);
+    }
+  } else if (kind === 'stain') {
+    // 水渍：一圈圈同心、颜色极淡，靠 bleed 做晕开
+    /* 水渍用 mass 不用 fill：水彩在纸底上很好看，但它的白底会盖住下面的墙，
+     * 而贴片必须透。改为"多层低 strength 的大圆"，中心深外圈浅。 */
+    brush.noStroke();
+    /* ‼ 只用 umber，不要混 slate —— 上一次混了冷灰，出来是一团蓝。
+     * 也不要 gradient：它给的是方向性排线，水渍是各向同性的，一有方向就假。 */
+    for (let i = 0; i < 6; i++) {
+      brush.mass('crayon', C.umber,
+                 { strength: 0.30 + i * 0.08, precision: 0.42 });
+      brush.circle(128, 128, 100 - i * 15, 0.5);
+      brush.noMass();
+    }
+    // 最外圈一道不规则的"水线"，水渍靠这条边读出来
+    brush.set('crayon', C.umber, 1.4);
+    brush.circle(128, 128, 102, 0.85);
+  } else if (kind === 'crack') {
+    // 裂缝：主干 + 分叉，全部炭笔细线
+    function br(x, y, ang, len, w, depth) {
+      const pts = [[x, y, 1.2]];
+      let px = x, py = y;
+      for (let i = 0; i < len; i++) {
+        ang += (Math.random() - 0.5) * 42;
+        px += Math.cos(ang * Math.PI / 180) * 9;
+        py += Math.sin(ang * Math.PI / 180) * 9;
+        pts.push([px, py, 1.2 - i / len * 0.55]);
+      }
+      /* 2B 在这套管线里太细太淡，纸底上量出来色差只有 12，抠图时会被当成纸纹滤掉。
+       * 换 charcoal + 加粗：裂缝必须在缩到 0.5 倍后仍然看得见。 */
+      brush.set('charcoal', C.charcoal, w * 1.6);
+      brush.spline(pts, 0.3);
+      if (depth > 0) for (let k = 0; k < 2; k++)
+        br(px, py, ang + (k ? 48 : -48), Math.max(3, len * 0.4), w * 0.7, depth - 1);
+    }
+    br(96, 24, 84, 16, 3.4, 2);
+    br(168, 40, 106, 10, 2.6, 1);
+  } else {
+    // 剥落：一块边缘不规则的浅色斑（露出墙灰），外圈加深
+    const pts = [];
+    for (let a = 0; a < 360; a += 24) {
+      const rr = 62 + Math.sin(a * 0.07) * 18 + Math.random() * 14;
+      pts.push([128 + Math.cos(a*Math.PI/180) * rr, 128 + Math.sin(a*Math.PI/180) * rr]);
+    }
+    brush.noStroke();
+    brush.mass('crayon', '#C9BC9E', { strength: 0.95, precision: 0.85, outline: true });
+    brush.polygon(pts);
+    brush.noMass();
+    brush.set('charcoal', C.charcoal, 1.2);
+    brush.polygon(pts);   // 描一遍破损边
+  }
+  brush.render();
+  window.__ok = true;
+} catch(e) { window.__err = String(e&&e.stack||e); console.error(e); }
+</script>
