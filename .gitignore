@@ -9,3 +9,14 @@ __pycache__/
 # 瓦片实验图（涂法变体，中间产物）
 art/tiles/_exp/
 art/tiles/_coat_*.png
+
+# 代码索引工具产物（62M，可重建）
+.gitnexus/
+
+# 回归脚本的副产物：每次跑都会重写，不入库（DEV_FLOW §6 提过它有时序抖动）
+keymap_check*.json
+stress_input.json
+timestep_check.json
+verify_fix.json
+audit_probe.json
+shots/ours_rect.json
