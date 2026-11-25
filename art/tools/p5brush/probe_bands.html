@@ -1,0 +1,74 @@
+<!doctype html>
+<meta charset="utf-8">
+<body style="margin:0;background:#222">
+<script type="module">
+import * as brush from '../../../.deps/p5.brush/dist/brush.esm.js';
+/* 超采样 + 双向斜带：浅底蜡笔铺满 → 深色蜡笔斜带（连续、带颗粒）→ 稀疏亮擦。
+ * 全部用内置笔刷：crayon 出蜡质，HB 出硬一点的擦痕。 */
+
+const U = 192, PAPER = '#E8DCBE';
+const q = new URLSearchParams(location.search);
+const SS = +(q.get('ss') || 4);
+const v = +(q.get('v') || 0);
+const N = U * SS;
+
+let s = 1;
+const srnd = k => { s = (k >>> 0) || 1; };
+const rnd = () => { s ^= s << 13; s >>>= 0; s ^= s >> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; };
+
+/* 斜带：沿法线排线，每条笔在方向上只抖 ±6°，横向再抖一点。
+ * 笔断成 1~3 段（cut 控制断的概率），断口是蜡笔"提笔"的地方。 */
+function bands(col, sw, per, angDeg, cut, seedOff) {
+  const a = angDeg * Math.PI / 180;
+  const dx = Math.cos(a), dy = Math.sin(a), nx = -dy, ny = dx;
+  const diag = Math.hypot(U, U);
+  for (let o = -diag; o <= diag; o += per * (0.86 + rnd() * 0.28)) {
+    const cx = U / 2 + nx * o, cy = U / 2 + ny * o;
+    const L = diag * 1.3;
+    let t = -L / 2 + rnd() * per;
+    while (t < L / 2) {
+      const end = Math.min(L / 2, t + 26 + rnd() * 60);
+      if (rnd() > cut) {
+        const aa = a + (rnd() - 0.5) * 0.20;
+        brush.set('crayon', col, sw * (0.8 + rnd() * 0.5) * SS);
+        brush.line((cx + Math.cos(aa) * t) * SS, (cy + Math.sin(aa) * t) * SS,
+                   (cx + Math.cos(aa) * end) * SS, (cy + Math.sin(aa) * end) * SS);
+      }
+      t = end + rnd() * per * 1.4;
+    }
+  }
+}
+
+const CFG = [
+  //  周期, 笔径, 两遍, 暗色
+  [4.6, 1.8, '#7C7767'],
+  [4.0, 1.5, '#7C7767'],
+  [5.4, 2.2, '#78735F'],
+  [4.6, 1.8, '#6E6957'],
+];
+
+try {
+  const [per, sw, dcol] = CFG[v];
+  srnd(6101 + v * 41);
+  brush.createCanvas(N, N);
+  brush.angleMode(brush.DEGREES);
+  brush.clear(PAPER);
+  brush.translate(-N / 2, -N / 2);
+
+  // 1) 浅底：蜡笔横铺（一行压一行），只为把纸压成浅暖灰
+  brush.set('crayon', '#C8BC9C', 10 * SS);
+  for (let y = -8; y < U + 8; y += 5.5) {
+    brush.line(-10 * SS, (y + (rnd() - 0.5) * 3) * SS, (U + 10) * SS, (y + 2 + (rnd() - 0.5) * 3) * SS);
+  }
+  // 2) 深色斜带：两遍，第二遍错半周期，色调更深一档
+  bands(dcol, sw, per, -40, 0.10);
+  bands('#6B6653', sw * 0.7, per * 1.05, -40, 0.55);
+  // 3) 稀疏亮擦：几道很淡的浅色，破掉机械感
+  bands('#D9CEB2', sw * 1.1, per * 5.5, -40, 0.45);
+  // 4) 反向交叉：极少
+  bands('#7A7563', sw * 0.9, per * 6.0, 46, 0.35);
+
+  brush.render();
+  window.__ok = true;
+} catch (e) { window.__err = String(e && e.stack || e); console.error(e); }
+</script>

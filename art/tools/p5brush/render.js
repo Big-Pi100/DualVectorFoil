@@ -95,6 +95,31 @@ im.save(r"${dst}")
         fs.writeFileSync(p, await cv.screenshot());
         console.log('→ art/tiles/_exp_%s.png  %dms', v, Date.now() - t);
       }
+    } else if (mode === 'shot') {
+      /* 通用截图： node render.js shot <page.html> <out.png> <w> <h> [dpr] */
+      const [pg, out, w, h, dpr] = process.argv.slice(3);
+      await page.setViewportSize({ width: +w || 400, height: +h || 400 });
+      const ctx2 = page.context();
+      const p2 = await ctx2.newPage();
+      if (dpr) await p2.setViewportSize({ width: +w, height: +h });
+      await p2.goto(`http://127.0.0.1:${PORT}/art/tools/p5brush/${pg}`, { waitUntil: 'load', timeout: 300000 });
+      await p2.waitForFunction(() => window.__ok || window.__err, { timeout: 300000 }).catch(() => {});
+      const r4 = await p2.evaluate(() => ({ ok: window.__ok, err: window.__err }));
+      if (r4.err) console.log('  ERR', String(r4.err).slice(0, 400));
+      /* 直接取画布像素（toDataURL），不走元素截图 ——
+       * 元素截图会等"元素稳定"，画布刚 render 完尺寸还在变就会超时。 */
+      const dataUrl = await p2.evaluate(() => {
+        const c = document.querySelector('canvas');
+        return c ? c.toDataURL('image/png') : null;
+      }).catch(() => null);
+      const outp = path.join(ROOT, out);
+      if (dataUrl && dataUrl.startsWith('data:image/png')) {
+        fs.writeFileSync(outp, Buffer.from(dataUrl.split(',')[1], 'base64'));
+      } else {
+        const cv2 = await p2.$('canvas');
+        fs.writeFileSync(outp, await cv2.screenshot());
+      }
+      console.log('→ %s  ok=%s', out, r4.ok);
     } else if (mode === 'coat') {
       const COATLIST = process.argv.slice(3).length ? process.argv.slice(3) : ['A','B','C','D'];
       /* 涂法变体实验：同一种子下 A/B/C/D 四种填色，比"露纸率"。 */

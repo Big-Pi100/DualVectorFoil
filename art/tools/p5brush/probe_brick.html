@@ -1,0 +1,122 @@
+<!doctype html>
+<meta charset="utf-8">
+<body style="margin:0;background:#222">
+<script type="module">
+import * as brush from '../../../.deps/p5.brush/dist/brush.esm.js';
+/* 砖墙蜡笔探针 v2 —— **只用内置 crayon**，四格并排比"底色/笔径/对比"三件事。
+ * 结构：整面一遍（笔跨砖）+ 后勾缝，绝不逐块涂。 */
+
+const N = 192;
+const PAPER = '#E8DCBE';
+const BW = 96, BH = 48;
+
+let s = 1;
+const srnd = k => { s = (k >>> 0) || 1; };
+const rnd = () => { s ^= s << 13; s >>>= 0; s ^= s >> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; };
+
+/* 圆角矩形路径：beginShape/vertex/endShape 保持压力连续，
+ * 逐段 line() 会让每段都重新起笔（起笔细 → 一圈"竹节"）。 */
+function roundRect(x, y, w, h, r, wob) {
+  const pts = [];
+  const corner = (cx, cy, a0) => {
+    for (let i = 0; i <= 6; i++) {
+      const a = a0 + (Math.PI / 2) * (i / 6);
+      pts.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]);
+    }
+  };
+  corner(x + w - r, y + r, -Math.PI / 2);
+  corner(x + w - r, y + h - r, 0);
+  corner(x + r, y + h - r, Math.PI / 2);
+  corner(x + r, y + r, Math.PI);
+  brush.beginShape(0.5);
+  for (const [px, py] of pts) brush.vertex(px + (rnd() - 0.5) * wob, py + (rnd() - 0.5) * wob);
+  brush.endShape(true);
+}
+
+/* 整面斜向排线：周期 per（法线方向），笔径 sw，断成 2~3 截。 */
+function hatchField(col, sw, per, angDeg, cut) {
+  const a = angDeg * Math.PI / 180;
+  const dx = Math.cos(a), dy = Math.sin(a), nx = -dy, ny = dx;
+  const diag = Math.hypot(N, N);
+  brush.clip([0, 0, N, N]);
+  for (let o = -diag; o <= diag; o += per * (0.88 + rnd() * 0.26)) {
+    const cx = N / 2 + nx * o, cy = N / 2 + ny * o;
+    const L = diag * 1.25;
+    let t = -L / 2 + rnd() * per;
+    while (t < L / 2) {
+      const len = (L * 0.25) + rnd() * (L * 0.45);
+      const end = Math.min(L / 2, t + len);
+      if (rnd() > cut) {
+        const aa = a + (rnd() - 0.5) * 0.09;
+        brush.set('crayon', col, sw * (0.88 + rnd() * 0.24));
+        brush.line(cx + Math.cos(aa) * t, cy + Math.sin(aa) * t,
+                   cx + Math.cos(aa) * end, cy + Math.sin(aa) * end);
+      }
+      t = end + rnd() * per * 1.1;
+    }
+  }
+  brush.noClip();
+}
+
+function seams() {
+  brush.set('crayon', '#2B2320', 5.5);
+  brush.wiggle(0.22);
+  for (let r = 0; r <= 4; r++) brush.line(-5, r * BH + 1, N + 5, r * BH + 1);
+  for (let r = 0; r < 4; r++) {
+    const off = (r % 2) * 48;
+    for (let x = off; x < N + 0.1; x += BW) brush.line(x, r * BH + 2, x, (r + 1) * BH - 2);
+  }
+  brush.noField();
+}
+
+function tile(v, ox, oy) {
+  brush.push();
+  brush.translate(ox, oy);
+  srnd(4001 + v * 17);
+
+  if (v === 0) {          // 浅底 + 4.6px 周期 + 1.8px 笔
+    brush.mass('crayon', '#D2C9AF', { strength: 0.46, precision: 0.72 });
+    brush.rect(0, 0, N, N); brush.noMass();
+    hatchField('#84806F', 5.5, 4.6, -40, 0.30);
+    hatchField('#7A7666', 4.5, 9.5, -40, 0.55);
+  } else if (v === 1) {   // 同 0，笔更粗（点径 2.3）
+    brush.mass('crayon', '#D2C9AF', { strength: 0.46, precision: 0.72 });
+    brush.rect(0, 0, N, N); brush.noMass();
+    hatchField('#84806F', 7.0, 4.8, -40, 0.30);
+    hatchField('#7A7666', 5.5, 10.0, -40, 0.55);
+  } else if (v === 2) {   // 无底：直接纸底排线 + 稀薄底色压一遍
+    hatchField('#82806D', 5.5, 4.6, -40, 0.30);
+    hatchField('#78755F', 4.5, 9.0, -40, 0.55);
+    brush.mass('crayon', '#CFC5A9', { strength: 0.22, precision: 0.70 });
+    brush.rect(0, 0, N, N); brush.noMass();
+  } else {                // 深底 + 深笔：验"整体值域"
+    brush.mass('crayon', '#BEB49A', { strength: 0.60, precision: 0.74 });
+    brush.rect(0, 0, N, N); brush.noMass();
+    hatchField('#736F5C', 6.0, 4.6, -40, 0.30);
+    hatchField('#68654F', 5.0, 9.5, -40, 0.55);
+  }
+
+  seams();
+
+  // 砖块黑描边（粗蜡笔、圆角、带抖）
+  for (let r = 0; r < 4; r++) {
+    const off = (r % 2) * 48;
+    for (let x = off - BW; x < N + BW; x += BW) {
+      brush.set('crayon', '#2B2320', 4.6 + rnd() * 1.6);
+      roundRect(x + 1.5, r * BH + 1.5, BW - 3, BH - 3, 5, 1.1);
+    }
+  }
+  brush.pop();
+}
+
+try {
+  brush.createCanvas(384, 384);
+  brush.angleMode(brush.DEGREES);
+  brush.clear(PAPER);
+  brush.translate(-192, -192);
+  tile(0, 0, 0); tile(1, 192, 0);
+  tile(2, 0, 192); tile(3, 192, 192);
+  brush.render();
+  window.__ok = true;
+} catch (e) { window.__err = String(e && e.stack || e); console.error(e); }
+</script>

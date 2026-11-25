@@ -3,11 +3,11 @@
   "throttle": "none",
   "dirs": {
     "D 右": {
-      "dx": 42.8,
+      "dx": 45,
       "dy": 0,
       "state": "walk",
-      "simMs": 167,
-      "wallMs": 171,
+      "simMs": 175,
+      "wallMs": 175,
       "pass": true
     },
     "A 左": {
@@ -39,8 +39,8 @@
   },
   "atk": {
     "state": "attack",
-    "lock": 0.27,
-    "simMs": 33,
+    "lock": 0.28,
+    "simMs": 25,
     "pass": true
   },
   "jump": {
@@ -51,15 +51,15 @@
   },
   "redKey": {
     "n": 1,
-    "cd": 1.6,
-    "wallMs": 14,
+    "cd": 1.58,
+    "wallMs": 27,
     "pass": true
   },
   "back": {
-    "dx": -64.2,
+    "dx": -61.3,
     "state": "dash",
     "dashSeen": true,
-    "invulnInDash": 0.12,
+    "invulnInDash": 0.112,
     "pass": true
   },
   "blueKey": {
@@ -80,12 +80,12 @@
   "plainAtk": {
     "state": "attack",
     "n": 0,
-    "simMs": 0,
+    "simMs": 17,
     "pass": true
   },
   "reloadGuard": {
-    "xBefore": 474,
-    "xAfter": 474,
+    "xBefore": 468,
+    "xAfter": 468,
     "hint": "再按一次 R 重开",
     "hit": 1,
     "pass": true
@@ -155,18 +155,18 @@
   },
   "touchJump": {
     "state": "jump",
-    "vy": -755,
+    "vy": -873,
     "onGround": false,
     "held": {
       "jump": 1
     },
-    "wallMs": 46,
+    "wallMs": 15,
     "pass": true
   },
   "touchAtk": {
     "state": "attack",
     "lock": 0.27,
-    "wallMs": 3,
+    "wallMs": 9,
     "pass": true
   },
   "touchEmptySlot": {
@@ -176,12 +176,12 @@
   },
   "touchBack": {
     "state": "dash",
-    "invuln": 0.11,
-    "wallMs": 36,
+    "invuln": 0.12,
+    "wallMs": 28,
     "pass": true
   },
   "touchStick": {
-    "dx": 31,
+    "dx": 28,
     "stateRight": "walk",
     "stateDown": "crouch",
     "pass": true

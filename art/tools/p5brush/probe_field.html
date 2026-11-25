@@ -1,0 +1,62 @@
+<!doctype html>
+<meta charset="utf-8">
+<body style="margin:0;background:#222">
+<script type="module">
+import * as brush from '../../../.deps/p5.brush/dist/brush.esm.js';
+/* 整面场纹理探针：不 clip、不 rect，整块 192 画布铺满。
+ * v = 0..3 选 (笔径 sw, 周期 per, 主色)。 */
+
+const N = 192;
+const PAPER = '#E8DCBE';
+const v = +(new URLSearchParams(location.search).get('v') || 0);
+
+let s = 1;
+const srnd = k => { s = (k >>> 0) || 1; };
+const rnd = () => { s ^= s << 13; s >>>= 0; s ^= s >> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; };
+
+const CFG = [
+  [5.0, 4.0, '#84806F'],
+  [6.0, 5.0, '#84806F'],
+  [7.0, 5.5, '#7E7A66'],
+  [4.0, 3.2, '#8A866F'],
+];
+
+function hatch(col, sw, per, angDeg, cut) {
+  const a = angDeg * Math.PI / 180;
+  const dx = Math.cos(a), dy = Math.sin(a), nx = -dy, ny = dx;
+  const diag = Math.hypot(N, N);
+  for (let o = -diag; o <= diag; o += per * (0.85 + rnd() * 0.32)) {
+    const cx = N / 2 + nx * o, cy = N / 2 + ny * o;
+    const L = diag * 1.3;
+    let t = -L / 2 + rnd() * per;
+    while (t < L / 2) {
+      const end = Math.min(L / 2, t + L * 0.3 + rnd() * L * 0.45);
+      if (rnd() > cut) {
+        const aa = a + (rnd() - 0.5) * 0.07;
+        brush.set('crayon', col, sw * (0.9 + rnd() * 0.22));
+        brush.line(cx + Math.cos(aa) * t, cy + Math.sin(aa) * t,
+                   cx + Math.cos(aa) * end, cy + Math.sin(aa) * end);
+      }
+      t = end + rnd() * per * 0.9;
+    }
+  }
+}
+
+try {
+  const [sw, per, col] = CFG[v];
+  srnd(700 + v * 31);
+  brush.createCanvas(N, N);
+  brush.angleMode(brush.DEGREES);
+  brush.clear(PAPER);
+  brush.translate(-N / 2, -N / 2);
+
+  brush.mass('crayon', '#D2C9AF', { strength: 0.5, precision: 0.72 });
+  brush.rect(0, 0, N, N); brush.noMass();
+  hatch(col, sw, per, -40, 0.32);
+  hatch(col, sw * 0.8, per * 2.1, -40, 0.55);
+  hatch('#77745F', sw * 0.9, per * 2.6, 48, 0.62);
+
+  brush.render();
+  window.__ok = true;
+} catch (e) { window.__err = String(e && e.stack || e); console.error(e); }
+</script>

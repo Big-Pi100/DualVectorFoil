@@ -1,0 +1,98 @@
+<!doctype html>
+<meta charset="utf-8">
+<body style="margin:0;background:#222">
+<script type="module">
+import * as brush from '../../../.deps/p5.brush/dist/brush.esm.js';
+/* 超采样探针：所有几何以"瓦片单位 u"书写（0..192），乘以 SS 画到 SS 倍画布，
+ * 最后在 Python 端降采样回 192。
+ *
+ * ## 为什么必须超采样
+ * 内置 crayon 的笔尖直径 = 0.33·w，横向散布 ≈ 1.4·w（scatter 1.9）。
+ * 想要 4.6u 的排线周期，w 必须 < 0.6u —— 那是亚像素，draw call 直接消失。
+ * 生图砖块 662px 压到 96px 用（6.9 倍降采样），它的"细笔触"本来就是
+ * 7 倍降采样的产物。所以正确做法不是把笔调细，而是**在 7 倍尺寸上画**。
+ */
+
+const U = 192;                       // 瓦片单位
+const PAPER = '#E8DCBE';
+const q = new URLSearchParams(location.search);
+const SS = +(q.get('ss') || 4);      // 超采样倍数
+const v = +(q.get('v') || 0);
+const N = U * SS;
+
+let s = 1;
+const srnd = k => { s = (k >>> 0) || 1; };
+const rnd = () => { s ^= s << 13; s >>>= 0; s ^= s >> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; };
+
+/* 深色乱涂：短笔、方向散、密度高 —— 生图的暗部是"乱毛"不是"顺线"。 */
+function scrub(n, col, wMin, wMax, ang, sprd, lenMin, lenMax) {
+  for (let i = 0; i < n; i++) {
+    const x = rnd() * U, y = rnd() * U;
+    const a = ang + (rnd() - 0.5) * sprd;
+    const len = lenMin + rnd() * (lenMax - lenMin);
+    brush.set('crayon', col, (wMin + rnd() * (wMax - wMin)) * SS);
+    brush.line(x * SS, y * SS, (x + Math.cos(a) * len) * SS, (y + Math.sin(a) * len) * SS);
+  }
+}
+
+/* 亮色斜带：把深色"擦"出浅缝。用内置 HB（scatter 0.6）——
+ * crayon 的晕开半径是笔宽的 3.8 倍，5u 的带距根本撑不住，整片会被擦白。 */
+function ribbons(per, sw, col, cut) {
+  const a = -40 * Math.PI / 180;
+  const dx = Math.cos(a), dy = Math.sin(a), nx = -dy, ny = dx;
+  const diag = Math.hypot(U, U);
+  for (let o = -diag; o <= diag; o += per * (0.9 + rnd() * 0.2)) {
+    const cx = U / 2 + nx * o, cy = U / 2 + ny * o;
+    const L = diag * 1.25;
+    let t = -L / 2 + rnd() * 6;
+    while (t < L / 2) {
+      const seg = 14 + rnd() * 22;                  // 每段 14~36u
+      const end = Math.min(L / 2, t + seg);
+      if (rnd() > cut) {
+        const ja = a + (rnd() - 0.5) * 0.10;
+        const bend = (rnd() - 0.5) * 1.6;
+        const x0 = cx + dx * t, y0 = cy + dy * t;
+        const x1 = cx + dx * end, y1 = cy + dy * end;
+        brush.set('HB', col, sw * (0.85 + rnd() * 0.3) * SS);
+        brush.line(x0 * SS, y0 * SS,
+                   ((x0 + x1) / 2 + nx * bend) * SS, ((y0 + y1) / 2 + ny * bend) * SS);
+        brush.line(((x0 + x1) / 2 + nx * bend) * SS, ((y0 + y1) / 2 + ny * bend) * SS,
+                   x1 * SS, y1 * SS);
+      }
+      t = end + rnd() * 5;
+    }
+  }
+}
+
+const CFG = [
+  //  scrub 次数, 笔径范围, 散布角(rad), 亮带周期, 亮带笔径, 亮带色
+  [1400, 2.5, 6.0, 2.6, 4.6, 2.6, '#E8DCC0'],
+  [1800, 2.2, 5.0, 2.6, 4.0, 2.2, '#E8DCC0'],
+  [1400, 2.5, 6.0, 2.6, 5.6, 3.2, '#EFE3C6'],
+  [900, 3.0, 7.5, 1.2, 4.6, 2.6, '#E8DCC0'],
+];
+
+try {
+  const [n, w0, w1, sp, per, lsw, lcol] = CFG[v];
+  srnd(5501 + v * 37);
+  brush.createCanvas(N, N);
+  brush.angleMode(brush.DEGREES);
+  brush.clear(PAPER);
+  brush.translate(-N / 2, -N / 2);
+
+  // 1) 浅底（蜡笔轻铺，只为让"缝"不是纯纸）
+  brush.set('crayon', '#D6CBAE', 9 * SS);
+  for (let i = 0; i < 40; i++) {
+    const y = -20 + (i / 40) * (U + 40);
+    brush.line(-20 * SS, y * SS, (U + 20) * SS, (y + (rnd() - 0.5) * 8) * SS);
+  }
+  // 2) 深色乱涂（暗部"乱毛"）
+  scrub(n, '#7A7565', w0, w1, -0.70, sp, 4, 14);
+  scrub(Math.round(n * 0.6), '#645F51', w1 * 0.7, w1 * 1.1, -0.70, 3.2, 3, 9);
+  // 3) 亮斜带（把暗部擦出浅缝）
+  ribbons(per, lsw, lcol, 0.14);
+
+  brush.render();
+  window.__ok = true;
+} catch (e) { window.__err = String(e && e.stack || e); console.error(e); }
+</script>
