@@ -289,7 +289,7 @@ DC 过窄处靠 rune 门（有没有那个符文），不靠玩家把自己压�
 |---|---|
 | `src/game.js` | −约 330 行（含注释）；`build.py` 重建 994KB（原 1020KB） |
 | HUD | 墨条删掉后左边只剩一条血：血瓶 `top 126→92`、房间名 `136→102`（触屏 `152→106` / `180→132`），**间距仍是 5px，是量出来的不是估的** |
-| `flat_check.js` | 57 项 → **归档**（`.bak/pre_unflat_20261125/`）。它测的动词不存在了 |
+| flat 测试套（57 项，已删） | 归档后随 flatten 实验一起清理。它测的动词不存在了 |
 | `interact_check.js` | 墨囊段落改写成"合成 reach:24 物品"，`22 项` —— 守的规则（`min(USE_REACH, reach)`）没变 |
 | `keymap_check.js` | 侧身两条 → 「手机空格点了不改变状态」，24 项 |
 | `ctrl_check.js` | 图例 13→12 条、纸印 F → 冲刺印 F、F 段改测冲刺 + 旧键别名，40 项 |
@@ -300,7 +300,9 @@ DC 过窄处靠 rune 门（有没有那个符文），不靠玩家把自己压�
 
 ### 9.6 想找回怎么办
 
-逐字备份在 `.bak/pre_unflat_20261125/`（`game.js` / `index.html` / `mobile.js` / `flat_check.js`）。
+逐字备份曾放在 `.bak/pre_unflat_20261125/`（`game.js` / `index.html` / `mobile.js` /
+flat 测试套），该目录已随 11-25 清理删除，**要找回只能从 git 历史取**：
+`git log --diff-filter=D -- .bak/pre_unflat_20261125`。
 但**先读 §9.1 再决定**：它不是被"暂时关掉"的，是判断为不该存在于 A 路线里。
 
 穿窄处这件事没消失，它去了 P3：

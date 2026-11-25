@@ -9,7 +9,7 @@
 用法：
     python art/prompts/sprite_prompt.py            # 列出全部状态
     python art/prompts/sprite_prompt.py walk       # 打印某一个的完整 prompt
-    python art/prompts/sprite_prompt.py --diff     # 与旧版逐句对比，验证只改了背景
+    python art/prompts/sprite_prompt.py walk --json # 输出 params，直接喂生图工具
 """
 import argparse
 import pathlib
@@ -157,6 +157,10 @@ def build(state):
     for k, v in rep.items():
         tpl = tpl.replace(k, v)
     tpl = tpl.replace("in all two cells", "in both cells")
+    # 2 帧表只有 1 条分割线，模板里的 "exactly 1 vertical bars" 单复数错了。
+    # 只影响 walk / crouch 这两张（已出图的不动），修的是下一次出图的那句话。
+    if n - 1 == 1:
+        tpl = tpl.replace("exactly 1 vertical bars", "exactly 1 vertical bar")
     # 清掉多余空行（三段之间只留一个空行）
     while "\n\n\n" in tpl:
         tpl = tpl.replace("\n\n\n", "\n\n")

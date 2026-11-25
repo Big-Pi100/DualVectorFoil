@@ -37,7 +37,9 @@
 | 轮廓 | 主角 3px 闭合、边缘毛；世界 1px 断续 | `STYLE_LOCK` L2 |
 
 **总表**：10 行（状态）× 最多 6 列（帧）= **960 × 1600** 一张。
-分文件：`art/hero/hero_<state>.png`（单行 sheet），最后由 `sheet.py` 拼成总表。
+分文件：`art/hero/hero_<state>.png`（单行 sheet）；总表 `art/hero/_ALL_STATES.png`
+**目前没有生成脚本**（手工拼），任何状态表重出后必须重拼一遍，
+`art/tools/asset_audit.py` 会比修改时间、报"总表过期"。
 
 **锚点统一为脚底 (80,152)，全状态无例外**（2026-11-25 修正，原"jump/fall 用骨盆锚"已作废）：
 

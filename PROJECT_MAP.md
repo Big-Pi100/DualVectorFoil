@@ -37,6 +37,7 @@
 | 查哪份文档算数 | **`INDEX.md`** |
 | 改代码 / 换资产要走什么流程 | **`DEV_FLOW.md`** |
 | 改美术 / 画风 / 瓦片 | `STYLE_LOCK.md` + `ART_PIPELINE.md` |
+| 做资产：出图 / 切片 / 挑砖 / 内嵌 / 取证 | **`ART_SKILLS.md`**（10 个 skill，命令与判据照抄） |
 | 改手感 | `FEEL_TABLE.md`（自动生成）+ `ACTION_CHAIN.md` |
 | 改操控 | `DOC_CONTROLS.md` |
 

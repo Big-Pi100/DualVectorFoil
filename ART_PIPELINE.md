@@ -294,7 +294,9 @@ python build.py && node test.js
 
 ## 7. 验收
 
-1. `asset_report.py --require-alpha` 必须 exit 0（真 alpha，不是假透明）
+1. `python art/tools/asset_audit.py` 输出 **P0 = 0**（尺寸 / 真 alpha / 有无消费点）。
+   旧版这里写的是 `asset_report.py --require-alpha`，该脚本**从未存在过**，
+   2026-11-26 由 `asset_audit.py` 取代 —— 见 `ART_SKILLS.md §12`。
 2. 100px 真实尺度下截屏，能一眼指出主角位置
 3. 灰度检查：主角区域平均亮度是全画面最低 15%
 4. 背景层不得出现闭合轮廓线

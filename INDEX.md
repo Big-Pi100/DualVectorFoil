@@ -30,7 +30,9 @@
 | `godot/` | **Godot 4.4 工程（正式发行形态）**：与 web 原型并存。玩家移动/跳跃/5 状态动画 + 战斗组件（Hitbox/Hurtbox/局部顿帧）+ WorldState 存档 + 沸腾线 shader + 单屏测试房。用 Godot 打开这个子目录，不是仓库根 | 🟠 移植中 |
 | `godot/README.md` | Godot 工程说明：打开方式、手感标定记录、资产同步、渲染设置、移植顺序 | 🟢 现行 |
 | `docs/ref/OTHERS_GDD_REVIEW.md` | 别人那份 GDD/TDD 的逐条核对：可吸收 / 照抄会炸（9 处）/ 不适用；**§6 说明它的数值已抄成 `F2` 对照预设的用途**。再收到同类文档先看这份 | 🟢 现行 |
-| `art/tools/tile_from_gen.py` | **瓦片唯一产线**（11-26 起）：洋红底生图素材板 → 洋红键 → 连通域分行 → 每块归一化到 54×48（保持比例、贴底、居中）→ 平铺预览。配方见 `ART_PIPELINE §4.5` | 🟢 现行 |
+| `art/tools/tile_from_gen.py` | **瓦片切片**（11-26 起）：洋红底素材板 → 洋红键 → 连通域分行 → 每块归一化到 54×48（保持比例、贴底、居中）→ 平铺预览。用法见 `ART_SKILLS §6`，配方见 `ART_PIPELINE §4.5` | 🟢 现行 |
+| `art/tools/pick_tiles.py` | **选砖**：从 12~16 块里按贪心最大最小距离挑 6 块 → `wall_0..5.png`。不许"取前 6 张" | 🟢 现行 |
+| `art/tools/asset_audit.py` | **资产体检**：尺寸 / 真 alpha / 帧数与配置对账 / 同类尺寸一致 / 有无消费点 / 死引用。`--strict` 有 P0 则非零退出 | 🟢 现行 |
 | `art/tiles/gen/` | 瓦片生图**素材板原图**（1024×1024，洋红底）+ `wallB_sheet.png` 切片位置可视化。**调瓦片先看这里，别改切好的 PNG** | 🟢 现行 |
 | `art/prompts/bg_prompt.md` | **背景出图配方**：与精灵表共用 Medium / 12 色板，只改三处 | 🟢 现行 |
 | `art/bg/bg_<room>.png` | **背景板**：960×540 整幅蜡笔背景（96 色量化），镜像拼接平铺，视差 0.28 | 🟢 现行（仅 hall） |
@@ -40,7 +42,8 @@
 | `UI_SKIN.md` | **UI 皮肤方案**：三层分离、九宫格、离散量条、UI 在明度阶梯的站位、迁移顺序 | 🟢 现行 |
 | `ASSET_MANIFEST.md` | **美术资产清单**：7 类实盘（精灵/瓦片/背景/道具/特效/UI/角色卡线），含数量与生产顺序 | 🟢 现行 |
 | `ART_INVENTORY.md` | **美术资产实盘盘点**（11-26 二次）：三条生图产线各自怎么跑、样图索引、问题分级（**背景盖住 95% 画面** / 地砖废件 / 墙砖亮边）、下一步排序。**问"美术现在什么状态"看这份** | 🟢 现行 |
-| `ART_PIPELINE.md` | 素材管线：分层规格、生成配方、分件骨骼、成本台账 | 11-25 改写 |
+| `ART_PIPELINE.md` | 素材管线：分层规格、生成配方（精灵/瓦片/背景）、分件骨骼、成本台账 | 11-26 |
+| **`ART_SKILLS.md`** | **美术生产技能手册**：10 个 skill（出图/切片/选砖/内嵌/取证/手感/体检）各自的触发、参数、命令、判据、失败模式；三条端到端管线与门；判据速查表；接入新资产的 9 步检查单。**动手做资产时照着这份做** | 11-26 |
 | `ACTION_CHAIN.md` | 操作-动作五段链路（意图→输入→动作→判定→反馈）+ 待裁定 | 11-25 |
 | `DOC_CONTROLS.md` | 操控代码完整实现与核对清单 | 11-25 |
 | `FEEL_TABLE.md` | 手感数字表（**自动生成，勿手改**，源头是 `feel_table.js`） | 11-24 |
@@ -117,7 +120,8 @@ game-soulkeep/
 ├─ CANON.md  INDEX.md  PROJECT_MAP.md  DEV_FLOW.md  README.md   ← 先读这五个
 ├─ STYLE_LOCK.md  MOVESET.md  DESIGN_A.md  ACTION_CHAIN.md
 ├─ DOC_CONTROLS.md  FEEL_TABLE.md  UI_SKIN.md  ASSET_MANIFEST.md
-├─ ART_PIPELINE.md  STORY.md                                    ← 现行规格，平铺根目录
+├─ ART_PIPELINE.md  ART_SKILLS.md  ART_INVENTORY.md  STORY.md    ← 现行规格/手册，平铺根目录
+│    （规格 → ART_PIPELINE　怎么操作 → ART_SKILLS　现在什么样 → ART_INVENTORY）
 ├─ docs/
 │  ├─ ref/       参考分析（别人的东西，需要时读）
 │  └─ history/   历史报告（只读，追根因时读）

@@ -37,8 +37,10 @@
 | 类型 | 典型动作 | 开工前 | 完工前 |
 |---|---|---|---|
 | **代码逻辑** | 改物理/绘制/输入/UI | 影响面三问 + 找到对应回归套 | 该套回归 + `node test.js` |
-| **资产贴图** | 换 PNG、改生成器 | 确认 PNG 尺寸/命名/是否内嵌 | `python build.py` + 实机截图 |
-| **瓦片（生图产线）** | 重出素材板 / 重切 | 先量素材比例算画布（`ART_PIPELINE §4.5.4`），别拍尺寸 | `tile_from_gen.py --preview` 看平铺 → 挑 6 块 → `build.py` → `node test.js` → 实机 |
+| **资产贴图** | 换 PNG、改生成器 | 确认 PNG 尺寸/命名/是否内嵌（判据见 `ART_SKILLS §14`） | `python build.py` + 实机截图 |
+| **角色帧表** | 重出某状态 / 改帧数 | `ART_SKILLS §3`（S1 出图）→ §4（S2 切片） | `--proof.png` 看脚线 → `build.py` → 实机 → 重拼 `_ALL_STATES.png` |
+| **瓦片（生图产线）** | 重出素材板 / 重切 / 重挑 | 先量素材比例算画布（`ART_PIPELINE §4.5.4`），别拍尺寸 | `tile_from_gen.py --preview` 看平铺 → `pick_tiles.py` 挑 6 块 → `build.py` → `node test.js` → 实机 |
+| **收工前** | 任何资产改动 | — | `python art/tools/asset_audit.py`（P0 必须为 0） |
 | **数值手感** | 改跳跃/速度/伤害 | 先改 `CANON.md §5` | `timestep_check` + `dc_feel_check` |
 | **纯文档** | 改 md | 确认它是不是唯一真源 | 改 `INDEX.md` 状态 |
 
@@ -120,6 +122,7 @@
 |---|---|
 | 世界设定 / 数值 / 裁定 | `CANON.md`（唯一设定真源） |
 | 画风 / 色板 / 瓦片 / UI 皮肤 | `STYLE_LOCK.md` |
+| 美术工具 / 命令 / 判据 | `ART_SKILLS.md`（技能手册，命令与阈值） |
 | 动作帧 / 判定 / 无敌 | `MOVESET.md` |
 | 美术资产增减 | `ASSET_MANIFEST.md` |
 | 新增/废弃/降级任何文档 | `INDEX.md`（状态表） |
@@ -148,6 +151,7 @@
 [ ] 新增路径没有删掉旧路径（grep 确认旧符号仍有人用）
 [ ] python build.py 跑过了（改了代码/资产的话）
 [ ] 对应回归全绿
+[ ] python art/tools/asset_audit.py 跑过了，P0 = 0（改了资产的话）
 [ ] 实机截图看过（资产类必须）
 [ ] 文档同步矩阵里的对应文档改了
 [ ] INDEX.md 状态表更新了（新增/废弃文档时）
@@ -198,3 +202,5 @@
 | 用固定网格从生图上硬裁瓦片 | 框会落在主体周围的留白上，6 张全是废像素（`floor_0..5`） | `ART_PIPELINE §4.5`：洋红底 + 连通域，位置是量出来的 |
 | 画布比例跟"想要的尺寸"走 | 石头 1.086:1 塞进 4:3 画布，横向空 14px，平铺成竖白条 | `STYLE_LOCK §L11` 第 3 条：比例跟素材走 |
 | 单块好看就宣布可用 | 瓦片的判据是**平铺**，不是单块 | `tile_from_gen.py --preview` 是硬步骤 |
+| 文档里写着一个不存在的脚本 | 写完没跑过，后面没人验证（asset_report.py 挂了很久） | `asset_audit.py §5`：死引用扫描 |
+| 检查工具的断言没跟着规格改 | 规格从 192 改到 54，断言没改 → 假报警 | `asset_audit.py` 直接读配置和磁盘对账，不做独立断言 |
