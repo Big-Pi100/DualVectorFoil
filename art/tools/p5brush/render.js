@@ -95,6 +95,21 @@ im.save(r"${dst}")
         fs.writeFileSync(p, await cv.screenshot());
         console.log('→ art/tiles/_exp_%s.png  %dms', v, Date.now() - t);
       }
+    } else if (mode === 'coat') {
+      const COATLIST = process.argv.slice(3).length ? process.argv.slice(3) : ['A','B','C','D'];
+      /* 涂法变体实验：同一种子下 A/B/C/D 四种填色，比"露纸率"。 */
+      await page.setViewportSize({ width: 220, height: 220 });
+      for (const c of COATLIST) {
+        const t = Date.now();
+        await page.goto(`http://127.0.0.1:${PORT}/${base}/tilegen.html?kind=wall&seed=0&coat=${c}`,
+          { waitUntil: 'load' });
+        await page.waitForFunction(() => window.__ok || window.__err, { timeout: 90000 }).catch(() => {});
+        const r3 = await page.evaluate(() => ({ ok: window.__ok, err: window.__err }));
+        if (!r3.ok) { console.log('  ERR %s: %s', c, String(r3.err).slice(0, 300)); continue; }
+        const cv = await page.$('canvas');
+        fs.writeFileSync(path.join(ROOT, 'art', 'tiles', `_coat_${c}.png`), await cv.screenshot());
+        console.log('→ _coat_%s.png  %dms', c, Date.now() - t);
+      }
     } else if (mode === 'tileset') {
       /* 正式瓦片：墙 6 变体 + 地 2 变体。前缀 _new_ 便于与旧版对比，
        * 确认后用 --publish 参数写出正式名。 */

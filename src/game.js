@@ -2780,7 +2780,10 @@ function render(alpha) {
    *   那就别设计它 —— 钟塔改成"石壁 + 墙上的龛 + 折痕"。
    *   这样拱龛从"虚空里的塔影"变成"墙上凿出来的深龛"，读法反而更实。 */
   if (room.id === 'tower') {
-    drawTileField(ctx, 'wall', 0, 0, px(room.w), px(room.h), 0.28, 13);
+    /* ‼ 原本是 0.28 —— 那时背景是"紫黑虚空"，石壁只是层淡影。
+     *   现在整间都是石壁，0.28 会让房间读成"黑屋"，
+     *   而龛叠在上面就成了一条条纯黑（对比没有了）。改 0.62。 */
+    drawTileField(ctx, 'wall', 0, 0, px(room.w), px(room.h), 0.62, 13);
   }
 
   // 远层：拱龛（越远越亮、越虚）
@@ -2789,14 +2792,17 @@ function render(alpha) {
      * 贴上去的黑纸 —— 轮廓再准也读成贴纸。降到 84% 不透明，
      * 石头的笔触从里面透出来，它才像"凿进墙里的洞"而不是"墙上的洞的贴图"。 */
     const w = 132, h = 300, top = cy + 40;
-    c.fillStyle = 'rgba(22,18,30,.84)';
+    /* ‼ 石壁换成蜡笔瓦片之后，纯黑紫的龛就成了"贴上去的两条黑纸"——
+     *   84% 太实，且冷紫和石壁的暖灰完全不搭。改成暖深褐 + 62%，
+     *   石头笔触透出来，它才是"墙里凿出的暗龛"。 */
+    c.fillStyle = 'rgba(40,34,28,.40)';
     c.beginPath();
     c.moveTo(wx, top + h);
     c.lineTo(wx, top + w / 2);
     c.arc(wx + w / 2, top + w / 2, w / 2, Math.PI, 0);
     c.lineTo(wx + w, top + h);
     c.closePath(); c.fill();
-    c.fillStyle = 'rgba(150,133,190,.045)';
+    c.fillStyle = 'rgba(214,182,132,.05)';
     c.fillRect(wx + 10, top + w / 2, w - 20, h - w / 2);
   });
   // 长廊：展厅是一堵真墙，不是虚空。
@@ -3467,7 +3473,7 @@ function drawTileField(ctx, kind, x0, y0, w, h, par, salt) {
   }
   /* 墙面压暗一档。墙和地现在是同一套石材瓦片，只靠"地面那条亮边"分不开 ——
    * 背景要往后退、前景要往前站，明度差是最省事也最可靠的一层。 */
-  ctx.fillStyle = 'rgba(8,6,4,.14)';
+  ctx.fillStyle = 'rgba(8,6,4,.07)';
   ctx.fillRect(x0, y0, w, h);
   ctx.restore();
   return true;

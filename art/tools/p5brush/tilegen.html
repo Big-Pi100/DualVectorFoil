@@ -32,6 +32,7 @@ const N = kind === 'slab' ? 48 : 192;
  * 用 192 见方的瓦片铺进去只会露出顶上一行，等于把 3/4 的画白画了。 */
 const H = kind === 'floor' ? 48 : (kind === 'slab' ? 20 : 192);
 const S = +(q.get('seed') || 0);
+const COAT = q.get('coat') || 'Z';   // 涂法变体：Z 是定版（两层 mass + 三层叠加出深浅）
 
 const P = { paper:'#E8DCBE', charcoal:'#2B2320', cold:'#8C8B84',
             umber:'#6B4B32', ochre:'#B98A2E', moss:'#4F6B3A',
@@ -45,12 +46,274 @@ const rnd = () => { s ^= s << 13; s >>>= 0; s ^= s >> 17; s ^= s << 5; s >>>= 0;
  * passes 决定整体深浅（同一支笔涂几遍），这是石墙唯一正确的"明暗语言"：
  * 换颜色会读成两种材料，涂几遍才是同一块石头的光影。
  * 缺角/崩边放在最后 —— 它是把"方正色块"打成"石头"的最后一刀。 */
+/* ## 自定义笔刷
+ *
+ * 内置 crayon 的 opacity 是 159/255（单笔 62%），本身已是"叠了才实"。
+ * `wax` 再降到 104/255（41%），为的是让**每一道笔触都读得出来**：
+ * 41% 的单笔盖不住纸，两道重叠才到 65%，三道到 79% —— 深浅全靠重叠次数，
+ * 这正是蜡笔的行为。内置笔刷一涂就实，才会"太满"。
+ *
+ * `seam` 是画缝用的：crayon/charcoal 的 scatter 是 1.9/1.5，
+ * 笔尖会横向甩开 1.5 个笔宽 → 2px 的缝被甩成虚线（前几版实拍全是断缝）。
+ * seam 把 scatter 压到 0.22，并把 opacity 提到 210，线才连得住。 */
+/* ## 两处关键参数（2026-11-25 查源码后纠正）
+ *
+ * ① `weight: 1.0` —— `set(name, color, w)` 的 w 是**乘**在笔刷 weight 上的
+ *    （`tipReach = State.stroke.weight * param.weight`，stroke.js:562）。
+ *    内置 crayon 的 weight 是 0.33，所以 set(…, 6) 实际只有 2px ——
+ *    前几版"笔触又细又碎"一半是这个原因（以为设了 6px，其实 2px）。
+ *    设成 1.0 后，set 的数字就是像素直径。
+ *
+ * ② `scatter: 0.38` —— scatter 不是"颗粒"，是**每个 dot 的横向随机偏移**，
+ *    单位是笔宽。内置 crayon 1.9 / pastel 5，会把 4px 的笔散成 ±4.6/±20px 的
+ *    点云，读成"砂纸"而不是"一道"（前几版实拍）。seam 用 0.22 能画出连续缝，
+ *    就是这个道理。蜡笔的手抖只需 1/3 个笔宽。 */
+brush.add('wax', { weight: 1.0, scatter: 0.38, sharpness: 0.80, grain: 1.4,
+                   opacity: 132, spacing: 0.06, pressure: [1.15, 0.85],
+                   type: 'default', rotate: 'natural', noise: 0.5 });
+/* wash：只用来"铺一层很淡的底"，让石头露出来的地方是浅灰而不是纯纸色。
+ * ‼ 这一点是从参考图反推的：p6_crayon 的深蓝城堡是**先铺实底、再蹭亮暗笔触**，
+ *   露出来的从来不是白纸。石墙如果直接"纸色底 + 灰笔"，露纸就是一排白条，
+ *   读成"没画完"（前几版实拍全是这个毛病）。 */
+brush.add('wash', { weight: 1.0, scatter: 0.30, sharpness: 0.55, grain: 0.6,
+                    opacity: 118, spacing: 0.06, pressure: [1.05, 0.95],
+                    type: 'default', rotate: 'natural', noise: 0.3 });
+/* waxline：试过、**失败**，留在这里是为了不再重走。
+ *（失败原因见文末：排线清晰了，但 1px 笔在 8-bit 累积下出"白刮痕"，且整体拉平。）
+ *
+ * 原设想：
+ * ‼ mass 内部固定 `set(brush, color, 1)`（hatch/mass.js:572），所以它的排线
+ *   笔宽恒为 1px。这**不是缺陷**：参考图 p6_crayon 的笔触在 1536 画布上是
+ *   8~12px，按 8 倍缩到我们 192 的瓦片正好是 1~1.5px。
+ *   真正的病灶是内置 crayon 的 **scatter 1.9** —— 它把 1px 的笔横向散成 2px 的雾，
+ *   一排线就糊成"水波/木纹"。把 scatter 压到 0.12，排线就是一根根清晰的蜡笔线。 */
+brush.add('waxline', { weight: 1.0, scatter: 0.45, sharpness: 0.80, grain: 1,
+                       opacity: 105, spacing: 0.07, pressure: [1.10, 0.90],
+                       type: 'default', rotate: 'natural', noise: 0.6 });
+brush.add('seam', { weight: 0.30, scatter: 0.22, sharpness: 0.80, grain: 1.1,
+                    opacity: 210, spacing: 0.04, pressure: [1.05, 0.95],
+                    type: 'default', rotate: 'natural', noise: 0.35 });
+
+/* 手涂一块石头：一道一道短线，方向统一。
+ * clip 到石头包围盒，超出的笔尾自动裁掉（p5.brush 的 clip 只吃矩形，
+ * 石头本来就是近矩形，够用）。 */
+function handCoat(x, y, w, h, base, n, ang, wmin = 3.0, wmax = 6.0, pen = 'wax',
+                  lenMin = 22, lenMax = 52) {
+  /* 抖动网格：把石头切成 cols×rows 个格子，每格落一笔，笔长跨 1.5~2 格。
+   *
+   * ‼ 不能用"按行平行扫"（上一版 L）—— 行距固定，石头四角永远涂不到，
+   *   角落留一圈纸色，整块就读成"贴纸贴上去的"（跟 _exp_F 同一个病）。
+   *   网格 + 超长笔，角落自然被相邻格的笔扫到。
+   * ‼ 每笔角度再抖 ±0.12rad：完全平行就成了排线，不是涂抹。 */
+  brush.clip([x + 0.5, y + 0.5, x + w - 0.5, y + h - 0.5]);
+  const diag = Math.hypot(w, h);
+  /* ‼ 这里曾经是 Math.max(2, …)：n=1 会被放大成 2×2 = **4 笔**，
+   *   于是"24 笔"实际画了 96 笔，怎么调都是"涂满"（连踩三版才发现）。
+   *   最小值必须是 1。 */
+  const cols = Math.max(1, Math.round(Math.sqrt(n * w / h)));
+  const rows = Math.max(1, Math.round(n / cols));
+  const cw = w / cols, ch = h / rows;
+  for (let gy = 0; gy < rows; gy++) {
+    for (let gx = 0; gx < cols; gx++) {
+      const px = x + (gx + 0.5) * cw + (rnd() - 0.5) * cw * 0.9;
+      const py = y + (gy + 0.5) * ch + (rnd() - 0.5) * ch * 0.9;
+      /* 笔长：18~46px。这是按参考图量的 —— 蜡笔一笔的行程大约是笔宽的
+       * 5~15 倍，不是横跨整块石头。太长就成"斜纹布"（P 版实拍）。 */
+      const a = ang + (rnd() - 0.5) * 0.90;
+      const ux = Math.cos(a), uy = Math.sin(a);
+      const len = lenMin + rnd() * (lenMax - lenMin);
+      const s0 = -len * (0.20 + rnd() * 0.60);
+      brush.set(pen, base, wmin + Math.pow(rnd(), 1.4) * (wmax - wmin));
+      brush.line(px + ux * s0, py + uy * s0, px + ux * (s0 + len), py + uy * (s0 + len));
+    }
+  }
+  brush.noClip();
+}
+
+function coatStone(pts, x, y, w, h, base) {
+  /* ## 涂法变体（2026-11-25 定版实验）
+   *
+   * ‼ 先纠正一个长期误解：**`strength` 不是浓度，是三档层数开关**。
+   *   源码 createMass 里它只出现在两处 —— `if (strength > 0.33)` 打第 2 层、
+   *   `if (strength > 0.66)` 打第 3 层（hatch/mass.js:605,621）。
+   *   每层排线间距 dist≈2px，所以"变深"= 加层，代价是纸色被吃光。
+   *
+   * 上一版每块石头平均叠了 4.5 层（0.52 + 34%×0.58 + 0.30 + 26%×0.72），
+   * 实测 std 只有 22、纸色 0%；定版参考图 p6_crayon.png 同尺寸是 std 74、纸色 17%。
+   * **这就是"涂得太满"的量化含义。** */
+  if (COAT === 'A') {
+    /* 对照：上一版。 */
+    brush.mass('crayon', base, { strength: 0.52, precision: 0.76 });
+    brush.polygon(pts); brush.noMass();
+    if (rnd() < 0.34) {
+      brush.mass('crayon', base, { strength: 0.58, precision: 0.78 });
+      brush.polygon(pts); brush.noMass();
+    }
+    brush.mass('crayon', base, { strength: 0.30 + rnd() * 0.08, precision: 0.66 });
+    brush.polygon(pts); brush.noMass();
+    if (rnd() < 0.26) {
+      brush.mass('crayon', base, { strength: 0.72, precision: 0.9 });
+      brush.rect(x + 1.5, y + 1.5, w - 3, h - 3); brush.noMass();
+    }
+  } else if (COAT === 'B') {
+    /* 单层：只打第 1 层 pass（strength ≤ 0.33），排线自己撑开纸色。
+     * crayon 本身的 opacity 是 159/255 —— 单笔只有 62%，排线之间必然透纸。 */
+    brush.mass('crayon', base, { strength: 0.30, precision: 0.70 });
+    brush.polygon(pts); brush.noMass();
+  } else if (COAT === 'C') {
+    /* 一层 mass + 一层 scribble：mass 保证"这块是实的"，scribble 出斑驳。 */
+    brush.mass('crayon', base, { strength: 0.30, precision: 0.70 });
+    brush.polygon(pts); brush.noMass();
+    brush.mass('crayon', base, { style:'scribble', strength: 0.55, length: 26, follow: 0.3 });
+    brush.polygon(pts); brush.noMass();
+  } else if (COAT === 'D') {
+    /* 纯 scribble 两遍：短手绘笔触，色调全靠重叠量。 */
+    brush.mass('crayon', base, { style:'scribble', strength: 0.62, length: 30, follow: 0.35 });
+    brush.polygon(pts); brush.noMass();
+    brush.mass('crayon', base, { style:'scribble', strength: 0.40, length: 18, follow: 0.1 });
+    brush.polygon(pts); brush.noMass();
+  } else if (COAT === 'DD') {
+    /* ## 为什么必须用 line() 而不是 mass/scribble
+     *
+     * `createMass()` 里固定 `set(State.mass.brush, color, 1)`（hatch/mass.js:572），
+     * 所以 mass 的排线笔宽 = 1 × 笔刷 weight = 0.33px —— **它就是用极细笔
+     * 密集排线堆出来的色块**，天然是"柔和水波"，怎么调都画不出一道粗笔触。
+     * scribble 同理（也走 set(...,1)）。
+     *
+     * 结论：瓦片要"看得见的一道一道"，必须 mass 铺底 + line() 画粗笔（走 stroke 路径，
+     * 笔宽由 set 决定，是真的像素）。 */
+    brush.mass('wax', base, { strength: 0.52, precision: 0.74 });
+    brush.polygon(pts); brush.noMass();
+    const ang = -0.50 + (rnd() - 0.5) * 0.20;
+    for (let i = 0; i < 20; i++) {
+      const short = rnd() < 0.5;
+      handCoat(x, y, w, h, base, 1, ang + (rnd() - 0.5) * 0.55, 3.6, 6.6, 'wax',
+               short ? 14 : 30, short ? 28 : 56);
+    }
+    if (rnd() < 0.30) {
+      brush.mass('crayon', base, { strength: 0.46, precision: 0.76 });
+      brush.polygon(pts); brush.noMass();
+    }
+  } else if (COAT === 'Z') {
+    /* ## 定版（2026-11-25）
+     *
+     * 参考图的画法是「**实底 + 明暗笔触**」：深蓝城堡的底几乎铺满，
+     * 上面压着清晰的亮蓝短笔。所以"不填满"指的是**笔触可辨、明暗有层次**，
+     * 不是"留白露纸"。瓦片是背景、铺满整屏，露白会读成"墙上破了个洞"。
+     *
+     * 三层：
+     *   ① 实底 —— wash 宽笔铺满，石头从纸色变成"一块料"
+     *   ② 明暗笔 —— 亮一档 / 暗一档 / 主色三档短笔，笔笔可辨
+     *   ③ 顶亮底暗 —— 给石头方向，否则整面墙读成一块大板
+     */
+    const ang = -0.50 + (rnd() - 0.5) * 0.16;
+    /* ① 底色：mass 两层（strength 0.42 触发 2 层 pass）。
+     *   ‼ 旧版 A 是"一密一稀 + 34% 补 + 26% 三遍"≈ 4.5 层，纸纹被彻底吃掉，
+     *     std 只有 13（一片平灰）—— 那才是"太满"。
+     *     降到 2.6 层，排线之间的纸还能透一点，笔触自己就出来了。 */
+    brush.mass('crayon', base, { strength: 0.42, precision: 0.74 });
+    brush.polygon(pts); brush.noMass();
+    if (rnd() < 0.28) {
+      brush.mass('crayon', base, { strength: 0.50, precision: 0.78 });
+      brush.polygon(pts); brush.noMass();
+    }
+    /* ② 不用亮笔/暗笔点缀：试过三档明暗、亮笔压底、wash 铺底，
+     *   在 96×48 的小砖上都会变成"贴了几道胶带 / 迷彩"——
+     *   因为一块砖只有 4600 像素，任何一道 4px 的异色笔都占 1/10 面积。
+     *   参考图那种亮笔触是服务 100px 以上的大形体的，瓦片尺度用不上。
+     *   层次只能靠"叠几遍"来出：同一支笔 1 遍浅、2 遍中、3 遍深。 */
+  } else if (COAT === 'X') {
+    /* 淡底 + 三成亮笔。底不是 mass（mass 一铺就满），是宽笔 wash。 */
+    const ang = -0.50 + (rnd() - 0.5) * 0.16;
+    handCoat(x, y, w, h, base, 9, ang + (rnd() - 0.5) * 0.4, 9, 13, 'wash', 30, 58);
+    /* 三档明暗 + 主色，是参考图"不填满"的真正来源：
+     * 石面不是"一个灰度涂到不同厚度"，而是**亮笔压在暗底上、暗笔划在亮处**。
+     * 只有主色一种，无论怎么调透明都读成"平灰"。 */
+    for (let i = 0; i < 32; i++) {
+      const r = rnd();
+      const col = r < 0.34 ? '#B0AFA3' : (r < 0.50 ? '#6B6A63' : base);
+      const short = rnd() < 0.5;
+      handCoat(x, y, w, h, col, 1, ang + (rnd() - 0.5) * 1.0, 2.8, 5.6, 'wax',
+               short ? 12 : 30, short ? 26 : 58);
+    }
+    if (rnd() < 0.4) handCoat(x, y, w, h, base, 10, ang + 0.45, 2.6, 5.0, 'wax');
+    /* 石头的体积：顶沿亮一道、底沿暗一道。
+     * ‼ 只靠手涂笔触，整面墙会读成"一块大板"—— 每块石头必须有"上面受光、
+     *   下面压进缝"的方向，眼睛才认得出这是砌上去的石头。 */
+    brush.clip([x + 0.5, y + 0.5, x + w - 0.5, y + h - 0.5]);
+    brush.set('wax', '#BCBBAE', 2.2);
+    brush.line(x + 1, y + 1.6, x + w - 1, y + 1.6);
+    brush.set('wax', '#57564F', 2.8);
+    brush.line(x + 1, y + h - 1.6, x + w - 1, y + h - 1.6);
+    brush.noClip();
+  } else if (COAT === 'P' || COAT === 'R') {
+    /* 定版：抖动网格手涂。18 格 ≈ 6×3，每格一笔，笔长 32~80px。 */
+    const ang = -0.50 + (rnd() - 0.5) * 0.16;
+    const pn = (COAT === 'R') ? 'pastel' : 'wax';
+    const nb = (COAT === 'R') ? 44 : 26;
+    /* 24 笔，但**长短各半**：一半 12~26px（短蹭），一半 30~58px（长扫）。
+     *
+     * ‼ 长度统一时，笔触之间留下的纸色是**长条**，读成"没涂到的一道缝"；
+     *   长短混在一起，长条被短笔切断成碎点，才像蜡笔的露纸。
+     * ‼ 单笔 opacity 132（52%）：一笔就够读，两笔才实 —— 深浅差全来自重叠次数。
+     *   笔数再多就变成"均匀涂满"（连踩三版），少笔反而有层次。 */
+    for (let i = 0; i < 34; i++) {
+      const short = rnd() < 0.5;
+      handCoat(x, y, w, h, base, 1, ang + (rnd() - 0.5) * 1.0, 2.8, 5.6, pn,
+               short ? 12 : 30, short ? 26 : 58);
+    }
+    if (rnd() < 0.45) handCoat(x, y, w, h, base, 12, ang + 0.45, 2.6, 5.0, pn);
+  } else if (COAT === 'H' || COAT === 'J' || COAT === 'K' ||
+             COAT === 'L' || COAT === 'M') {
+    /* 手涂：不靠 mass 的排线填色，改成**一行一行画短笔**。
+     * 这是"人拿蜡笔涂一块石头"的真实动作，也直接对应参考图的质感：
+     * 笔触长度 30~70px、方向一致、重叠处深、单道处浅。
+     * ‼ 一密一稀的 mass 之所以"太满"，是因为它按 2px 间距铺满不留缝；
+     *   手涂的行距是 5~8px，中间必然留浅色。 */
+    const rows = COAT === 'H' ? 14 : (COAT === 'J' ? 22 : (COAT === 'K' ? 10 : 20));
+    if (COAT === 'J') {   // 先垫一层极薄的 mass 兜底，避免直接露大片纸
+      brush.mass('crayon', base, { strength: 0.30, precision: 0.62 });
+      brush.polygon(pts); brush.noMass();
+    }
+    const ang = -0.52 + (rnd() - 0.5) * 0.18;   // 全图统一约 -30°
+    if (COAT === 'L' || COAT === 'M') {
+      /* 第三轮：H 的露纸率对了（18%），但读成"没画完"。
+       * 加行数 + 加笔宽把覆盖率抬到七成左右，剩下三成才是真正的蜡笔留白。
+       * 另加个体差异：四成石头再补一遍，方向偏 30°，重叠处变深。 */
+      handCoat(x, y, w, h, base, 18, ang);
+      if (COAT === 'M') handCoat(x, y, w, h, base, 8, ang + 0.55);
+    } else {
+      handCoat(x, y, w, h, base, rows, ang);
+    }
+  } else if (COAT === 'E' || COAT === 'F' || COAT === 'G') {
+    /* 第二轮：D 的质感对了，但每块石头一样深、笔触方向每块都不同。
+     * 修法：① 先垫一层 mass 定方向与整体色调（可选）
+     *       ② 两层 scribble，一长一短，长的给"蹭"，短的给颗粒
+     *       ③ 三分之一石头多蹭一层 → 个体差异
+     * ‼ scribble 的 baseAngle 是 mass 内部 rr2(-90,90) 随机的，外部传不进去 ——
+     *   所以"方向一致"只能靠垫一层 mass（它至少给一个主方向）。 */
+    if (COAT === 'F') {
+      brush.mass('crayon', base, { strength: 0.30, precision: 0.70 });
+      brush.polygon(pts); brush.noMass();
+    }
+    const L1 = COAT === 'G' ? 45 : 34;
+    const fol = COAT === 'G' ? 0.20 : 0.0;
+    brush.mass('crayon', base, { style:'scribble', strength: 0.58, length: L1, follow: fol });
+    brush.polygon(pts); brush.noMass();
+    brush.mass('crayon', base, { style:'scribble', strength: 0.34, length: 20, follow: 0.0 });
+    brush.polygon(pts); brush.noMass();
+    if (rnd() < 0.34) {
+      brush.mass('crayon', base, { style:'scribble', strength: 0.52, length: 26, follow: 0.0 });
+      brush.polygon(pts); brush.noMass();
+    }
+  }
+}
+
 function stone(x, y, w, h, base) {
   /* 缝宽：每块石头内缩量略有不同，缝就不是等宽的一条条。
    * 等宽缝是"贴图"的最大破绽 —— 真砌石没有两块缝一样宽。 */
-  const pad = 0.9 + rnd() * 0.6;   // 石头边缘要压在缝线底下，否则 mass 的半压边会露一圈暖色
-  /* 石头是**四边形，不是矩形**。四个角各抖 ±3px，缝宽就自然不均匀了 ——
-   * 真砌石的缝没有一条是等宽的，等宽缝是"贴图"最大的破绽，方角是第二大的。
+  const pad = 0.9 + rnd() * 0.6;
+  /* 石头是**四边形，不是矩形**。四个角各抖 ±2px，缝宽就自然不均匀了。
    * 抖动值必须来自 srnd（9 重放一致），用 Math.random 会让 9 份错开、接缝裂开。 */
   const jx = () => (rnd() - 0.5) * 2.2, jy = () => (rnd() - 0.5) * 2.2;
   const pts = [
@@ -59,47 +322,22 @@ function stone(x, y, w, h, base) {
     [x + w - pad + jx(), y + h - pad + jy()],
     [x + pad + jx(),     y + h - pad + jy()],
   ];
-  /* 两遍，一密一稀 —— 这是"有涂过但没糊"的唯一配比。
-   * ‼ 三遍密涂（0.6+）会把排线之间填死，整块石头变成一片平灰；
-   *   只涂一遍稀的，边缘又填不满、缝会忽宽忽窄。
-   *   密的一遍负责"这块是实心的"，稀的一遍负责"看得见笔"。
-   * ‼ 也不要垫 hatch：hatch 是直线、mass 是弧线，两层一叠就是"波纹干涉"，
-   *   整面墙读成木纹。两者只能选一个当主体，选 mass（弧线是绕形状走的）。 */
-  brush.mass('crayon', base, { strength: 0.52, precision: 0.76 });
-  brush.polygon(pts);
-  brush.noMass();
-  /* 两成石头再密涂一遍 → 明显更深。同一支笔多一遍是唯一的"变深"语言，
-   * 换颜色会读成两种材料。 */
-  if (rnd() < 0.34) {
-    brush.mass('crayon', base, { strength: 0.58, precision: 0.78 });
-    brush.polygon(pts);
-    brush.noMass();
-  }
-  /* 纯冷灰，和墙同一个石场。
-   * ‼ 不要掺土褐：哪怕只有两成，铺满三条地面带之后就是"橙灰棋盘"，
-   *   而且土褐在冷灰里饱和度极高，一眼就跳出来（实拍见 shots/_tilecache.png）。
-   *   地面靠"石块横长 + 更密"来区分，不靠换颜色。 */
-  brush.mass('crayon', base, { strength: 0.30 + rnd() * 0.08, precision: 0.66 });
-  brush.polygon(pts);
-  brush.noMass();
-  /* 深浅：两成石头多涂一遍 —— 这是唯一正确的"变深"手段。
-   * ‼ 不能用低 strength 的 charcoal 当"暗角"：strength 是排线密度不是浓度，
-   *   0.2 得到的是"稀疏的全浓度黑线"，读成涂了墨，不是阴影（这一版踩过，
-   *   见 shots/wall_new.png 里那些黑毛刷）。 */
-  if (rnd() < 0.26) {
-    brush.mass('crayon', base, { strength: 0.72, precision: 0.9 });
-    brush.rect(x + pad, y + pad, w - pad * 2, h - pad * 2);
-    brush.noMass();
-  }
+  coatStone(pts, x, y, w, h, base);
+
   /* 短蹭痕：石头表面的"笔一道笔一道"全靠这个。
    * mass 的笔触是绕形状中心的长弧，单独用就像水波纹；
-   * 叠几道 15~40px 的短直线，才读成"来回蹭过的石头"。 */
-  const n = 3 + Math.floor(rnd() * 3);
+   * 叠几道 15~40px 的短直线，才读成"来回蹭过的石头"。
+   * crayon 每笔只有 62% 不透明度 → 短笔之间自然留出浅色，这是露纸的第二个来源。 */
+  /* 手涂变体的笔触本身就是"短蹭痕"，再叠一遍只会更满 —— 只留两三道补漏。 */
+  const hand = COAT === 'H' || COAT === 'J' || COAT === 'K' ||
+               COAT === 'L' || COAT === 'M';
+  const n = hand ? 2 + Math.floor(rnd() * 2)
+                 : (COAT === 'A' ? 3 + Math.floor(rnd() * 3) : 5 + Math.floor(rnd() * 4));
   for (let i = 0; i < n; i++) {
-    const yy = y + 8 + rnd() * (h - 16);
-    const x0 = x + 5 + rnd() * (w * 0.5);
-    brush.set('crayon', rnd() < 0.08 ? P.umber : base, 1.7 + rnd() * 1.4);
-    brush.line(x0, yy, x0 + 14 + rnd() * (w * 0.38), yy + (rnd() - 0.5) * 14);
+    const yy = y + 6 + rnd() * (h - 12);
+    const x0 = x + 4 + rnd() * (w * 0.55);
+    brush.set('crayon', base, 1.5 + rnd() * 1.3);
+    brush.line(x0, yy, x0 + 12 + rnd() * (w * 0.32), yy + (rnd() - 0.5) * 12);
   }
   /* 崩边：不是画个三角，是让那块地方的笔触"塌下去"。 */
   if (rnd() < 0.30) {
@@ -163,30 +401,83 @@ function paint() {
      * ‼ 中途试过"抱石墙"（96×96 大石），单看好看，进游戏整面墙读成"预制板"——
      *   石块占 96px 屏幕，10 块就铺满一屏，既不像砖墙也压不住前景。
      *   而且用户说的"墙丑"指的是**画法**（几何直线 + 噪点滤镜），不是砖太大。 */
-    for (let r = 0; r < 4; r++) {
-      const off = (r % 2) * 48;
-      for (let x = off - 96; x < N + 96; x += 96) stone(x, r * 48, 96, 48, P.cold);
+    if (COAT === 'EE') {
+      /* ## 整面画，不逐块画（2026-11-25 定版）
+       *
+       * 逐块涂的死结：一块砖只有 96×48 = 4600 像素，任何看得见的笔触
+       * (4~6px 宽) 都占它 1/10 面积，稍微拉点对比就读成"贴上去的一道"；
+       * 不拉对比又融进底里看不见。试了 15 个变体都是这两头。
+       *
+       * 参考图 p6_crayon 的城堡是**整块形体一次画完**：长笔触跨过整个屋顶，
+       * 砖/瓦的缝是最后用暗线勾的结构，不是"每块各涂各的"。
+       * 石墙照这个做：整面长笔触 → 再勾砖缝。
+       */
+      brush.mass('wax', P.cold, { strength: 0.50, precision: 0.70 });
+      brush.rect(0, 0, N, N); brush.noMass();
+
+      const ang = -0.52;
+      brush.clip([0, 0, N, N]);
+      for (let i = 0; i < 80; i++) {
+        const x0 = rnd() * N, y0 = rnd() * N;
+        const a = ang + (rnd() - 0.5) * 0.70;
+        const len = 36 + rnd() * 78;
+        /* 三成用亮一档、两成用暗一档 —— 这才是参考图的"明暗笔"。
+         * 逐块涂时同样的笔会成"胶带"，整面画时它只是"墙面上的一道亮/暗"。 */
+        const r = rnd();
+        const col = r < 0.26 ? '#96958B' : (r < 0.38 ? '#7A7972' : P.cold);
+        brush.set('wax', col, 3.5 + rnd() * 6.5);
+        brush.line(x0, y0, x0 + Math.cos(a) * len, y0 + Math.sin(a) * len);
+      }
+      brush.noClip();
+
+      /* 石头之间的整体明暗。
+       * ‼ 不能用宽笔划一道来"压深"——22~36px 的笔在 48px 高的砖上就是一整块黑。
+       *   变深只有一条路：**同一支笔多涂一遍**（mass 一遍，crayon）。 */
+      for (let r = 0; r < 4; r++) {
+        const off = (r % 2) * 48;
+        for (let x = off - 96; x < N + 96; x += 96) {
+          if (rnd() < 0.22) {
+            brush.mass('crayon', P.cold, { strength: 0.42, precision: 0.76 });
+            brush.rect(x + 1, r * 48 + 1, 94, 46);
+            brush.noMass();
+          }
+        }
+      }
+    } else {
+      for (let r = 0; r < 4; r++) {
+        const off = (r % 2) * 48;
+        for (let x = off - 96; x < N + 96; x += 96) {
+          /* 石头之间的基色差：四成石头亮一档、三成暗一档。
+           * ‼ 全部同色时，靠笔触叠出来的差别只有 ±10%，整面墙还是"一个色"。 */
+          const q = rnd();
+          const b = q < 0.40 ? '#929188' : (q < 0.70 ? '#83827B' : P.cold);
+          stone(x, r * 48, 96, 48, b);
+        }
+      }
     }
     /* 缝：两道 —— 一道宽炭线（沟），一道窄深线（投影）。
      * 单线读成"描边"，两道才有"砌进去"的深度。 */
-    brush.set('charcoal', P.charcoal, 2.2);
-    brush.wiggle(0.22);
+    brush.set('seam', P.charcoal, 1.8);
+    brush.wiggle(0.16);
     for (let r = 0; r <= 4; r++) brush.line(-6, r * 48, N + 6, r * 48);
     for (let r = 0; r < 4; r++) {
       const off = (r % 2) * 48;
       for (let x = off; x < N + 0.1; x += 96) brush.line(x, r * 48 + 2, x, (r + 1) * 48 - 2);
     }
-    brush.set('2B', P.charcoal, 1.8);
+    brush.set('seam', P.charcoal, 1.2);
     for (let r = 0; r <= 4; r++) brush.line(-6, r * 48 + 1.2, N + 6, r * 48 + 1.2);
     brush.noField();
 
     /* 整面脏：两三片很淡的土褐，位置随机。这是唯一"跨石头"的层，
      * 有了它，四块石头才是一面墙而不是四块贴图。 */
+    /* ‼ 这一层是"跨石头的脏"，目的只是让四块石头连成一面墙。
+     *   上一版用两片整块 mass 压土褐，在薄涂的墙上直接跳成"橙色斑块"——
+     *   墙的主色是冷灰，土褐只要成片出现就抢戏。
+     *   改成几道很淡的斜短线：面积小、笔淡，只在缝附近留一点温度。 */
     for (let i = 0; i < 3; i++) {
-      brush.mass('crayon', P.umber,
-                 { strength: 0.16, precision: 0.3, gradient: 0.8 });
-      brush.rect(rnd() * 140, rnd() * 140, 40 + rnd() * 70, 30 + rnd() * 60);
-      brush.noMass();
+      const sx = rnd() * N, sy = rnd() * N;
+      brush.set('wax', P.umber, 2.5 + rnd() * 4);
+      brush.line(sx, sy, sx + 14 + rnd() * 26, sy + (rnd() - 0.5) * 10);
     }
   } else {
     /* 地面：一整行石砌，宽度组合凑满 192。
@@ -201,8 +492,8 @@ function paint() {
       x += ws[wi % ws.length]; wi++;
     }
     /* 竖缝 */
-    brush.set('charcoal', P.charcoal, 1.8);
-    brush.wiggle(0.18);
+    brush.set('seam', P.charcoal, 1.6);
+    brush.wiggle(0.15);
     let x2 = -192, wi2 = 0;
     while (x2 < N + 192) {
       brush.line(x2, 2, x2, 46);
@@ -211,7 +502,7 @@ function paint() {
     brush.noField();
     /* 横缝：只画 y=0 这一条。y=48 由下一块瓦片的 y=0 提供，
      * 自己再画一条会在拼接处变成双线。 */
-    brush.set('2B', P.charcoal, 1.9);
+    brush.set('seam', P.charcoal, 1.6);
     brush.line(-6, 0, N + 6, 0);
     /* 地面碎屑：赭金的小点，踩出来的脏。 */
     brush.set('crayon', P.ochre, 1.3);
