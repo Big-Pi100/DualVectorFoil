@@ -52,7 +52,7 @@ im.save(r"${dst}")
 
   const srv = spawn('python', ['-m', 'http.server', String(PORT), '--bind', '127.0.0.1'],
     { cwd: ROOT, stdio: 'ignore' });
-  await new Promise(r => setTimeout(r, 1200));
+  await new Promise(r => setTimeout(r, 2500));
 
   const exe = path.join(process.env.USERPROFILE,
     'AppData/Local/ms-playwright/chromium-1248/chrome-win64/chrome.exe');
@@ -102,8 +102,8 @@ im.save(r"${dst}")
       for (const c of COATLIST) {
         const t = Date.now();
         await page.goto(`http://127.0.0.1:${PORT}/${base}/tilegen.html?kind=wall&seed=0&coat=${c}`,
-          { waitUntil: 'load', timeout: 150000 });
-        await page.waitForFunction(() => window.__ok || window.__err, { timeout: 180000 }).catch(() => {});
+          { waitUntil: 'load', timeout: 300000 });
+        await page.waitForFunction(() => window.__ok || window.__err, { timeout: 300000 }).catch(() => {});
         const r3 = await page.evaluate(() => ({ ok: window.__ok, err: window.__err }));
         if (!r3.ok) { console.log('  ERR %s: %s', c, String(r3.err).slice(0, 300)); continue; }
         const cv = await page.$('canvas');
@@ -124,7 +124,7 @@ im.save(r"${dst}")
           const t = Date.now();
           await page.goto(
             `http://127.0.0.1:${PORT}/${base}/tilegen.html?kind=${k}&seed=${i}${cq}`,
-            { waitUntil: 'load', timeout: 150000 });
+            { waitUntil: 'load', timeout: 300000 });
           await page.waitForFunction(() => window.__ok || window.__err, { timeout: 90000 }).catch(() => {});
           const r3 = await page.evaluate(() => ({ ok: window.__ok, err: window.__err }));
           if (!r3.ok) { console.log('  ERR %s/%d', k, i, String(r3.err).slice(0, 240)); continue; }

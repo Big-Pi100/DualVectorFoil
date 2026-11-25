@@ -443,6 +443,313 @@ function coatStone(pts, x, y, w, h, base) {
       brush.line(x0, ly, x0 + Math.cos(ang) * w * 0.55, ly + Math.sin(ang) * w * 0.55);
     }
     brush.noClip();
+  } else if (COAT === 'P' || COAT === 'Q' || COAT === 'R') {
+    /* ## 细笔多次涂抹（2026-11-25 v6）
+     *
+     * 用户判据：「手绘蜡笔是细笔触多次涂抹」。
+     *
+     * W/Y 的错不在"手涂"这个动作，在**笔太宽**：9~16px 一笔盖住砖面的 1/5，
+     * 一块砖只有 8~11 笔 → 观感是"几条宽带"，不是"涂过的面"。
+     *
+     * 真实蜡笔是 1~2px 的笔尖，在同一块面上**来回蹭几十次**。
+     * 深浅不来自"某笔涂得多深"，来自**这个位置被蹭到几次**：
+     *   蹭三次的地方深一层，蹭一次的地方浅，一次没蹭到的透底色。
+     * 所以正确的做法不是"一遍排满细线"（N 版），而是
+     *   **每遍只画一半、相位错开、叠 6~14 遍** —— 深浅自己会长出来。
+     *
+     * ‼ 每遍方向只偏 ±4°（0.14rad）。人手在同一块面上不会每遍换方向，
+     *   但也不会完全一致；偏太多会揉成一团乱麻，反而失去石材的纹向。
+     */
+    const passes = COAT === 'P' ? 6 : (COAT === 'Q' ? 10 : 14);
+    const cover = COAT === 'P' ? 0.55 : (COAT === 'Q' ? 0.45 : 0.35);
+    /* 亮底：只垫一层很淡的 crayon，把纸色从"死白"拉到"浅米"。
+     * 不垫的话，14 遍稀疏细线之间会露出成片纯纸色 → 读成"破洞"。 */
+    brush.mass('crayon', shade(base, 56), { strength: 0.28, precision: 0.52 });
+    brush.polygon(pts); brush.noMass();
+
+    const a0 = -0.50 + (rnd() - 0.5) * 0.80;
+    brush.clip([x + 0.5, y + 0.5, x + w - 0.5, y + h - 0.5]);
+    const cx = x + w / 2, cy = y + h / 2;
+
+    for (let p = 0; p < passes; p++) {
+      const a = a0 + (rnd() - 0.5) * 0.14;
+      const ux = Math.cos(a), uy = Math.sin(a);
+      const nx = -uy, ny = ux;
+      let mn = 1e9, mx = -1e9;
+      for (const [px, py] of [[x, y], [x + w, y], [x, y + h], [x + w, y + h]]) {
+        const t = (px - cx) * nx + (py - cy) * ny;
+        if (t < mn) mn = t;
+        if (t > mx) mx = t;
+      }
+      const L = Math.hypot(w, h);
+      /* 每遍起始相位不同 —— 这是"斑驳"的唯一来源。
+       * 相位相同的话，即使只画一半，各遍也会落在同样的位置上，又变回排线。 */
+      let t = mn - 1 + rnd() * 3;
+      while (t < mx + 1) {
+        if (rnd() < cover) {
+          const rel = Math.min(1, Math.max(0, (t - mn) / Math.max(1, mx - mn)));
+          /* 上亮下暗 + 每笔 ±16 抖。抖幅比条纹版（±9）大一半：
+           * 手蹭的深度本来就不均匀，太小就又成"均匀条纹"了。 */
+          const col = shade(base, 26 - 72 * rel + (rnd() - 0.5) * 32);
+          brush.set('hair', col, 1.0 + rnd() * 0.9);
+          /* 起手在砖外（u 为负）、长度 50~110% 对角线：
+           * 有的笔从外面进来，有的到中途就收 —— 收笔位置不一才不像排线。 */
+          const uS = -L * 0.5 - rnd() * L * 0.35;
+          const uE = uS + L * (0.50 + rnd() * 0.60);
+          brush.line(cx + nx * t + ux * uS, cy + ny * t + uy * uS,
+                     cx + nx * t + ux * uE, cy + ny * t + uy * uE);
+        }
+        t += 2.2 + rnd() * 2.0;
+      }
+    }
+    brush.noClip();
+  } else if (COAT === 'FA' || COAT === 'FB') {
+    /* ## 细笔短蹭（2026-11-25 v7）—— 真正对上"人怎么用蜡笔"
+     *
+     * P/Q 已经做到"细笔 + 多遍"，但看图还是斜纹布。
+     * 差在哪：P/Q 的每一笔仍然是**贯穿整块砖的长线**（0.5~1.1 倍对角线）。
+     * 人拿蜡笔涂一块 96×48 的石头，一笔只有 **8~18px** ——
+     * 是短促的来回蹭，不是一条拉到底的线。
+     *
+     * 所以这一版换掉整个动作结构：
+     *   不做排布、不做遍次，直接**撒 n 笔**：
+     *   每笔的落点随机撒在砖面（含砖外扩一圈）、方向在同一主向上 ±20°、
+     *   长度 6~18px、宽 1.0~1.8px。
+     * 深浅完全来自"这个位置被几笔盖到" —— 中心密、边角疏，
+     * 自然的明暗起伏，不需要再用 grad 去算。
+     *
+     * ‼ 方向必须有个主向（a0），不能全随机：
+     *   全随机撒会变成"毛毡/乱麻"，石材的纹向就没了。
+     *   参考图能读出斜向，靠的就是"大部分笔朝同一个方向"。
+     */
+    const n = COAT === 'FA' ? 90 : 150;
+    /* 亮底：这一层把纸色从"死白"拉到"浅米"。
+     * ‼ 不能省。只靠短笔盖不满，14px 短笔之间必有缝，
+     *   缝里是纯纸白就会读成"砂纸/破洞"（P 版就是这样）。 */
+    brush.mass('crayon', shade(base, 46), { strength: 0.42, precision: 0.52 });
+    brush.polygon(pts); brush.noMass();
+
+    const a0 = -0.50 + (rnd() - 0.5) * 0.80;
+    brush.clip([x + 0.5, y + 0.5, x + w - 0.5, y + h - 0.5]);
+    for (let i = 0; i < n; i++) {
+      /* 落点：x 放宽到 [-8%, 108%]，让一部分笔从砖外压进来（手不停在边内）。 */
+      const px = x + (-0.08 + rnd() * 1.16) * w;
+      const py = y + (-0.08 + rnd() * 1.16) * h;
+      const rel = Math.min(1, Math.max(0, (py - y) / h));
+      /* 主向 ±20°；另有一成笔偏到 ±45°，做交叉。 */
+      const wide = rnd() < 0.10;
+      const a = a0 + (rnd() - 0.5) * (wide ? 1.6 : 0.70);
+      const ln = 6 + rnd() * 12;
+      /* 上亮下暗 + 每笔抖 ±20：手蹭的深度本来就不匀。 */
+      const col = shade(base, 22 - 66 * rel + (rnd() - 0.5) * 40);
+      brush.set('hair', col, 1.0 + rnd() * 0.8);
+      brush.line(px, py, px + Math.cos(a) * ln, py + Math.sin(a) * ln);
+    }
+    brush.noClip();
+  } else if (COAT === 'FC' || COAT === 'FD') {
+    /* ## 短段密排（2026-11-25 v8）—— 目标砖的真实结构
+     *
+     * 对着 `_exp/cmp_FA.png` 第①块（生图压到 96×48）逐条数出来的：
+     *   · 每条线 **10~20px 长**（不是通长），端点参差不齐
+     *   · 线与线间距只有 **1.5~2.5px**，密到几乎挨着
+     *   · 方向一致（约 -30°），但因为每条都短，读不出"一条拉到底"
+     *   · 底是暖米（143），线是深棕（100 左右），对比约 43
+     *
+     * 所以 FA（撒 90 笔短杠）错在**太稀**：落点随机撒，间距变成 8~12px，
+     * 读成"砂纸/雀斑"。P 错在**太长**：间距对了但线通长 → 斜纹布。
+     *
+     * 正解是两者的交集：**按法线密排（间距 1.5~2.5px），但每条只画 10~22px，
+     * 起点随机错位，再叠 3~4 遍**。密排保证盖住，短段保证不读出通长线。
+     */
+    const passes = COAT === 'FC' ? 3 : 4;
+    /* 亮底：目标砖的底（143）比我们的 base（~160）暗，
+     * 用 shade(base,26) 刚好；FA 用 46 就偏白了。 */
+    brush.mass('crayon', warmize(shade(base, 26), 0.40), { strength: 0.46, precision: 0.52 });
+    brush.polygon(pts); brush.noMass();
+
+    const a0 = -0.50 + (rnd() - 0.5) * 0.80;
+    brush.clip([x + 0.5, y + 0.5, x + w - 0.5, y + h - 0.5]);
+    const cx = x + w / 2, cy = y + h / 2;
+    const L = Math.hypot(w, h);
+
+    for (let p = 0; p < passes; p++) {
+      const a = a0 + (rnd() - 0.5) * 0.12;
+      const ux = Math.cos(a), uy = Math.sin(a);
+      const nx = -uy, ny = ux;
+      let mn = 1e9, mx = -1e9;
+      for (const [px, py] of [[x, y], [x + w, y], [x, y + h], [x + w, y + h]]) {
+        const t = (px - cx) * nx + (py - cy) * ny;
+        if (t < mn) mn = t;
+        if (t > mx) mx = t;
+      }
+      let t = mn - 1 + rnd() * 2.2;
+      while (t < mx + 1) {
+        /* 每条短段：起点沿主向随机落在 [-L/2, L/2] 附近，长度 10~22px。
+         * ‼ 起点不能均匀分布 —— 均匀分布又成"整齐短杠"。
+         *   用两次 rnd 相乘（偏向两侧、中间少）更接近手的落点。 */
+        const u0 = (rnd() - 0.5) * (L * 0.9);
+        const seg = 14 + rnd() * 12;
+        const rel = Math.min(1, Math.max(0, (t - mn) / Math.max(1, mx - mn)));
+        /* ‼ 明暗幅度收到 34（上一版 76）：目标是"浅底 + 细暗线"，
+         *   纵向渐变很弱；76 会变成深一块浅一块的斑驳岩。
+         *   两成笔反向上提亮 —— 蜡厚处会反一点光，参考图里就有这种浅线。 */
+        /* 线比底暗约 40：目标是"底 143 / 线 100"的关系，
+         * 不是靠整体明暗渐变（那是 FC2 的错，深一块浅一块）。 */
+        const lift = rnd() < 0.15 ? 22 : 0;
+        const col = warmize(shade(base, -8 - 32 * rel + lift + (rnd() - 0.5) * 14), 0.34);
+        brush.set('hair', col, 1.6 + rnd() * 0.8);
+        brush.line(cx + nx * t + ux * u0, cy + ny * t + uy * u0,
+                   cx + nx * t + ux * (u0 + seg), cy + ny * t + uy * (u0 + seg));
+        /* 三成位置补第二段：同一条线上断成两截，模拟蜡笔提笔再落 */
+        if (rnd() < 0.30) {
+          const u1 = u0 + seg + 2 + rnd() * 8;
+          brush.line(cx + nx * t + ux * u1, cy + ny * t + uy * u1,
+                     cx + nx * t + ux * (u1 + 8 + rnd() * 10),
+                     cy + ny * t + uy * (u1 + 8 + rnd() * 10));
+        }
+        t += 3.6 + rnd() * 1.4;
+      }
+    }
+    brush.noClip();
+  } else if (COAT === 'FE') {
+    /* ## 细笔多遍·方向微错（2026-11-25 v9）—— 收口版
+     *
+     * 前面把"多次涂抹"读成了"短笔撒点"（FA）和"短段密排"（FC），都错。
+     * 对着目标砖放大看，它的结构是：
+     *   · 一条条**连续的斜线**（不是碎短杠），方向基本一致
+     *   · 但线之间**不平行**：有交叉、有压叠，形成细密的网状微结构
+     *   · 深浅来自"这个位置被几遍扫到"，不是"某笔涂得多深"
+     *
+     * 所以"多次涂抹"的重点是**遍**，不是**短**：
+     *   每遍都是一整片斜线，但每遍的基准角度比上一遍**偏一点**，
+     *   5 遍下来角度跨度 ±20°，叠加处出交叉，未叠处出浅色 ——
+     *   这才是蜡笔在一个面上来回蹭的样子。
+     *
+     * ‼ 与 N 版（一遍排满）的唯一区别就是"遍数 + 每遍角度偏移"。
+     *   N 版 35 条完全平行 → 斜纹布；这里 5 遍 × 各 25 条交错 → 手涂。
+     */
+    const passes = 5;
+    brush.mass('crayon', warmize(shade(base, 48), 0.36), { strength: 0.46, precision: 0.52 });
+    brush.polygon(pts); brush.noMass();
+
+    const a0 = -0.50 + (rnd() - 0.5) * 0.70;
+    brush.clip([x + 0.5, y + 0.5, x + w - 0.5, y + h - 0.5]);
+    const cx = x + w / 2, cy = y + h / 2;
+    const L = Math.hypot(w, h);
+
+    for (let p = 0; p < passes; p++) {
+      /* 每遍角度：以 a0 为中心均匀铺开（-20° ~ +20°），再加手抖。
+       * 均匀铺开而不是随机，是为了保证"一定存在交叉" ——
+       * 全随机可能 5 遍都撞在同一角度，就退化成 N 版。 */
+      const a = a0 + (p / (passes - 1) - 0.5) * 0.70 + (rnd() - 0.5) * 0.10;
+      const ux = Math.cos(a), uy = Math.sin(a);
+      const nx = -uy, ny = ux;
+      let mn = 1e9, mx = -1e9;
+      for (const [px, py] of [[x, y], [x + w, y], [x, y + h], [x + w, y + h]]) {
+        const t = (px - cx) * nx + (py - cy) * ny;
+        if (t < mn) mn = t;
+        if (t > mx) mx = t;
+      }
+      let t = mn - 1 + rnd() * 3.0;
+      while (t < mx + 1) {
+        /* ‼ 每遍只画四成半。
+         *   5 遍全画 = 5 倍密度 → 糊成深灰（FE 第一版就是这样，std 掉到 22）。
+         *   画四成 → 叠完约 2.2 遍的密度，缝里还留底色，深浅才出来。 */
+        if (rnd() < 0.45) {
+        const rel = Math.min(1, Math.max(0, (t - mn) / Math.max(1, mx - mn)));
+        const lift = rnd() < 0.15 ? 22 : 0;
+        const col = warmize(shade(base, 26 - 42 * rel + lift + (rnd() - 0.5) * 16), 0.30);
+        brush.set('hair', col, 1.5 + rnd() * 0.8);
+        /* 八成画通长，两成断一次（手会提笔，但断口不多） */
+        if (rnd() < 0.80) {
+          brush.line(cx + nx * t - ux * L, cy + ny * t - uy * L,
+                     cx + nx * t + ux * L, cy + ny * t + uy * L);
+        } else {
+          const cut = (rnd() - 0.5) * L * 0.6;
+          const wd = 2 + rnd() * 5;
+          brush.line(cx + nx * t - ux * L, cy + ny * t - uy * L,
+                     cx + nx * t + ux * (cut - wd), cy + ny * t + uy * (cut - wd));
+          brush.line(cx + nx * t + ux * (cut + wd), cy + ny * t + uy * (cut + wd),
+                     cx + nx * t + ux * L, cy + ny * t + uy * L);
+        }
+        }
+        t += 3.0 + rnd() * 1.6;
+      }
+    }
+    brush.noClip();
+  } else if (COAT === 'FF' || COAT === 'FG') {
+    /* ## 亮条 vs 中长线（2026-11-25 v10）—— 判"明暗关系到底哪头亮"
+     *
+     * 反复看图后改判：目标砖的条纹**比底亮**，不是暗线。
+     * 蜡笔画一道，蜡堆在纸上 → 那一道反光略强（偏亮），
+     * 而两道之间覆盖薄的地方 → 偏暗。所以是「亮条 + 暗缝」。
+     *
+     * 我前面（N/P/FE）一直做「暗线压亮底」，方向整个反了 ——
+     * 这就是为什么怎么调都像"划痕/刻痕"，而不像"涂上去的"。
+     *
+     * FF = 亮条带（判明暗关系）
+     * FG = 同样密度但用暗线（对照，确认哪头亮才对）
+     */
+    const bright = COAT === 'FF';
+    /* ## 参数来自量化，不是手感（2026-11-25）
+     * 对目标砖（生图压到 96×48）沿纹理法线取剖面实测：
+     *   暗段均宽 **1.42px**、平均间距 **4.33px**、剖面 43~210（差 167）。
+     * 也就是说：**线要极细（1.4px）、对比要极强（暗到底、亮到顶）**。
+     * 我前面所有版本线宽 2~3px，粗了一倍 —— 所以只能读成"几道深划线"
+     * 或"糊成灰面"，永远出不来"细笔触多次涂抹"的密度感。
+     * 底的目标是 ~195：mass 用 shade(base,58) 盖上去后合成约 195。 */
+    brush.mass('crayon', warmize(shade(base, 40), 0.55), { strength: 0.50, precision: 0.50 });
+    brush.polygon(pts); brush.noMass();
+
+    const a0 = -0.50 + (rnd() - 0.5) * 0.46;
+    brush.clip([x + 0.5, y + 0.5, x + w - 0.5, y + h - 0.5]);
+    const cx = x + w / 2, cy = y + h / 2;
+    const L = Math.hypot(w, h);
+    let mn = 1e9, mx = -1e9;
+    {
+      const ux = Math.cos(a0), uy = Math.sin(a0), nx = -uy, ny = ux;
+      for (const [px, py] of [[x, y], [x + w, y], [x, y + h], [x + w, y + h]]) {
+        const t = (px - cx) * nx + (py - cy) * ny;
+        if (t < mn) mn = t;
+        if (t > mx) mx = t;
+      }
+    }
+    let t = mn - 2;
+    while (t < mx + 2) {
+      const a = a0 + (rnd() - 0.5) * 0.10;
+      const ux = Math.cos(a), uy = Math.sin(a);
+      const nx = -uy, ny = ux;
+      const rel = Math.min(1, Math.max(0, (t - mn) / Math.max(1, mx - mn)));
+      /* 亮条：+34（比底亮），上亮下暗仍然保留但幅度小。 */
+      /* 合成公式反推：目标暗线 60、底 195、opacity 215(84.3%)
+       *   ⇒ 笔色 = (60 - 0.157*195)/0.843 ≈ 35 → shade(base,-128)
+       *   ‼ 凭视觉给 -46 完全不够：合成后只剩 ~110，跟底只差 45，
+       *     所以前几版看着"有纹但不出对比"（std 卡在 23~33，目标 42）。 */
+      const d = bright ? (30 - 16 * rel + (rnd() - 0.5) * 14)
+                       : warmize(shade(base, -34 - 16 * rel + (rnd() - 0.5) * 14), 0.50);
+      /* ‼ 对比要压在这：单砖看起来 -58 更像目标（std 48），
+       *   但整面墙铺开就成了"斜纹布"，抢主角和 UI。
+       *   背景层的判据不是"单砖像不像"，是"整屏会不会吵"。
+       *   -34 时合成对比约 60，std 落在 32 上下 —— 看得出笔触，压得住画面。 */
+      brush.set('hair', d, 1.15 + rnd() * 0.35);
+      /* ‼ 起点不能全区间随机：上一版 u0 ∈ [-L/2, L/2]，
+       *   一半的线整条落在砖外 → 中央只有 4 条（目标 12 条）。
+       *   人手的动作是"从左外侧起笔，往右拉过整块"，
+       *   所以 u0 收在左侧 [-0.75L, -0.30L]，长度 0.6~1.05L。 */
+      const u0 = -L * 0.75 + rnd() * L * 0.45;
+      const seg = L * (0.60 + rnd() * 0.45);
+      brush.line(cx + nx * t + ux * u0, cy + ny * t + uy * u0,
+                 cx + nx * t + ux * (u0 + seg), cy + ny * t + uy * (u0 + seg));
+      /* 两成收笔早（手抬起来了）：补一段留断口，别每条都等长 */
+      if (rnd() < 0.20) {
+        const u1 = u0 + seg + 4 + rnd() * 8;
+        brush.line(cx + nx * t + ux * u1, cy + ny * t + uy * u1,
+                   cx + nx * t + ux * Math.min(u1 + 12 + rnd() * 16, L * 0.55),
+                   cy + ny * t + uy * Math.min(u1 + 12 + rnd() * 16, L * 0.55));
+      }
+      t += 3.6 + rnd() * 0.8;
+    }
+    brush.noClip();
   } else if (COAT === 'N' || COAT === 'O') {
     /* ## 高频细斜纹（2026-11-25 v5）—— 按"生图压到 96px 后"的真实频率画
      *
@@ -705,7 +1012,66 @@ function paint() {
      * ‼ 中途试过"抱石墙"（96×96 大石），单看好看，进游戏整面墙读成"预制板"——
      *   石块占 96px 屏幕，10 块就铺满一屏，既不像砖墙也压不住前景。
      *   而且用户说的"墙丑"指的是**画法**（几何直线 + 噪点滤镜），不是砖太大。 */
-    if (COAT === 'EE') {
+    if (COAT === 'GG') {
+      /* ## 整面细笔多遍（2026-11-25 v11）—— 结构对了，笔触换成细的
+       *
+       * 用户判据：「手绘蜡笔是细笔触多次涂抹」。
+       * 前面 FG 已经把**单块砖**做到量化吻合（线宽 1.4px / 间距 4.3px /
+       * RGB 150,141,119 vs 目标 156,142,120），但**铺满一屏就成了斜纹布**。
+       *
+       * 根因是结构不是参数：FG 在 `stone()` 里逐块涂，
+       * 每块砖都独立"斜涂一遍" → 8 块砖就是 8 块斜纹板，人脸看了就是补丁。
+       * 真实的手绘墙只涂**一遍**，笔触从这块砖划到那块砖，
+       * 砖缝是涂完之后再用暗线勾出来的结构。
+       *
+       * 所以这里沿用 EE 的整面结构（`mass` 铺底 + 跨砖笔触 + 后勾缝），
+       * 只把 EE 的**粗笔长线**（3.5~10px × 36~114px）换成
+       * **细笔短段**（1.2~1.9px × 8~24px）+ 三遍不同角度。
+       */
+      /* ‼ strength 0.56 = 两层排线，缝里会透出纸色（#E8DCBE 很亮），
+       *   在墙上就是密密麻麻的**白点/霉斑**（GG1~GG3 都毁在这）。
+       *   0.74 走三层，排线才密到不透纸。 */
+      brush.mass('wax', '#9A998F', { strength: 0.74, precision: 0.66 });
+      brush.rect(0, 0, N, N); brush.noMass();
+
+      const ang = -0.52;
+      brush.clip([0, 0, N, N]);
+      /* 三遍：每遍基准角差 0.16rad（约 9°），叠出来才有交叉；
+       * 单遍的笔只抖 ±0.11rad，否则方向一散就成"毛毡"。 */
+      for (let p = 0; p < 3; p++) {
+        const ap = ang + (p - 1) * 0.16;
+        const nb = p === 1 ? 260 : 200;
+        for (let i = 0; i < nb; i++) {
+          const x0 = rnd() * N, y0 = rnd() * N;
+          const a = ap + (rnd() - 0.5) * 0.22;
+          const len = 10 + rnd() * 18;
+          /* 明暗笔：三成亮、一成半暗。细笔必须把对比拉开一档，
+           * 否则 1.5px 的线混进底里就看不见（粗笔时代 ±0 都够）。 */
+          const r = rnd();
+          /* ‼ 亮笔不能太白（#A9A89C 在暗底上成雪点/霉斑），只比主色亮一档；
+           *   暗笔同理，压太多就成了"黑划痕"。 */
+          /* ‼ 不要亮笔。细笔 + 亮色在暗底上必然成"白点/霉斑"（GG1/GG2 都是），
+           *   参考图里没有这种亮斑——蜡笔把纸压暗，只会更深，不会更亮。 */
+          const col = r < 0.38 ? '#78776F' : P.cold;
+          brush.set('hair', col, 1.15 + rnd() * 0.55);
+          brush.line(x0, y0, x0 + Math.cos(a) * len, y0 + Math.sin(a) * len);
+        }
+      }
+      brush.noClip();
+
+      /* 块间明暗：四成石头压暗一档（整面画的墙必须有这个层次，
+       * 否则所有砖一个值，缝一勾就成了"网格纸"）。 */
+      for (let r = 0; r < 4; r++) {
+        const off = (r % 2) * 48;
+        for (let x = off - 96; x < N + 96; x += 96) {
+          if (rnd() < 0.22) {
+            brush.mass('crayon', P.cold, { strength: 0.42, precision: 0.76 });
+            brush.rect(x + 1, r * 48 + 1, 94, 46);
+            brush.noMass();
+          }
+        }
+      }
+    } else if (COAT === 'EE') {
       /* ## 整面画，不逐块画（2026-11-25 定版）
        *
        * 逐块涂的死结：一块砖只有 96×48 = 4600 像素，任何看得见的笔触
@@ -781,10 +1147,12 @@ function paint() {
      *   上一版用两片整块 mass 压土褐，在薄涂的墙上直接跳成"橙色斑块"——
      *   墙的主色是冷灰，土褐只要成片出现就抢戏。
      *   改成几道很淡的斜短线：面积小、笔淡，只在缝附近留一点温度。 */
-    for (let i = 0; i < 3; i++) {
+    /* ‼ 2.5~6.5px × 14~40px 的土褐线在整面墙上一眼就是"棕色补丁"（实拍验证过）。
+     *   跨石头的脏只需要"若有若无"：细、短、少。 */
+    for (let i = 0; i < 2; i++) {
       const sx = rnd() * N, sy = rnd() * N;
-      brush.set('wax', P.umber, 2.5 + rnd() * 4);
-      brush.line(sx, sy, sx + 14 + rnd() * 26, sy + (rnd() - 0.5) * 10);
+      brush.set('wax', P.umber, 1.3 + rnd() * 1.1);
+      brush.line(sx, sy, sx + 6 + rnd() * 9, sy + (rnd() - 0.5) * 4);
     }
   } else {
     /* 地面：一整行石砌，宽度组合凑满 192。
