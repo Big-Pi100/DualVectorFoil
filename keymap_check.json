@@ -7,7 +7,7 @@
       "dy": 0,
       "state": "walk",
       "simMs": 167,
-      "wallMs": 178,
+      "wallMs": 176,
       "pass": true
     },
     "A 左": {
@@ -15,7 +15,7 @@
       "dy": 0,
       "state": "walk",
       "simMs": 167,
-      "wallMs": 168,
+      "wallMs": 169,
       "pass": true
     },
     "W 上（不动）": {
@@ -26,33 +26,33 @@
     "S 下（蹲）": {
       "dx": 0,
       "state": "crouch",
-      "simMs": 25,
+      "simMs": 33,
       "pass": true
     }
   },
   "lookUp": {
     "before": 324,
-    "after": 296.3883374929428,
-    "dy": -27.6,
-    "simMs": 50,
+    "after": 292.7390663996339,
+    "dy": -31.3,
+    "simMs": 58,
     "pass": true
   },
   "atk": {
     "state": "attack",
-    "lock": 0.29,
-    "simMs": 17,
+    "lock": 0.28,
+    "simMs": 25,
     "pass": true
   },
   "jump": {
-    "vy": -932,
+    "vy": -912,
     "onGround": false,
-    "simMs": 25,
+    "simMs": 33,
     "pass": true
   },
   "redKey": {
     "n": 1,
-    "cd": 1.58,
-    "wallMs": 30,
+    "cd": 1.59,
+    "wallMs": 14,
     "pass": true
   },
   "back": {
@@ -74,18 +74,18 @@
     },
     "state": "cast",
     "n": 1,
-    "cd": 1.5500000000000003,
+    "cd": 1.5333333333333337,
     "pass": true
   },
   "plainAtk": {
     "state": "attack",
     "n": 0,
-    "simMs": 0,
+    "simMs": 33,
     "pass": true
   },
   "reloadGuard": {
-    "xBefore": 472,
-    "xAfter": 472,
+    "xBefore": 474,
+    "xAfter": 474,
     "hint": "再按一次 R 重开",
     "hit": 1,
     "pass": true
@@ -155,18 +155,18 @@
   },
   "touchJump": {
     "state": "jump",
-    "vy": -834,
+    "vy": -814,
     "onGround": false,
     "held": {
       "jump": 1
     },
-    "wallMs": 20,
+    "wallMs": 29,
     "pass": true
   },
   "touchAtk": {
     "state": "attack",
-    "lock": 0.28,
-    "wallMs": 9,
+    "lock": 0.25,
+    "wallMs": 6,
     "pass": true
   },
   "touchEmptySlot": {
@@ -176,12 +176,12 @@
   },
   "touchBack": {
     "state": "dash",
-    "invuln": 0.08,
-    "wallMs": 41,
+    "invuln": 0.09,
+    "wallMs": 31,
     "pass": true
   },
   "touchStick": {
-    "dx": 33,
+    "dx": 47,
     "stateRight": "walk",
     "stateDown": "crouch",
     "pass": true

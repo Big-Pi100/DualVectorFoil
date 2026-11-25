@@ -1,0 +1,140 @@
+<!doctype html>
+<meta charset="utf-8">
+<body style="margin:0;background:#222">
+<script type="module">
+/* SoulKeep 墙瓦片 v5 —— 小砖阵列 + 无缝平铺。
+ *
+ * v4 的问题（白哥指出）：
+ *   1) 一张 192px 瓦片只有一块砖，砖比角色还大 4 倍 → 太小气；
+ *   2) 纸白缝太宽，2×2 平铺一眼看出四张瓦片拼接。
+ *
+ * v5 的判据与做法：
+ *   - 一张瓦片 = 3 列 × 4 行 = 12 块小砖（每块 60×44 游戏像素，接近角色身高）
+ *   - **瓦片边界正好落在砖缝中心线上**：每边留 G/2 的底色，
+ *     相邻瓦片各出半条缝 → 拼起来和内部缝一样宽，看不出瓦片边界
+ *   - 底色统一 PAPER，砖间露纸白 —— 儿童风格保留
+ *   - 每块砖外形各异（顶点数/半径扰动/长宽），但网格坐标固定 → 轮换瓦片仍对齐
+ *   - 原厂 crayon + mass(scribble)，笔刷参数一个不改
+ */
+import * as brush from '../../../.deps/p5.brush/dist/brush.esm.js';
+
+const q = new URLSearchParams(location.search);
+const S = +(q.get('seed') || 0);
+const SS = +(q.get('ss') || 6);
+const N = 192 * SS;
+const U = 192;                       // 瓦片边长（规格统一）
+const PAPER = '#F2EAD6';
+const COLS = 3, ROWS = 4;            // 12 块小砖
+const G = 4;                         // 砖缝宽；瓦片边缘留 G/2=2 → 平铺无缝
+
+/* 砖宽高：c*w + c*G = U → w = U/COLS - G */
+const BW = U / COLS - G;             // 64 - 4 = 60
+const BH = U / ROWS - G;             // 48 - 4 = 44
+
+/* 设定表的石头基色：暖棕 / 灰褐 / 灰紫 / 米色 */
+const STONE = ['#9A7C5E', '#8B8278', '#99919A', '#A69A82', '#857C6E', '#8E806D'];
+const SEAM  = '#6B5A4A';
+
+let seed = 1;
+const srnd = k => { seed = (k >>> 0) || 1; };
+const rnd = () => { seed ^= seed << 13; seed >>>= 0; seed ^= seed >> 17; seed ^= seed << 5; seed >>>= 0; return seed / 4294967296; };
+
+function shade(hex, k) {
+  const n = parseInt(hex.slice(1), 16);
+  const c = [n >> 16, (n >> 8) & 255, n & 255].map(v =>
+    Math.max(0, Math.min(255, Math.round(v + k))));
+  return '#' + c.map(v => v.toString(16).padStart(2, '0')).join('');
+}
+
+/* 点是否在多边形内（射线法）—— 短笔不外溢到缝里 */
+function inside(px, py, poly) {
+  let hit = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [xi, yi] = poly[i], [xj, yj] = poly[j];
+    if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) hit = !hit;
+  }
+  return hit;
+}
+
+/* 一块小砖的不规则轮廓，严格收在自己的格子里（格子 = BW×BH，格子外就是缝） */
+function brickPoly(gx, gy, id) {
+  const cx = gx + BW / 2, cy = gy + BH / 2;
+  const rx = BW / 2 - 1.2, ry = BH / 2 - 1.2;
+  const nv = 7 + Math.floor(rnd() * 5);        // 7~11 顶点 → 外形各异
+  const rot = rnd() * Math.PI * 2;
+  const asp = 0.90 + rnd() * 0.20;
+  const pts = [];
+  for (let i = 0; i < nv; i++) {
+    const a = rot + (i / nv) * Math.PI * 2 + (rnd() - 0.5) * 0.24;
+    const r = 0.88 + rnd() * 0.16;             // 半径扰动小一点，砖仍填满格子
+    let x = cx + Math.cos(a) * rx * r;
+    let y = cy + Math.sin(a) * ry * r * asp;
+    x = Math.max(gx + 0.6, Math.min(gx + BW - 0.6, x));
+    y = Math.max(gy + 0.6, Math.min(gy + BH - 0.6, y));
+    pts.push([x, y]);
+  }
+  return pts;
+}
+
+function drawBrick(poly, base) {
+  // mass(scribble)：原厂 crayon 的乱向摩擦填充
+  brush.mass('crayon', base, {
+    strength: 0.90, precision: 0.78,
+    style: 'scribble', follow: 0.35, length: 11 * SS,
+  });
+  brush.polygon(poly.map(([x, y]) => [x * SS, y * SS]));
+  brush.noMass();
+
+  // 乱向短笔：限制在多边形内，靠深浅叠加出块面明暗
+  const xs = poly.map(p => p[0]), ys = poly.map(p => p[1]);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs);
+  const y0 = Math.min(...ys), y1 = Math.max(...ys);
+  const n = Math.round((x1 - x0) * (y1 - y0) / 130);
+  for (let i = 0; i < n * 1.5; i++) {
+    const px = x0 + rnd() * (x1 - x0), py = y0 + rnd() * (y1 - y0);
+    if (!inside(px, py, poly)) continue;
+    const a = (rnd() - 0.5) * 2.45;
+    const len = 2 + rnd() * 5;
+    const ex = px + Math.cos(a) * len, ey = py + Math.sin(a) * len;
+    if (!inside(ex, ey, poly)) continue;
+    brush.set('crayon', shade(base, rnd() < 0.5 ? -11 : 10), (0.5 + rnd() * 0.8) * SS);
+    brush.line(px * SS, py * SS, ex * SS, ey * SS);
+  }
+
+  // 轮廓：细深棕蜡笔线
+  brush.set('crayon', SEAM, 0.9 * SS);
+  brush.wiggle(0.08);
+  for (let i = 0; i < poly.length; i++) {
+    const a = poly[i], b = poly[(i + 1) % poly.length];
+    brush.line(a[0] * SS, a[1] * SS, b[0] * SS, b[1] * SS);
+  }
+  brush.wiggle(0);
+}
+
+try {
+  brush.createCanvas(N, N);
+  brush.angleMode(brush.DEGREES);
+  brush.clear(PAPER);                         // 统一底色，小砖之间露纸白
+  brush.translate(-N / 2, -N / 2);
+  srnd(9101 + S * 31);
+
+  // 固定网格；相邻瓦片的边界都留 G/2=2px 底色 → 平铺后缝宽处处 G=4px
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const gx = G / 2 + c * (BW + G);
+      const gy = G / 2 + r * (BH + G);
+      const poly = brickPoly(gx, gy, r * COLS + c);
+      // 相邻砖不同色：错开取色，避免同色连片
+      const ci = (S * 5 + r * 7 + c * 3) % STONE.length;
+      drawBrick(poly, STONE[ci]);
+    }
+  }
+
+  brush.render();
+  window.__ok = true;
+} catch (e) {
+  window.__err = String(e && e.stack || e);
+}
+</script>
+</body>
+</html>
