@@ -1,0 +1,129 @@
+<!doctype html>
+<meta charset="utf-8">
+<body style="margin:0;background:#222">
+<script type="module">
+/* SoulKeep 墙瓦片 v4 —— 一张瓦片 = 一块完整的石砖。
+ *
+ * v3 的问题（白哥指出）：一张 192px 瓦片里塞 4 行 ×3~4 块石头，
+ * 平铺时瓦片边界正好切在石头中间，2×2 拼起来就是四堵墙硬接，缝对不上。
+ * 白哥定判据：一张瓦片一块砖；砖外形多样且不同；规格统一；
+ *            **接缝露出底色不是问题 —— 儿童风格，是优点**。
+ *
+ * 结构：
+ *   - 瓦片 192×192，1:1 贴（覆盖 4×4 逻辑格）
+ *   - 整张瓦片只有一块石头，四周留纸白 —— 平铺后纸白连成十字缝，正是童趣感
+ *   - 每个 seed 生成不同外形（顶点数 / 长宽比 / 半径扰动都不同）
+ *   - 每块石头独立基色，原厂 crayon 的 mass(scribble) 乱涂填充
+ * 全程原厂 crayon，笔刷参数一个不改。
+ */
+import * as brush from '../../../.deps/p5.brush/dist/brush.esm.js';
+
+const q = new URLSearchParams(location.search);
+const S = +(q.get('seed') || 0);
+const SS = +(q.get('ss') || 6);
+const N = 192 * SS;
+const U = 192;                       // 瓦片边长（规格统一）
+const PAPER = '#F2EAD6';
+
+/* 设定表的石头基色：暖棕 / 灰褐 / 灰紫 / 米色 */
+const STONE = ['#9A7C5E', '#8B8278', '#99919A', '#A69A82', '#857C6E', '#8E806D'];
+const SEAM  = '#6B5A4A';             // 缝线：细深棕蜡笔，不是黑硬边
+
+let seed = 1;
+const srnd = k => { seed = (k >>> 0) || 1; };
+const rnd = () => { seed ^= seed << 13; seed >>>= 0; seed ^= seed >> 17; seed ^= seed << 5; seed >>>= 0; return seed / 4294967296; };
+
+function shade(hex, k) {
+  const n = parseInt(hex.slice(1), 16);
+  const c = [n >> 16, (n >> 8) & 255, n & 255].map(v =>
+    Math.max(0, Math.min(255, Math.round(v + k))));
+  return '#' + c.map(v => v.toString(16).padStart(2, '0')).join('');
+}
+
+/* 一块石头的轮廓 —— 每个 seed 外形明显不同：
+ *   顶点数 9~13、长宽比 0.82~1.18、半径扰动 0.80~1.12、整体旋转随机。
+ * 全部点收在 [INSET, U-INSET] 内 → 四周留纸白，平铺时连成儿童风格的缝。 */
+function stonePoly() {
+  const INSET = 4;                           // 留 4u 纸白边（平铺后缝宽 8u，儿童风格但不离散）
+  const cx = U / 2, cy = U / 2;
+  const maxR = U / 2 - INSET;
+  const nv = 9 + Math.floor(rnd() * 5);      // 9~13 个顶点 → 外形不同
+  const aspect = 0.82 + rnd() * 0.36;        // 长宽比 → 有的扁有的方
+  const rot = rnd() * Math.PI * 2;           // 整体旋转
+  const pts = [];
+  for (let i = 0; i < nv; i++) {
+    const a = rot + (i / nv) * Math.PI * 2 + (rnd() - 0.5) * 0.22;
+    const r = maxR * (0.80 + rnd() * 0.32);  // 半径扰动 → 形状不规则
+    let x = cx + Math.cos(a) * r;
+    let y = cy + Math.sin(a) * r * aspect;
+    x = Math.max(INSET, Math.min(U - INSET, x));
+    y = Math.max(INSET, Math.min(U - INSET, y));
+    pts.push([x, y]);
+  }
+  return pts;
+}
+
+/* 点是否在多边形内（射线法）—— 把短笔限制在石头内部，避免颗粒外散（规范 A2-3） */
+function inside(px, py, poly) {
+  let hit = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [xi, yi] = poly[i], [xj, yj] = poly[j];
+    if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) hit = !hit;
+  }
+  return hit;
+}
+
+function drawStone(poly, base) {
+  // 1) mass(scribble)：库自带的乱涂填充 —— 规范 A2-3 的自然纸面摩擦
+  brush.mass('crayon', base, {
+    strength: 0.90, precision: 0.78,
+    style: 'scribble', follow: 0.35, length: 15 * SS,
+  });
+  brush.polygon(poly.map(([x, y]) => [x * SS, y * SS]));
+  brush.noMass();
+
+  // 2) 乱向短笔：块面内明暗靠深浅叠加，不另画亮条
+  const xs = poly.map(p => p[0]), ys = poly.map(p => p[1]);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs);
+  const y0 = Math.min(...ys), y1 = Math.max(...ys);
+  const n = Math.round((x1 - x0) * (y1 - y0) / 70);
+  for (let i = 0; i < n * 1.5; i++) {
+    const px = x0 + rnd() * (x1 - x0), py = y0 + rnd() * (y1 - y0);
+    if (!inside(px, py, poly)) continue;         // 起点必须在石头内
+    const a = (rnd() - 0.5) * 2.45;             // ±70°
+    const len = 2 + rnd() * 6;
+    const ex = px + Math.cos(a) * len, ey = py + Math.sin(a) * len;
+    if (!inside(ex, ey, poly)) continue;         // 终点也在 → 笔触不外溢
+    const col = shade(base, rnd() < 0.5 ? -11 : 10);
+    brush.set('crayon', col, (0.5 + rnd() * 0.9) * SS);
+    brush.line(px * SS, py * SS, ex * SS, ey * SS);
+  }
+
+  // 3) 轮廓：沿石头边画细深棕蜡笔线，轻微抖动
+  brush.set('crayon', SEAM, 1.1 * SS);
+  brush.wiggle(0.10);
+  for (let i = 0; i < poly.length; i++) {
+    const a = poly[i], b = poly[(i + 1) % poly.length];
+    brush.line(a[0] * SS, a[1] * SS, b[0] * SS, b[1] * SS);
+  }
+  brush.wiggle(0);
+}
+
+try {
+  brush.createCanvas(N, N);
+  brush.angleMode(brush.DEGREES);
+  brush.clear(PAPER);                         // 露纸白 —— 儿童风格，白哥明确要保留
+  brush.translate(-N / 2, -N / 2);
+  srnd(9101 + S * 31);
+
+  // 一张瓦片，一块石头
+  drawStone(stonePoly(), STONE[S % STONE.length]);
+
+  brush.render();
+  window.__ok = true;
+} catch (e) {
+  window.__err = String(e && e.stack || e);
+}
+</script>
+</body>
+</html>

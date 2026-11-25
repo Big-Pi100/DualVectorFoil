@@ -3,11 +3,11 @@
   "throttle": "none",
   "dirs": {
     "D 右": {
-      "dx": 45,
+      "dx": 42.8,
       "dy": 0,
       "state": "walk",
-      "simMs": 175,
-      "wallMs": 175,
+      "simMs": 167,
+      "wallMs": 178,
       "pass": true
     },
     "A 左": {
@@ -15,7 +15,7 @@
       "dy": 0,
       "state": "walk",
       "simMs": 167,
-      "wallMs": 169,
+      "wallMs": 168,
       "pass": true
     },
     "W 上（不动）": {
@@ -39,27 +39,27 @@
   },
   "atk": {
     "state": "attack",
-    "lock": 0.28,
-    "simMs": 25,
+    "lock": 0.29,
+    "simMs": 17,
     "pass": true
   },
   "jump": {
-    "vy": -952,
+    "vy": -932,
     "onGround": false,
-    "simMs": 17,
+    "simMs": 25,
     "pass": true
   },
   "redKey": {
     "n": 1,
     "cd": 1.58,
-    "wallMs": 27,
+    "wallMs": 30,
     "pass": true
   },
   "back": {
     "dx": -61.3,
     "state": "dash",
     "dashSeen": true,
-    "invulnInDash": 0.112,
+    "invulnInDash": 0.095,
     "pass": true
   },
   "blueKey": {
@@ -74,18 +74,18 @@
     },
     "state": "cast",
     "n": 1,
-    "cd": 1.541666666666667,
+    "cd": 1.5500000000000003,
     "pass": true
   },
   "plainAtk": {
     "state": "attack",
     "n": 0,
-    "simMs": 17,
+    "simMs": 0,
     "pass": true
   },
   "reloadGuard": {
-    "xBefore": 468,
-    "xAfter": 468,
+    "xBefore": 472,
+    "xAfter": 472,
     "hint": "再按一次 R 重开",
     "hit": 1,
     "pass": true
@@ -155,17 +155,17 @@
   },
   "touchJump": {
     "state": "jump",
-    "vy": -873,
+    "vy": -834,
     "onGround": false,
     "held": {
       "jump": 1
     },
-    "wallMs": 15,
+    "wallMs": 20,
     "pass": true
   },
   "touchAtk": {
     "state": "attack",
-    "lock": 0.27,
+    "lock": 0.28,
     "wallMs": 9,
     "pass": true
   },
@@ -176,12 +176,12 @@
   },
   "touchBack": {
     "state": "dash",
-    "invuln": 0.12,
-    "wallMs": 28,
+    "invuln": 0.08,
+    "wallMs": 41,
     "pass": true
   },
   "touchStick": {
-    "dx": 28,
+    "dx": 33,
     "stateRight": "walk",
     "stateDown": "crouch",
     "pass": true
