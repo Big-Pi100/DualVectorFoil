@@ -575,6 +575,10 @@
 <script id="atlas-man" type="application/json">__MAN__</script>
 <script>window.ATLAS_MAN = JSON.parse(document.getElementById('atlas-man').textContent);</script>
 <script>window.ATLAS_B64 = "__B64__";</script>
+<!-- 蜡笔包（P6 定版）：10 张表 × n 帧，base64 内联。build.py 注入。 -->
+<script>window.CRAYON_B64 = __CRAYON__;</script>
+<!-- 背景板（C 类）：roomId -> 整幅蜡笔背景。没有就退回程序化背景。 -->
+<script>window.BG_B64 = __BG__;</script>
 <script>
 __AUDIO__
 </script>

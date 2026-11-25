@@ -98,24 +98,44 @@
 
 ## 4. 生成配方（逐字复用，只改槽位）
 
+> ⚠ **本节已按 `STYLE_LOCK.md`（P6 蜡笔）改写。** 原 STYLE ANCHOR 那段
+> `vector-clean, confident smooth curves, no texture noise` 与 L4「没有直线、涂不满、
+> 颗粒是特征」**直接冲突**，留着会让每张图都往"数码蜡笔滤镜"漂 —— 已删除，不再使用。
+
 ```
 STYLE ANCHOR（每个 prompt 必带，一字不改）：
-hand-painted 2D game art, vector-clean — confident smooth curves,
-no sketchy strokes, no texture noise, no photographic detail, no pixel grid.
-Three value steps per material. Cheerful and bright, never moody.
+real wax crayon on warm cream paper, waxy and slightly broken colour,
+irregular hand-drawn contour ~3px, wobbly lines, no smooth vector curves,
+the paper showing through at the edges of every stroke.
+Flat 2D graphic art only. Palette strictly the 12-crayon box in STYLE_LOCK §L5:
+cream #E8DCBE, wax white #FBF7EC, charcoal #2B2320, cool grey #8C8B84,
+deep blue #1F2E5C, slate blue #4C6E8C, blood red #9B2226, ochre #B98A2E,
+umber #6B4B32, skin #D9A16B, moss #4F6B3A, violet black #3B2340.
 
 TECHNICAL（抠图用，每个素材图必带）：
-flat solid pure magenta #FF00FF background filling every gap,
+flat solid PURE SATURATED MAGENTA RGB 255,0,255 — bright neon magenta, edge to edge.
+NOT mauve, NOT dusty rose, NOT pink, NOT maroon, NOT muted. No paper in the background.
+For frame strips: EXACTLY {N-1} vertical bars of pure saturated green RGB 0,255,0,
+~14px wide, perfectly straight, running the FULL height top to bottom,
+dividing the row into {N} equal columns. Bars must not be interrupted.
+No green and no magenta anywhere inside the figures.
 no cast shadow, no contact shadow, ambient occlusion excluded,
-no characters, no text, no watermark, no signature, no frame, no border.
+no text, no watermark, no signature, no frame, no border.
 
 EXCLUDE（固定负面）：
-pixel art, 3D render, photorealistic, oil painting texture,
-dark gothic mood, night, fog, glow effects, magic aura, UI, HUD.
+photograph, photo of paper, paper texture, cream background, white background,
+3D render, perspective, vanishing point, drop shadow, soft shadow, gradient, airbrush,
+pixel art, dithering, clean vector linework, front view, three-quarter view,
+dark gothic mood, fog, glow effects, magic aura, UI, HUD.
 ```
 
-水印处理：图生模型会在右下角打"AI生成/WORKBUDDY"，统一 `crop((0,0,w,h-84))`。
-（按 1024/1536 宽的实测值，换尺寸要重新量。）
+**为什么底色和分割线这么死板**：`STYLE_LOCK.md` §L3.5 有完整推导（白 T 与纸底的
+G 通道只差 27，洋红底差 247）。这一步选错，后面要补泛洪抠纸、去纸色、能量切刀口
+三个补丁，而且每个补丁都会带来新的缺陷 —— 已经踩过一整轮。
+
+水印处理：图生模型会在右下角打"AI生成/WORKBUDDY"。
+洋红底上可直接用 `process_spritesheet.patch_watermark()`（把浅色低饱和像素涂回背景色），
+**不要用 `crop` 硬裁底部** —— 会切到靴子。旧文档写的 `crop((0,0,w,h-84))` 作废。
 
 ## 5. 硬约束：生图做不出连续动画帧
 
@@ -124,7 +144,15 @@ dark gothic mood, night, fog, glow effects, magic aura, UI, HUD.
 - 同一个 prompt 连生 8 次，角色的帽子角度、大衣褶皱、剑的长度都会漂
 - 直接当 sprite sheet 用 → 播放起来"抖动"，比不做动画更难看
 
-**解法（选这条）**：**分件 + 程序骨骼**。
+> **2026-11-25 修正（实测）**：一行 N 帧 + 洋红底 + 绿分割线这条路**能走通**，
+> walk 4 帧、attack 4 帧都已成表（`MOVESET.md` §7）。前提是三个条件同时满足：
+> ① 分割线钉死刀口（切点不再靠猜）② 全帧共用一个缩放系数（否则抬腿帧被压小）
+> ③ 姿态差异被 prompt 逼到极端（帧间差 <6px 时动起来像原地抖）。
+> **所以下面的"分件 + 程序骨骼"不是唯一解，而是最终形态**：
+> 逐帧 strip 用于 S 档（128px）的 10 个动作状态；分件用于要做 squash/stretch、
+> 要换装、要让衣摆延迟摆动的场合。两条路不冲突，先出 strip 让手感跑起来。
+
+**解法（最终形态）**：**分件 + 程序骨骼**。
 
 | 件 | 用途 |
 |---|---|

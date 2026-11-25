@@ -1,0 +1,14 @@
+<<TITLE>>
+
+LAYOUT: exactly <<NFRAMES>> figures, no more, no fewer. Wide equal gaps between them, one figure per invisible column. Each is a COMPLETE person with two legs, two arms, head and torso — no detached limbs, no cropped parts. <<GROUND>> Same character, same size in all <<NWORD>> cells.
+
+<<POSES_HEADER>>
+<<POSES>>
+<<EXTRA_LAYOUT>>
+Character (identical to reference): man in his early 30s, thick dark-brown curly hair, full beard, plain white t-shirt, brown shorts to the knee, brown shoes. Strict side view facing right, empty hands.<<EXTRA_CHAR>>
+
+PROPORTIONS: adult, 3.3 heads tall, head including hair about 30% of total height. NOT chibi.
+
+Medium: real wax crayon, waxy broken color, the magenta background showing through the gaps between strokes, irregular ~3px hand-drawn contour, wobbly lines, no smooth vector curves. Flat 2D graphic. Palette strictly charcoal #2B2320, cool grey #8C8B84, umber #6B4B32, skin #D9A16B, wax white #FBF7EC, plus the magenta background and green separators. BACKGROUND: flat solid pure magenta #FF00FF edge to edge, filling every gap between strokes, no paper, no cream, no texture, no vignette. SEPARATORS: exactly <<NSEPS>> vertical bars of pure saturated green #00FF00, each about 14px wide, perfectly straight, running the FULL height of the image from the very top edge to the very bottom edge, dividing the row into <<NWORD>> equal columns; the bars must not be interrupted. No green and no magenta anywhere inside the figures.
+
+STRICTLY NOT: photograph, photo of paper, paper texture, cream background, white background, 3D render, perspective, vanishing point, drop shadow, soft shadow, gradient shading, airbrush, pixel art, dithering, clean vector linework, chibi, big head, text, numbers, labels, grid lines, borders, <<EXTRA_NEG>>watermark.

@@ -326,6 +326,115 @@ const PACK_ATLAS = {
 };
 let atlasImg = null, atlasMan = null;
 
+/* ============================ 蜡笔包（P6 定版） ============================
+ * 十张独立表，每张 n 帧横排，帧框恒为 160×160，锚点恒为脚底 (80,152)。
+ * 出图见 `art/prompts/sprite_prompt.py`，切片见 `art/tools/build_sheet_magenta.py`，
+ * 状态定义与时序见 `MOVESET.md §3`。
+ *
+ * 🔴 归一化必须用**一个全局常量**，不许按每帧裁切框算。
+ *    `drawAtlasFrame` 用的是 `k = height / fr.h`，fr 是紧贴人物的裁切框。
+ *    蜡笔表里站姿高 128、蹲姿高 92，各自归一之后**蹲下的人和站着一样高** ——
+ *    这就是"看得见吃不着"那个 bug 的来源。这里所有帧共用一个 cell，缩放只由
+ *    `spriteH / CRAYON.spriteH` 决定（目前 = 1），人物真实高矮由出图阶段的
+ *    `--scale-by tallest` 统一，渲染层不再二次判断。
+ *
+ * 🔴 fps / 帧数抄自 MOVESET §3 的时序表，改一处必须两边一起改。
+ *    非循环状态播完停在最后一帧（由 `loop:0` + `Math.min` 保证），
+ *    这样"动作做完了但状态还没退"时画面不会自己跳回第一帧。
+ */
+const CRAYON = {
+  cell: 160, ax: 80, ay: 152, spriteH: 128,
+  fps:  { stand:6, walk:9, jump:10, fall:3, attack:12, cast:12, hurt:10, crouch:4, slide:11, dash:15 },
+  n:    { stand:4, walk:2, jump:3,  fall:3, attack:4,  cast:4,  hurt:3,  crouch:2, slide:3,  dash:3 },
+  loop: { stand:1, walk:1, jump:0, fall:1, attack:0, cast:0, hurt:0, crouch:1, slide:0, dash:0 },
+};
+const PACK_CRAYON = { kind:'crayon', label:'蜡笔（P6 定版）' };
+const crayonImgs = {};              // state -> HTMLImageElement
+let crayonReady = 0;
+
+function loadCrayon(done) {
+  const src = (typeof window !== 'undefined' && window.CRAYON_B64) || {};
+  const keys = Object.keys(CRAYON.n).filter(k => src[k]);
+  if (!keys.length) { done && done(0); return; }
+  let left = keys.length;
+  const tick = () => { if (--left === 0) { crayonReady = keys.length; done && done(keys.length); } };
+  for (const k of keys) {
+    const img = new Image();
+    img.onload = () => { crayonReady++; tick(); };
+    img.onerror = () => { delete crayonImgs[k]; tick(); };
+    img.src = 'data:image/png;base64,' + src[k];
+    crayonImgs[k] = img;
+  }
+}
+
+/* 画一帧蜡笔。`fixIdx` 用来锁帧（目前没人用，留着给"顿帧"这类后续需求）。
+ * 关掉 imageSmoothing：蜡笔是硬边，双线性一插就糊成水彩，
+ * 而 128px 的人画到 128px 上本来就是 1:1，插值纯属自找模糊。 */
+function drawCrayonFrame(ctx, state, t, feetX, feetY, flip, fixIdx) {
+  const img = crayonImgs[state];
+  if (!img || !img.complete || !img.naturalWidth) return;
+  const n = CRAYON.n[state] || 1;
+  let i;
+  if (fixIdx != null) i = Math.min(fixIdx, n - 1);
+  else {
+    i = Math.floor(t * (CRAYON.fps[state] || 6));
+    i = CRAYON.loop[state] ? ((i % n) + n) % n : Math.min(i, n - 1);
+  }
+  const k = P_SPRITE_H / CRAYON.spriteH;
+  /* 帧框左右对称（实测 31 帧的人物中心都在 80.0~80.5），
+   * 所以翻转时镜像原点取 feetX 即可，不会左右跳半像素。 */
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  if (flip) { ctx.translate(feetX, 0); ctx.scale(-1, 1); ctx.translate(-feetX, 0); }
+  ctx.drawImage(img,
+                i * CRAYON.cell, 0, CRAYON.cell, CRAYON.cell,
+                feetX - CRAYON.ax * k, feetY - CRAYON.ay * k,
+                CRAYON.cell * k, CRAYON.cell * k);
+  ctx.restore();
+}
+
+/* ============================ 背景板（C 类） ============================
+ * 一层整幅蜡笔背景替代"一整面墙的 fillRect"。没有图就自动退回旧代码 ——
+ * 不是怕出错，是因为钟塔还没有图，而且这张随时可能被否，留一条 else 就不用 git revert。
+ *
+ * 平铺用**镜像拼接**：`正向 | 左右翻转` 拼成 2 倍宽，接缝处是"同一条边对同一条边"，
+ * 天然无缝。蜡笔笔触镜像之后几乎看不出来 —— 这是蜡笔比木刻/几何省事的地方。
+ */
+const bgPlates = {};                 // roomId -> Image
+function loadBgPlates(done) {
+  const src = (typeof window !== 'undefined' && window.BG_B64) || {};
+  const keys = Object.keys(src);
+  if (!keys.length) { done && done(0); return; }
+  let left = keys.length;
+  for (const k of keys) {
+    const img = new Image();
+    img.onload = () => { bgPlates[k] = img; if (--left === 0) done && done(keys.length); };
+    img.onerror = () => { if (--left === 0) done && done(keys.length); };
+    img.src = 'data:image/png;base64,' + src[k];
+  }
+}
+
+/* 调用时坐标系已经 translate(-camX, -camY)，所以这里传的是**世界坐标**。
+ * 垂直方向跟满镜头（背景贴在屏幕上，不上下滑）——
+ * 横版里背景上下飘比左右不动更假，因为没有东西能解释它为什么动。 */
+function drawBgPlate(ctx, img, par) {
+  const w = VIEW_W, h = VIEW_H, y = camY;
+  const start = camX * (1 - par);          // camX 越大，背景被"追"得越慢
+  const period = w * 2;
+  const k0 = Math.floor((camX - w - start) / period);
+  for (let k = k0; ; k++) {
+    const x = start + k * period;
+    if (x > camX + VIEW_W) break;
+    if (x + period < camX - w) continue;
+    ctx.drawImage(img, x, y, w, h);
+    ctx.save();
+    ctx.translate(x + period, y);
+    ctx.scale(-1, 1);
+    ctx.drawImage(img, 0, 0, w, h);
+    ctx.restore();
+  }
+}
+
 function animFrames(n) { const a = atlasMan && atlasMan.animations[n]; return a ? a.frames : []; }
 function animFps(n)    { const a = atlasMan && atlasMan.animations[n]; return a ? a.fps : 6; }
 
@@ -434,7 +543,9 @@ let prevX = 0, prevY = 0, prevCamX = 0, prevCamY = 0;
 function snapInterp() { prevX = P.x; prevY = P.y; prevCamX = camX; prevCamY = camY; }
 let shakeT = 0, shakeAmp = 0;          // 震屏：剩余时长 + 幅度，分开存才能"大震不因为短而看不见"
 let hitStop = 0;                       // 顿帧：打中的那一瞬整体停 40~60ms，是打击感的主要来源
-let playerPack = PACK_ATLAS;
+/* 默认皮肤：蜡笔包。boot() 里如果发现没内联图（直接开 src/index.html 未构建），
+ * 会自动退回名片包 —— 那时人物是空的，但游戏逻辑不崩，测试脚本照跑。 */
+let playerPack = PACK_CRAYON;
 let ended = false, msg = '', msgT = 0, msgPrio = 0;
 /* 最近几条 say()，只给测试读。存在的理由见 say() 的注释：
  * 屏幕上只有一行字，读"现在是什么"会漏掉"刚才出现过什么"。 */
@@ -1993,8 +2104,14 @@ function updatePlayer(dt) {
   // 8. 姿态压缩 + 步态 + 脚步声
   if (P.landT > 0) P.landT -= dt;
   /* 压缩值由**状态写目标**，P.sq 每帧追过去。这样蹲/滑铲/起跳拉伸共用一条曲线，
-   * 任何切换都是连续的 —— 硬切就是"闪烁"的来源。 */
-  P.poseSq = P.state === 'crouch' ? 0.66 : P.state === 'slide' ? 0.52 : 1;
+   * 任何切换都是连续的 —— 硬切就是"闪烁"的来源。
+   *
+   * 🔴 蜡笔包例外：它有真正的蹲/滑帧（crouch 高 92、slide f2 高 81，已按蹲姿出图）。
+   *    再乘 0.66/0.52 就是**压两次**，蹲下的人矮到快贴地 —— 这正是当初
+   *    "蹲下没变矮"修好之后最容易反过来踩的坑。结构压缩只给没有对应帧的包；
+   *    起跳/落地那种瞬时弹性（doJump 写的 1.20、落地写的 0.84）两包都要。 */
+  P.poseSq = (playerPack.kind === 'crayon') ? 1
+           : P.state === 'crouch' ? 0.66 : P.state === 'slide' ? 0.52 : 1;
   P.sq += (P.poseSq - P.sq) * Math.min(1, dt * 22);
 
   /* 步态相位按**走过的距离**推进，不按时间：走得快步频就高，停下相位就不动。
@@ -2345,7 +2462,11 @@ function hash2(x, y, s) {
   n = Math.imul(n ^ (n >>> 13), 1274126177);
   return ((n ^ (n >>> 16)) >>> 0) / 4294967295;
 }
-const STONE = ['#1f1a28', '#221d2c', '#1c1725', '#252030'];
+/* 石头配色：从"霓虹紫的写实夜店"迁到蜡笔 12 色板（STYLE_LOCK L5）。
+ * 旧值是 #1f1a28 / #221d2c 这类冷紫 —— 它们在暗色展厅里成立，
+ * 一旦背景换成亮纸蜡笔，紫灰就成了"另一个世界的地板"，怎么调都像贴错了图。
+ * 现在用炭黑打底 + 土褐四档，受光面走冷灰，全部落在 L5 的色系里。 */
+const STONE = ['#3A2C22', '#463527', '#31251C', '#503C2B'];
 const BRICK_H = 8, BRICK_W = 16;
 
 function drawStone(ctx, x, y, tx, ty) {
@@ -2354,7 +2475,7 @@ function drawStone(ctx, x, y, tx, ty) {
   const lfOpen = !isSolid(tileAt(x - 4, y + TILE * 0.5));
   const rtOpen = !isSolid(tileAt(x + TILE + 4, y + TILE * 0.5));
 
-  ctx.fillStyle = '#0d0b12';
+  ctx.fillStyle = '#2B2320';            // 炭黑：砖缝。旧值 #0d0b12 是"暗紫黑"，在亮背景里显得脏
   ctx.fillRect(x, y, TILE, TILE);
 
   // 错行砖
@@ -2369,7 +2490,7 @@ function drawStone(ctx, x, y, tx, ty) {
       ctx.fillStyle = c;
       ctx.fillRect(px0 + 1, y + r * BRICK_H + 1, BRICK_W - 2, BRICK_H - 2);
       // 每块砖顶上一条 1px 微光 —— 石头靠这个比靠贴图更容易读出来
-      ctx.fillStyle = rv > 0.72 ? 'rgba(206,192,240,.10)' : 'rgba(206,192,240,.05)';
+      ctx.fillStyle = rv > 0.72 ? 'rgba(232,220,190,.14)' : 'rgba(232,220,190,.06)';
       ctx.fillRect(px0 + 1, y + r * BRICK_H + 1, BRICK_W - 2, 1);
       // 少量砖缺角/发霉，打破规则网格
       if (rv < 0.05) { ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(px0 + 3, y + r * BRICK_H + 3, 4, 3); }
@@ -2380,14 +2501,14 @@ function drawStone(ctx, x, y, tx, ty) {
   for (let i = 0; i < 5; i++) {
     const gx = x + Math.floor(hash2(tx, ty, i * 3 + 1) * (TILE - 3));
     const gy = y + Math.floor(hash2(tx, ty, i * 3 + 2) * (TILE - 3));
-    ctx.fillStyle = hash2(tx, ty, i * 3 + 3) > 0.55 ? 'rgba(190,178,210,.10)' : 'rgba(0,0,0,.22)';
+    ctx.fillStyle = hash2(tx, ty, i * 3 + 3) > 0.55 ? 'rgba(232,220,190,.13)' : 'rgba(0,0,0,.22)';
     ctx.fillRect(gx, gy, 2, 2);
   }
 
   // 受光顶面 / 背光底边 / 侧边压暗
   if (upOpen) {
-    ctx.fillStyle = '#574c66'; ctx.fillRect(x, y, TILE, 3);
-    ctx.fillStyle = '#6d6180'; ctx.fillRect(x, y, TILE, 1);
+    ctx.fillStyle = '#8C8B84'; ctx.fillRect(x, y, TILE, 3);   // 冷灰：受光面
+    ctx.fillStyle = '#B3B1A6'; ctx.fillRect(x, y, TILE, 1);
   }
   if (dnOpen) { ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(x, y + TILE - 5, TILE, 5); }
   if (lfOpen) { ctx.fillStyle = 'rgba(0,0,0,.30)'; ctx.fillRect(x, y, 3, TILE); }
@@ -2400,16 +2521,17 @@ function drawStone(ctx, x, y, tx, ty) {
 
 function drawSlab(ctx, x, y, tx, ty) {
   // 台面：14px 厚，下面是空的（玩家能从下面走过去）
-  ctx.fillStyle = '#1b1724'; ctx.fillRect(x, y + 4, TILE, 14);
+  // 配色同石头迁到 12 色板：土褐台面 + 赭金受光刃。旧值是紫灰渐变，理由见 STONE 的注释。
+  ctx.fillStyle = '#2B2320'; ctx.fillRect(x, y + 4, TILE, 14);
   const g = ctx.createLinearGradient(0, y + 4, 0, y + 18);
-  g.addColorStop(0, '#4a4058'); g.addColorStop(0.35, '#38304a'); g.addColorStop(1, '#241f2e');
+  g.addColorStop(0, '#8A6A3C'); g.addColorStop(0.35, '#6B4B32'); g.addColorStop(1, '#3A2C22');
   ctx.fillStyle = g; ctx.fillRect(x, y + 4, TILE, 12);
-  ctx.fillStyle = '#6b5f7e'; ctx.fillRect(x, y + 4, TILE, 1);
+  ctx.fillStyle = '#B98A2E'; ctx.fillRect(x, y + 4, TILE, 1);    // 赭金：这一条是"能踩"的信号
   // 铆钉
   for (let i = 0; i < 2; i++) {
     const rx = x + 10 + i * 24;
     ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(rx, y + 10, 3, 3);
-    ctx.fillStyle = 'rgba(200,190,220,.25)'; ctx.fillRect(rx, y + 10, 2, 2);
+    ctx.fillStyle = 'rgba(232,220,190,.45)'; ctx.fillRect(rx, y + 10, 2, 2);
   }
   // 底边阴影投到空气里 —— 让它有厚度
   ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.fillRect(x, y + 16, TILE, 4);
@@ -2595,7 +2717,8 @@ function render(alpha) {
   });
   // 长廊：展厅是一堵真墙，不是虚空。
   // 没有它，画框会"浮"在背景上 —— 这是上一版最难看的地方。
-  if (room.id === 'hall') {
+  if (room.id === 'hall' && bgPlates.hall) drawBgPlate(ctx, bgPlates.hall, 0.28);
+  if (room.id === 'hall' && !bgPlates.hall) {
     const RW = px(room.w), railY = px(12.45), floorY = px(15);
     const gw = ctx.createLinearGradient(0, 0, 0, floorY);
     gw.addColorStop(0, '#100d16'); gw.addColorStop(0.55, '#1a1424'); gw.addColorStop(1, '#221a2c');
@@ -2784,10 +2907,15 @@ function render(alpha) {
     const feetX = P.x + P_CW/2;
     /* 步态（走）与抬头（↑）都只改"画在哪"，不改 P.y —— 物理和画面必须分开。
      * 上一版把浮动直接写进 feetY，同时又在下面用 Math.min 硬切压缩，
-     * 两个都在动就分不清是哪个在抖了。 */
+     * 两个都在动就分不清是哪个在抖了。
+     *
+     * 🔴 程序化步态只给**没有 walk 帧**的包用。蜡笔包的 walk 是真帧
+     *    （CONTACT / PASSING UP 两帧，腿在画里已经剪开），再叠 4px 上下颠 + 5° 摇摆，
+     *    等于把真帧踩准的接触点又推离地面 —— 读起来是"抽筋"，不是"迈步"。 */
+    const gait = playerPack.kind !== 'crayon';
     const ph = P.walkPhase * Math.PI;
     let lift = 0, roll = 0;
-    if (P.state === 'walk') {
+    if (gait && P.state === 'walk') {
       /* 名片管线没有 walk 帧（只有 idle/wave/attack/kick/hit）。硬画 idle 会像"滑行"，
        * 所以补一层程序化步态：躯干上下颠 + 左右摆 + 两拍一次的轻微压缩。
        * 这三件事频率一致、都由 walkPhase（距离）驱动，读起来就是"在迈步"。 */
@@ -2817,14 +2945,30 @@ function render(alpha) {
      * **以脚底为原点**：以身体中心缩放会让人半截陷进地板里。
      * 这里不再有 Math.min 硬切 —— 硬切就是"按键时画面闪一下"的根因。 */
     let sq = P.sq || 1;
-    if (P.walkW > 0.01) sq *= 1 + Math.sin(ph * 2) * 0.018 * P.walkW;
+    if (gait && P.walkW > 0.01) sq *= 1 + Math.sin(ph * 2) * 0.018 * P.walkW;
     if (Math.abs(sq - 1) > 0.004 || Math.abs(roll) > 0.001) {
       ctx.translate(feetX, feetY);
       ctx.rotate(roll);
       ctx.scale(1 / Math.sqrt(sq), sq);
       ctx.translate(-feetX, -feetY);
     }
-    if (playerPack.kind === 'atlas') {
+    if (playerPack.kind === 'crayon') {
+      /* 蜡笔包：10 状态各有真帧，状态名直接就是表名。
+       * 不传 fixIdx —— jump 现在有 3 帧真帧（起跳/上升/顶点），
+       * 以前锁第 1 帧是因为名片包只有一个 idle 可以用，锁帧才是对的。 */
+      const st = CRAYON.n[P.state] ? P.state : 'stand';
+      if (P.state === 'dash') {
+        /* 后跃残影：蜡笔的 dash 三帧本来就是"连着倒三步"，
+         * 残影只叠两层、错位更小 —— 三层会读成"四个人一起退"。 */
+        const base = ctx.globalAlpha;
+        for (let i = 2; i >= 1; i--) {
+          ctx.globalAlpha = base * (0.10 + i * 0.06);
+          drawCrayonFrame(ctx, st, P.animT, feetX - P.vx * 0.018 * i, feetY, P.face < 0, null);
+        }
+        ctx.globalAlpha = base;
+      }
+      drawCrayonFrame(ctx, st, P.animT, feetX, feetY, P.face < 0, null);
+    } else if (playerPack.kind === 'atlas') {
       const anim = PACK_ATLAS.map[P.state] || 'idle';
       const fix = P.state === 'jump' ? 1 : null;
       /* 后跃的残影：精灵表里没有后空翻的帧，只有 idle。
@@ -2903,8 +3047,15 @@ function render(alpha) {
   ctx.strokeRect(5, 5, VIEW_W - 10, VIEW_H - 10);
 
   if (msgT > 0) {
-    ctx.fillStyle = '#ffe6a3'; ctx.font = 'bold 22px sans-serif'; ctx.textAlign = 'center';
+    /* 蜡笔世界里底是亮纸（#E8DCBE），米黄字 #ffe6a3 跟它只差一点色相、明度几乎相同 ——
+     * 实测在亮背景上读不出来。改成"炭黑字 + 纸色描边"：
+     * 描边让字从任何底色上剥离开，字本身走最深色，正好复用 L2 完成度的那条对比。 */
+    ctx.font = 'bold 22px sans-serif'; ctx.textAlign = 'center';
     ctx.globalAlpha = Math.min(1, msgT * 2);
+    ctx.lineJoin = 'round'; ctx.lineWidth = 6;
+    ctx.strokeStyle = 'rgba(232,220,190,.96)';
+    ctx.strokeText(msg, VIEW_W/2, 84);
+    ctx.fillStyle = '#2B2320';
     ctx.fillText(msg, VIEW_W/2, 84);
     ctx.globalAlpha = 1; ctx.textAlign = 'left';
   }
@@ -3165,6 +3316,16 @@ function boot() {
     img.onload = () => { atlasImg = img; };
     img.src = 'data:image/png;base64,' + b64;
   }
+  /* 皮肤包落地顺序：蜡笔图内联在 HTML 里（build.py 注入），加载即用；
+   * 没注入（直接开 src/index.html、或跑无头测试）就退回名片包 ——
+   * 那时人物画不出来，但逻辑、存档、HUD 全都不受影响，回归照跑。 */
+  loadCrayon((n) => {
+    if (n < 8) {
+      playerPack = PACK_ATLAS;
+      if (typeof window !== 'undefined') window.__packFallback = n;
+    }
+  });
+  loadBgPlates();
   let start = 'hall';
   /* 读档在进房间**之前**：进房间本身会落盘，顺序反了会把刚读出来的进度
    * 用默认值盖掉（先写后读 = 存档永远停在开局）。 */
