@@ -70,9 +70,11 @@ walk 试了 **5 次**，hurt 3 次，jump / attack / dash 各 2 次。
 ### 2.2 瓦片（生图素材板 → 切片，2026-11-26 起）
 
 ```
-生图 1024×1024：洋红底 + 16 块互不接触的散石（4 列 × 4 行）
-    │  提示词要点：BLOCKY / NEARLY RECTANGULAR / NOT round / STRICTLY NO green
-    │  块间 ≥24px 纯洋红，任何一块不许碰到画布边缘
+生图 1024×1024：洋红底 + 十块左右互不接触的散石
+    │  提示词 = 七层锚点（style_anchor.py · PROFILE["tile"]）+ subject 段
+    │  ⚠ subject 里不许有 block / brick / masonry —— 这三个词自带 3D 先验，
+    │    实测连出三版全是立体砖块；换 flat-faced stones + 建筑立面图才平
+    │  块间 ≥40px 纯洋红，任何一块不许碰到画布边缘
     ▼
 art/tools/tile_from_gen.py
     │  ① 洋红键（复用 process_spritesheet.magenta_score：min(R,B)-G，只看色相）
@@ -253,6 +255,23 @@ INDEX 里标着 🟢 现行，实际只有文档引用它。`p5.brush` 也已于
 
 `bg` 目录只有 `bg_hall.png`。`ROOMS` 里的第二个房间目前没有背景板 ——
 真跑起来要么复用 hall（同一面墙走两遍），要么退回代码渐变。
+
+### P1-4 提示词：骨架已立，但三条漂移没压住
+
+11-26 建了七层锚点（`STYLE_LOCK §L0.5`），把"材质咬合 / 笔触形态 / 边界 / 禁区"从
+氛围词变成了可执行的层。六次出图定位出一个稳定结论：**`block` / `brick` / `masonry`
+这三个词自带 3D 语义先验**，拿掉它们平面化才成立（证据 `shots/prompt_trials.png`）。
+
+但还有三条**没解决**，不要当成已解决：
+
+| 漂移 | 表现 | 影响 |
+|---|---|---|
+| 块数不可控 | 9 / 12 / 13 / 16 都出过 | 产线不受影响（切片按连通域，`pick_tiles` 选 6），但排期没法按"一张出 N 块"算 |
+| 洋红纯度不稳 | T1 与 T6 的洋红明显偏暗偏紫 | **这条最危险**：洋红不纯 → 洋红键抠不净 → alpha 长毛 |
+| 赭石读成橄榄绿 | T6 大片橄榄 | 色板里 ochre `#B98A2E` 与 moss `#4F6B3A` 相邻，容易混 |
+
+对策方向写在 `STYLE_LOCK §L0.5.8`：底色强调"平涂印刷色，不是蜡笔画的"；
+瓦片 subject 显式排 moss；块数不跟模型争，交给切片。
 
 ### P2 完整性缺口
 

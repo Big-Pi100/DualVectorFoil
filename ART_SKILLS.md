@@ -49,7 +49,8 @@
 | **S8** | `capture` | 实机取证 | 房间名 → 整屏截图 | `node _shot_scene.js` | 🟢 现行 |
 | **S9** | `feel-calibrate` | 手感数字对账 | 改过的物理参数 → 跳高/速度实测 | `node probe_feel.js` / Godot `feel_smoke.gd` | 🟢 现行 |
 | **S10** | `asset-audit` | 资产体检 | `art/` 全目录 → 问题清单 | `python art/tools/asset_audit.py` | 🟢 现行 |
-| 底座 | `process_spritesheet` | 抠图/切帧/对位/去水印 | 见 §12 | 被 S2、S4 调用 | 🟢 现行 |
+| **S11** | `prompt-anchor` | 维护七层提示词锚点（不产资产） | 改画风/新资产 → 一组槽位 | `python art/prompts/style_anchor.py --check` | 🟢 现行 |
+| 底座 | `process_spritesheet` | 抠图/切帧/对位/去水印 | 见 §13 | 被 S2、S4 调用 | 🟢 现行 |
 
 **没有人用的 skill 要删，不要留着。** 判据：`grep -rn "<脚本名>" --include=*.md --include=*.js --include=*.py .`
 输出为空就是死的。`art/tools/crayon.py` 目前就是这个状态（零调用者，见 §15）。
@@ -319,48 +320,73 @@ python art/tools/build_sheet_magenta.py \
 
 | 项 | 值 |
 |---|---|
-| 配方 | `ART_PIPELINE.md §4.5.2`（提示词逐字复制，只改块数与比例） |
+| 配方 | `ART_PIPELINE.md §4.5.2` 的 **subject 段** + `PROFILE["tile"]` 的锚点 |
 | 参数 | `1024×1024`、`quality high`、`background opaque` |
 | 输出 | `art/tiles/gen/<语义名>_sheet_vN_<风格>.png` |
-| 命名 | 语义名写清是什么（`wall` / `floor` / `slab`），vN 便于对比，风格词说明这批的特征（`blocky` / `cobblestone`） |
+| 命名 | 语义名写清是什么（`wall` / `floor` / `slab`），vN 便于对比，风格词说明这批的特征 |
+| 失败样本 | `art/tiles/gen/_trials/t<N>_<改了什么>.png`，**不删**，留给半年后复查 |
 
 ### 命令
 
-没有 CLI，配方是文本。生图时把 `§4.5.2` 的整段贴上，只改两处：
+锚点由代码拼，不手写：
 
+```bash
+python art/prompts/style_anchor.py --show tile     # 先看锚点全长（应 ≤2200 字符）
 ```
-Exactly TWELVE separate stone blocks  → 块数（12~16 都行，看画布利用率）
-Width to height ratio about 1.35       → 目标长宽比（决定 §6 的画布尺寸）
+
+```python
+import sys; sys.path.insert(0, 'art/prompts')
+from style_anchor import compose, PROFILE
+prompt = compose(SUBJECT, tail="Count: exactly twelve stones, four columns by three rows.",
+                 **PROFILE["tile"])
+print(prompt)      # 贴给生图工具
 ```
+
+只改两处：`SUBJECT` 里的块数与比例。**锚点一个字都不许在调用处改** —— 要改就改
+`style_anchor.py`，然后跑 `--check` 和 `--budget`。
 
 ### 判据（门①）
 
 | # | 判据 | 阈值 | 怎么看 |
 |---|---|---|---|
-| 1 | 块数 | 12~16 | 数；少于 12 说明模型合并了石头 |
-| 2 | 洋红纯度 | 四角色度 > 180 | 目测是否"荧光洋红"，奶粉色/紫红都不行 |
-| 3 | 块间最小间距 | ≥ 24px（提示词要求） | `S4` 会打印每块 bbox，重叠就是没分开 |
-| 4 | 不碰画布边 | 四边留白 | 碰边的石头会被切成半个 |
-| 5 | 形状接近矩形 | 长宽比 1.0~1.6，四边近直线 | 目测；圆的就是"鹅卵石"，重出 |
-| 6 | 无绿色/苔藓色 | 无 | 目测；出现就说明负面约束没生效 |
-| 7 | 同一支笔 | 轮廓粗细一致 | 和角色表并排看 |
+| 1 | **形状是平的** | 无顶面、无侧面、无厚度 | 目测；出现顶面就是 `block/brick/masonry` 又混进来了 |
+| 2 | 洋红纯度 | 荧光洋红，不偏紫不偏暗 | 与上一批并排比；偏暗会让洋红键抠不干净 |
+| 3 | 块数 | ≥ 10 即可，不强求 12 | **块数不可控，别跟模型争**；切片按连通域，出几块用几块 |
+| 4 | 块间最小间距 | ≥ 24px | `S4` 会打印每块 bbox，重叠就是没分开 |
+| 5 | 不碰画布边 | 四边留白 | 碰边的石头会被切成半个 |
+| 6 | 长宽比 | 4:3 横置（1.3 左右） | 竖的说明比例句被读反了 |
+| 7 | 无绿色/苔藓色 | 无 | 赭石与苔绿相邻，极易混 |
+| 8 | 画面无多余物体 | 只有石头 | 可数名词（`twelve crayons`）会被真的画出来 |
+| 9 | 同一支笔 | 轮廓粗细一致 | 和角色表并排看 |
 
-### 提示词的两条硬经验（花了两张图换来的）
+### 六条硬经验（花了六张图换来的）
 
-1. **"rounded" 一个字毁掉整批。** 要砌石必须写 `BLOCKY / NEARLY RECTANGULAR`，
-   并逐条否定 `NOT round / NOT oval / NOT boulder / NOT cobblestone`。
-2. **正向色板和负面清单必须一致。** 第 1 版写了 no moss，却在正向描述里给了 moss 色，
-   等于没写。负面要写 `STRICTLY NO green`，不是 `no green`。
+完整实测表在 `ART_PIPELINE §4.5.3`，这里只留"下次会再犯"的部分：
+
+1. **`block` / `brick` / `masonry` 自带 3D 先验。** 这三个词一出现，出的全是立体砖。
+   换成 `flat-faced stones` + "建筑立面图"才平。**这是唯一稳定复现的结论。**
+2. **几何约束写成否定清单会更糟。** 写 6 个 `NO top face / NO box / NO cube`，
+   出来全组最立体 —— 模型把被否定的名词当特征提取。几何只用正向类比。
+3. **单次成功不能归因于措辞。** 曾把某版当"有效措辞"，逐字重出照样失败。
+   判据要能重复复现，才能写进定版。
+4. **可数名词复数会被画出来。** `twelve crayons` → 画面里出现 4 根实体蜡笔。
+   比喻也别用可数名词。
+5. **比例要写整数比并点明方向。** `1.35 to 1` 会出竖的；`four units wide per three high` 才对。
+6. **锚点超 2200 字符，subject 就被淹没。** 数量约束连 tail 复述都救不回来。
 
 ### 失败模式
 
 | 现象 | 根因 | 处置 |
 |---|---|---|
-| 平铺像鹅卵石/砂砾 | 形状圆、块太小、缝太大 | 重出：块数减到 12、长宽比压到 1.35、加 BLOCKY |
-| 平铺有一道道竖白条 | 画布比例与素材不符（不是提示词问题） | 去 `S4`，按 `§6` 的算式重算画布 |
-| 石头带黄绿色 | 正向给了 moss/olive | 换成 umber + 灰主导，加 STRICTLY NO green |
-| 有石头被画布边切掉 | 提示词没约束 edge | 重出，`No stone may touch the edge` 要保留 |
-| 块块粘连成一坨 | 间距不足 | 重出；`S4` 会把粘连判成一块，数量对不上 |
+| 石头是立体砖块 | 物体名里有 `block`/`brick`/`masonry` | 换 `flat-faced stones`，加立面图类比 |
+| 越加约束越立体 | 用否定清单描述几何 | 改成正向类比，否定只留 L5 一条 |
+| 画面里多出蜡笔/工具 | 用了可数名词复数 | 全部删掉，"只有石头"用正向句说 |
+| 块数总是差一两块 | 数量约束在长 prompt 里失效 | **不管**；切片按连通域，`S5` 选 6 块 |
+| 石头竖着 | `A to B` 形式比例 | 改 `four units wide for every three units high` |
+| 洋红偏暗/偏紫 | 底色被当蜡笔涂了 | 加"背景是平涂印刷色，不是蜡笔画的"；或切片时重置底色 |
+| 石头带黄绿色 | 赭石与苔绿混 | subject 显式排 moss/olive/yellow-green |
+| 平铺有一道道竖白条 | 画布比例与素材不符（不是提示词问题） | 去 `S4`，按 `§4.5.4` 算式重算画布 |
+| 块块粘连成一坨 | 间距不足 | 重出；`S4` 会把粘连判成一块 |
 
 ---
 
@@ -666,6 +692,75 @@ python art/tools/asset_audit.py --strict   # 有 P0 就以非零码退出（可�
 
 ---
 
+## 12.5 S11 `prompt-anchor` · 维护提示词锚点
+
+> 编号放 12.5 是因为它**不产生资产**。它是所有出图 skill（S1 / S3 / S6）共用的地基，
+> 放在最后单列，避免每次调风格都要翻三份文档。
+
+### 触发
+
+- 要改画风措辞（"蜡笔再糙一点" / "改成水彩"）
+- 新开一类资产，想知道用哪组槽位
+- 出图结果漂了，要判断是锚点的问题还是 subject 的问题
+- 收到别人给的风格提示词建议，要评估能不能直接用
+
+**不该用**：只想换一张图的构图 —— 那是 subject 的事，锚点一个字都别动。
+
+### 输入 / 输出
+
+| 项 | 值 |
+|---|---|
+| 唯一真源 | `art/prompts/style_anchor.py`（代码），理由与实测记录在 `STYLE_LOCK.md §L0.5` |
+| 消费方 | `sprite_prompt.py`（S1）、瓦片调用处（S3）、背景配方（S6） |
+| 输出 | 一个 `compose()` 函数 + 5 个 `PROFILE` |
+
+### 命令
+
+```bash
+python art/prompts/style_anchor.py --check     # 与 sprite_template.txt 逐句对账
+python art/prompts/style_anchor.py --budget    # 长度是否超 2200
+python art/prompts/style_anchor.py --show tile # 打印某 profile 的完整锚点
+python art/prompts/style_anchor.py             # 三个常量层 + 全部槽位
+```
+
+### 七层职责（改之前必须知道哪层管什么）
+
+| 层 | 管什么 | 类型 |
+|---|---|---|
+| L1 媒介 | 用什么画、什么投影方式 | 常量 |
+| L2 笔触 | 蜡笔怎么咬纸、轮廓什么样 | 常量 |
+| L2g 颗粒 | `inner`（要抠图）/ `full`（整幅用） | 槽位 |
+| L3 可读性 | 剪影是否一眼能认 | 常量 |
+| L3.5 朝向 | `flat` / `side` / `room` / `per_object` | 槽位 |
+| L3.6 投影 | `none`（素材）/ `hatch`（背景） | 槽位 |
+| L3.7 分离 | `strict` / `layered` | 槽位 |
+| L4 色板 | 只能用哪 12 色（**上限，不是清单**） | 常量 |
+| L4m 明度 | `storybook` / `draft` | 槽位 |
+| L5 禁区 | 风格级否定，只此一条清单 | 常量 |
+| 底色 | 洋红 / 米纸 / 无 | **工序参数** |
+
+### 判据（门①）
+
+| # | 判据 | 阈值 | 怎么看 |
+|---|---|---|---|
+| 1 | 对账通过 | `--check` exit 0 | 锚点与定版模板必须逐句同源 |
+| 2 | 长度 | `--budget` ≤ 2200 | 超了 subject 会被淹没 |
+| 3 | 常量层未被改动 | `git diff` 只动槽位 | 常量层是已出 31 帧的基线 |
+| 4 | 改完跑一张 `ref` | 四类物体仍是同一支笔 | 一张图就能验，别直接批量出 31 帧 |
+
+### 失败模式
+
+| 现象 | 根因 | 处置 |
+|---|---|---|
+| 三处 prompt 措辞慢慢不一样了 | 手写锚点，没有单一真源 | 收进 `style_anchor.py`，`--check` 兜底 |
+| 改了一句"更好听的"措辞，效果全崩 | 常量层被当成可优化文本 | 常量层不许改写，要改先出对照图 |
+| 素材边缘长毛、相邻块粘连 | 给素材用了 `grain="full"` | 素材一律 `inner` |
+| 背景画成完成品，主角糊进去 | 给背景用了 `mood="storybook"` | 背景一律 `draft`，且画里不许有成品主角 |
+| 洋红键抠出破洞 | 把 `on cream paper` 写进了 L1 | 底色只从 `bed` 走，L1 不许提纸 |
+| 锚点越写越长，效果越差 | 以为"详细"等于"有效" | 看 `--budget`；长出来的部分砍 L5 与 L4 |
+
+---
+
 ## 13. 底层共享能力 `process_spritesheet`
 
 `E:/IdentityCard/tools/process_spritesheet.py`（474 行），**跨项目复用，不许另写一份**。
@@ -740,7 +835,12 @@ python art/tools/asset_audit.py --strict   # 有 P0 就以非零码退出（可�
 | 实机没变化 | S7 | 忘了 `build.py` | 重建 |
 | 图能切但全是纸色 | S3 | 用了纸底而不是洋红底 | 重出（`floor_0..5` 就是这么废的） |
 | 平铺一道竖白条 | S4 | 画布比例跟"想要的尺寸"走 | 按素材比例重算 `--tw` |
-| 平铺像砂砾/鹅卵石 | S3 | 提示词 `rounded` / 块太多 / 色含绿 | 重出，改 BLOCKY + STRICTLY NO green |
+| 平铺像砂砾/鹅卵石 | S3 | 提示词 `rounded` / 块太多 / 色含绿 | 重出，改 `flat-faced` + 排 moss |
+| **瓦片全是立体砖块** | **S3** | **物体名里有 `block`/`brick`/`masonry`** | **换 `flat-faced stones` + 立面图类比** |
+| **加了一堆 `NO xxx` 反而更糟** | **S11** | **几何用否定描述，模型把名词当特征** | **改正向类比；否定只留 L5** |
+| **画面里多出蜡笔/工具** | **S3** | **用了可数名词复数（`twelve crayons`）** | **删掉该名词，"只有石头"用正向句** |
+| **石头竖着** | **S3** | **`1.35 to 1` 有方向歧义** | **写 `four units wide per every three high`** |
+| **漂了，但不知道是锚点还是 subject** | **S11** | **没有单一真源，改在哪不清楚** | **`--check` 对账；先跑一张 `ref` 定位** |
 | 角色边缘紫边 | S2 | 缩放没预乘 alpha | 用 `resize_premultiplied` |
 | 蹲姿和站姿一样高 | S2 | `--scale-by tallest` | 改 `head` |
 | 6 块砖长得一样 | S5 | 取了前 6 张 | 贪心最大最小距离重挑 |

@@ -19,6 +19,194 @@
 
 ---
 
+## L0.5 提示词七层锚点（提示词的唯一真源，2026-11-26 建）
+
+> 起因：白哥拿来一份建议，主张把风格提示词拆成 **5 层固定锚点**（媒介 / 笔触纸感 /
+> 可读性 / 色彩光影 / 明确禁区），理由是"明亮童趣稚拙儿童蜡笔画"这类词只是**氛围**，
+> 缺材质咬合、笔触形态、边界与禁区的硬约束，模型会在批次间漂成扁平卡通、水彩晕染、
+> 厚涂油画或糊成一团。
+>
+> **建议的方向是对的，但直接照抄会炸三处**（见下面 §L0.5.5）。实测 6 张之后定版为
+> **七层** —— 多了朝向上和投影两层几何约束。代码在 `art/prompts/style_anchor.py`，
+> 本节的表格与它是同一件事的两种写法；**改措辞只改代码，本节记录理由**。
+
+### L0.5.1 七层各自管什么（职责不重叠是重点）
+
+| 层 | 名字 | 管什么 | 常量还是槽位 | 放错会怎样 |
+|---|---|---|---|---|
+| L1 | 媒介 Medium | 用什么画、什么投影方式 | **常量** | — |
+| L2 | 笔触 Stroke | 蜡笔怎么咬纸、轮廓什么样 | **常量** | 少了就成平滑色块 |
+| L2g | 颗粒范围 Grain | 颗粒在内侧还是铺满 | 槽位 `inner` / `full` | 素材用了 `full` → 边缘长毛、连通域粘连 |
+| L3 | 可读性 Read | 剪影是否一眼能认 | 常量 | — |
+| **L3.5** | **朝向 Orient** | 从哪个角度看 | 槽位 4 档 | 放进 L1 → 石头画成 3/4 方块 |
+| **L3.6** | **投影 Shadow** | 地上有没有影子 | 槽位 2 档 | 素材留投影 → 洋红键把影子算进主体，抠出一圈脏边 |
+| L3.7 | 分离 Separation | 主体之间怎么隔开 | 槽位 2 档 | — |
+| L4 | 色板 Palette | 只能用哪 12 色 | 常量（语义是**上限**） | 写成"清单" → 12 色全上，出红砖蓝砖 |
+| L4m | 明度 Mood | 绘本明调 / 世界草稿调 | 槽位 2 档 | 背景用了明调 → 画成完成品，主角糊进去 |
+| L5 | 禁区 NOT | 明确排掉哪些风格 | **常量** | 少了会漂成 3D / 水彩 / 厚涂 |
+| — | 底色 Bed | 洋红 / 米纸 / 无 | **工序参数，不是画风层** | 写进画风句 → 洋红键失效（见 §L3.5） |
+
+**为什么底色必须单列**：它不是"画风"，是"这张图接下来要走哪道工序"。
+洋红底意味着要抠图，米纸底意味着整幅使用。同一张画，换底色不改画风，
+但它决定了后面能不能被 `build_sheet_magenta.py` / `tile_from_gen.py` 处理。
+把 `on cream paper` 写进媒介层，是这套体系里最容易犯、后果最重的一个错。
+
+### L0.5.2 三个常量层（逐字，不许改写）
+
+```
+L1  MEDIUM
+2D hand-drawn crayon illustration, children's picture book. Flat 2D graphic art,
+orthographic front view, no perspective, no vanishing point. Real wax crayon, every
+mark made by a hand holding one.
+
+L2  STROKE
+Visible waxy crayon strokes, the paper's tooth showing through, wax skipping the grain
+instead of flooding it. Fill built from overlapping short strokes. Outlines gentle,
+irregular, about 3px, wobbly, slightly broken, no smooth vector curves.
+
+L5  NOT
+STRICTLY NOT: 3D render, CGI, photograph, cast shadow, contact shadow, airbrush,
+smooth gradient, soft shadow, ambient occlusion, glow, vector-clean linework, pixel art,
+dithering, watercolour, oil paint, anime cel shading, text, letters, numbers, labels,
+signature, watermark, border, frame.
+```
+
+L2 里那句 `the paper's tooth showing through` 就是建议里说的"**蜡笔在粗纸上的颗粒咬合**"。
+原来只有 `waxy broken colour`，说的是蜡质，没说咬纸 —— 这是真缺的一环。
+
+`orthographic front view` 留在 L1，虽然它描述的是机位不是笔。理由见 §L0.5.4 第 2 条：
+唯一的成功案例里有它，挪走过一次就全成 3D 方块。
+
+### L0.5.3 四个槽位与五档用途
+
+| 槽位 | 档 | 用在哪 | 正文要点 |
+|---|---|---|---|
+| `orient` | `flat` | 瓦片、道具、正面素材 | "reads as a flat shape cut from coloured paper … the way a paving stone looks in an elevation drawing" |
+| | `side` | 角色帧表 | "Strict side view, one shoulder, one eye, one readable arm silhouette" |
+| | `room` | 背景板 | "flat room seen straight on, parallel wall and floor lines" |
+| | `per_object` | 风格参考图 | "each object keeps the view angle stated in its own description" |
+| `shadow` | `none` | 一切要抠图的 | "pasted flat onto the bare background, its outline meets the background colour directly" |
+| | `hatch` | 背景板 | "shadows made of visible charcoal hatching, never a soft edge" |
+| `grain` | `inner` | 一切要抠图的 | "grain stays inside each shape, one clean closing contour" |
+| | `full` | 背景板 | "grain runs across the whole sheet, empty areas included" |
+| `mood` | `storybook` | 主角 / 道具 / 敌人 | "lightest areas left uncoloured so the base shows through" |
+| | `draft` | **纯**背景板 | "visibly rougher than the finished character who will stand in front" |
+
+**`mood=draft` 只能给画面里没有成品主角的背景板。** 风格参考图里有主角，
+套 draft 就出现"比站在它前面的角色更草"—— 而主角就在画面里，等于要求主角自己画草。
+这个坑实测踩过一次。
+
+五档用途（`PROFILE`）：
+
+| profile | bed | grain | orient | shadow | mood | 用途 |
+|---|---|---|---|---|---|---|
+| `sheet` | magenta | inner | side | none | storybook | 角色 / 敌人帧表 |
+| `tile` | magenta | inner | flat | none | storybook | 瓦片素材板 |
+| `prop` | magenta | inner | flat | none | storybook | 道具 / UI |
+| `bg` | cream | full | room | hatch | **draft** | 背景板（整幅） |
+| `ref` | cream | full | per_object | none | storybook | 风格参考图（不抠图、不进游戏） |
+
+### L0.5.4 六条实测结论（每条都有出图佐证）
+
+证据图：`shots/prompt_trials.png`（T1–T6 六张并排，一眼看得出哪几张是 3D）。
+失败样本留在 `art/tiles/gen/_trials/`，不删 —— 半年后要能复查"为什么这句话不能写"。
+
+**① `block` / `brick` / `masonry` 自带 3D 语义先验。这是最重要的一条。**
+T1–T3 用了这三个词，六张里三张全部画成立体砖块（有顶面、右侧暗面、底部厚度）。
+T4 把这几个词从物体名里彻底拿掉，只留"`flat-faced stones` + 建筑立面图"这个正向类比，
+**第一次出平面形状**。T5、T6 保持，连续两次稳定。
+
+**② 几何约束写成否定清单，会把物体画得比不加约束更立体。**
+T1 写了 `NO top face, NO side face, NO thickness, NO box, NO cube, NO 3/4 view, NO isometric`
+（6 个否定），结果是全组最立体的。模型把被否定的名词当特征提取 —— 说"别画成方块"，
+它拿到的是 box / cube。几何只许用**正向类比**（剪纸、立面图），风格否定交给 L5 一条清单。
+
+**③ 单次成功不能归因于措辞。**
+`ART_PIPELINE §4.5.2` 那版曾出过一版好图，我一直当成"这段话有效"的证据。
+T3 用同一段 subject **逐字**重出，9 块全是 3D。所以那次成功大概率是采样运气，
+n=1 的因果结论不成立。**判据必须能在重复出图下稳定复现，才写进定版。**
+
+**④ 锚点超长会淹没 subject。**
+T1 的锚点 3844 字符，subject 里的 `Exactly TWELVE` 和末尾复述都没生效，出了 13 块。
+T3 压到 2117 字符，数量约束仍然不稳（9 块）。**结论：数量在当前模型上就不可控，别指望 prompt。**
+产线对策是切片脚本按连通域切，切出几块用几块，由 `pick_tiles.py` 选 6 块 —— 不跟模型争这个。
+
+**⑤ 把 `twelve-crayon box` 改成 `twelve crayons`，画面里出现 4 根实体蜡笔。**
+T4 出现的。可数名词复数会被当成"要画的物体"。同理，改成"`the same set of colours`"
+之后蜡笔消失。**凡是不想让模型画出来的名词，一个都不要留**，哪怕它只是个比喻。
+
+**⑥ 比例必须写成整数比且点明方向。**
+T5 写 `about 1.35 to 1`，出来是**竖的**（0.68:1）—— 数字被对到了"高"。
+T6 改成 `four units wide for every three units high (4 by 3), so each one is a landscape
+rectangle, wider than it is tall`，比例立刻正确。**`A to B` 这种写法在比例上有方向歧义。**
+
+### L0.5.5 与那份 5 层建议的差异（照做的、改的、拒的）
+
+| 建议 | 我们怎么处理 | 理由 |
+|---|---|---|
+| 拆 5 层固定锚点 | ✅ **照做，扩到 7 层** | 缺朝向与投影两层，实测石头会立体、素材会带投影 |
+| "on textured **cream** sketchbook paper" | ❌ **改成槽位** | 精灵表与瓦片必须洋红底，否则洋红键整批失效（§L3.5：白 T 与米纸底 G 差 27，洋红差 247） |
+| "**clean silhouette**" + "paper grain" 同层 | ⚠️ **拆成 grain 两档** | 素材要干净边（`inner`），背景要粗颗粒（`full`），两者矛盾 |
+| "**NOT** messy scribbles that lose shape" | ❌ **背景不用** | 背景本来就要求断续 1px、纸白 30–50%、出界 3–8px。写成 NOT 会让背景变完成品 |
+| "bright cheerful children's picture book" | ✅ 保留，但落成 `mood=storybook` 的明度关系 | 只说"bright"会漂成高饱和卡通；要说"最亮处是露出来的底材" |
+| NOT 清单（3D / 渐变 / 暗黑写实） | ✅ 照做，并加 `cast shadow` / `contact shadow` | 素材留投影会被洋红键算进主体 |
+| 先用模板跑 **1 张风格参考图**目检 | ✅ 照做，`art/ref/style_ref_v1.png` | 见 §L0.5.6 |
+
+### L0.5.6 风格参考图（`art/ref/style_ref_v1.png`）验了什么
+
+一张图里放了主角、两块石头、一丛草、一个史莱姆，**不给参考图**（给了就把风格锁在那张图上，
+测不出锚点本身）。用 `ref` profile 出。
+
+验过并通过的：
+
+- **纸感**：蜡笔咬纸的颗粒在空白区也可见，不是平滑色块 —— L2 那句 `the paper's tooth` 起效
+- **同一支笔**：四类物体的轮廓粗细、颗粒密度一致
+- **明度**：纸是最亮的，阴影是薄排线，不脏
+- **分离**：四类物体各自独立，没有粘连
+- **主角一致**：3.3 头身、白 T、深棕卷发大胡子，与已出的 31 帧同一个人
+
+验过并**失败**的（这轮才补上 L3.5 / L3.6）：
+
+- 石头被画成 3/4 立体方块 —— 当时 L1 里那句 `orthographic front view` 对物体没有约束力
+- 史莱姆带一圈柔和椭圆投影 —— 当时没有任何一层在禁投影
+
+**这张图不是资产，不进游戏。** 它的用途是"改风格参数后，花一张图确认四类物体还是同一支笔"，
+比改完直接批量出 31 帧便宜得多。
+
+### L0.5.7 用法
+
+```bash
+python art/prompts/style_anchor.py --check     # 与 sprite_template.txt 逐句对账
+python art/prompts/style_anchor.py --budget    # 锚点长度是否超标（上限 2200）
+python art/prompts/style_anchor.py --show tile # 打印某个 profile 的完整锚点
+python art/prompts/style_anchor.py             # 打印三个常量层与全部槽位
+```
+
+在代码里：
+
+```python
+from style_anchor import compose, PROFILE
+prompt = compose(SUBJECT, **PROFILE["tile"])
+```
+
+`--check` 的意义：`sprite_template.txt` 是已出 31 帧的实证基线，**措辞一个字不许改**；
+但它和锚点必须能逐句对上，否则"同一支笔"只是嘴上说的。对账会跳过两类：模板故意没有的
+纸色 `#E8DCBE`（那是纸，不是蜡笔色），以及只在背景 profile 里出现的 cream 底。
+
+### L0.5.8 仍然没解决的问题（不要当成已解决）
+
+| 问题 | 现状 | 下一步 |
+|---|---|---|
+| 石头块数不可控 | 9 / 12 / 13 / 16 都出过 | 不跟模型争：切片按连通域，`pick_tiles.py` 选 6 块 |
+| 洋红纯净度不稳 | T1 与 T6 的洋红明显偏暗偏紫 | 加一句"背景是平涂印刷色，不是蜡笔画的"；或切片时按色相重置底色 |
+| 赭石读成橄榄绿 | T6 明显 | 色板里 ochre `#B98A2E` 与 moss `#4F6B3A` 相邻易混；瓦片 subject 要显式排除 moss |
+| `4:3` 只是本次生效 | 1 次 | 再出 2 张确认可复现，才写进"定版" |
+
+> **这四条都标着"未解决"，不是忘了写。** 定版表里只放能重复复现的结论 ——
+> 这条规矩本身就是 §L0.5.4 第 3 条教的。
+
+---
+
 ## L1 统一机制：一支蜡笔画的同一个人（两个视图，不是两种媒介）
 
 > 白哥 2026-11-25 03:07 修正：「**角色卡也要是蜡笔的。**」

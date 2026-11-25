@@ -39,7 +39,8 @@
 | **代码逻辑** | 改物理/绘制/输入/UI | 影响面三问 + 找到对应回归套 | 该套回归 + `node test.js` |
 | **资产贴图** | 换 PNG、改生成器 | 确认 PNG 尺寸/命名/是否内嵌（判据见 `ART_SKILLS §14`） | `python build.py` + 实机截图 |
 | **角色帧表** | 重出某状态 / 改帧数 | `ART_SKILLS §3`（S1 出图）→ §4（S2 切片） | `--proof.png` 看脚线 → `build.py` → 实机 → 重拼 `_ALL_STATES.png` |
-| **瓦片（生图产线）** | 重出素材板 / 重切 / 重挑 | 先量素材比例算画布（`ART_PIPELINE §4.5.4`），别拍尺寸 | `tile_from_gen.py --preview` 看平铺 → `pick_tiles.py` 挑 6 块 → `build.py` → `node test.js` → 实机 |
+| **瓦片（生图产线）** | 重出素材板 / 重切 / 重挑 | subject 里**不许有 block/brick/masonry**（会出 3D 砖）；先量素材比例算画布（`ART_PIPELINE §4.5.4`） | `style_anchor.py --budget` → 生图 → `tile_from_gen.py --preview` 看平铺 → `pick_tiles.py` 挑 6 块 → `build.py` → `node test.js` → 实机 |
+| **改画风 / 调提示词** | 改措辞、加约束 | 常量层不许动；改的是槽位（`STYLE_LOCK §L0.5.1`） | `style_anchor.py --check` + `--budget` → 出一张 `ref` 验同一支笔 → 再批量出资产 |
 | **收工前** | 任何资产改动 | — | `python art/tools/asset_audit.py`（P0 必须为 0） |
 | **数值手感** | 改跳跃/速度/伤害 | 先改 `CANON.md §5` | `timestep_check` + `dc_feel_check` |
 | **纯文档** | 改 md | 确认它是不是唯一真源 | 改 `INDEX.md` 状态 |

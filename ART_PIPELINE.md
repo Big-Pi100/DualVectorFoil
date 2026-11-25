@@ -100,44 +100,65 @@
 **尺度基准**：树干宽 50–60px、树冠半径 110–140px。不是这个数就重生成，
 不要靠缩放去凑（缩放会连带改变描边粗细，两棵树的线宽就不一致了）。
 
-## 4. 生成配方（逐字复用，只改槽位）
+## 4. 生成配方（锚点由代码提供，本节只写"每类资产改哪个槽位"）
 
-> ⚠ **本节已按 `STYLE_LOCK.md`（P6 蜡笔）改写。** 原 STYLE ANCHOR 那段
-> `vector-clean, confident smooth curves, no texture noise` 与 L4「没有直线、涂不满、
-> 颗粒是特征」**直接冲突**，留着会让每张图都往"数码蜡笔滤镜"漂 —— 已删除，不再使用。
+> ⚠ **本节原来的手写 STYLE ANCHOR 已作废**（2026-11-26）。理由不只是"和 L4 冲突"，
+> 更实质的是：**手写的锚点在每处会漂**。同一句话在三个脚本里各写一遍，三个月后必然出现
+> 三个版本，而且没人知道哪个是权威。
+>
+> 现在锚点是代码：`art/prompts/style_anchor.py`。七层结构、每个槽位的正文、六条实测结论
+> 都在 `STYLE_LOCK.md §L0.5`。本节只负责回答一个问题：**出某一类资产时，选哪一组槽位。**
+
+| 出什么 | profile | 命令 |
+|---|---|---|
+| 角色 / 敌人帧表 | `sheet` | `python art/prompts/sprite_prompt.py walk --json` |
+| 瓦片素材板 | `tile` | 见 §4.5.5 |
+| 道具 / UI 元素 | `prop` | `compose(SUBJECT, **PROFILE["prop"])` |
+| 背景板 | `bg` | `art/prompts/bg_prompt.md`（骨架 + 三处反向差异） |
+| 风格参考图 | `ref` | `compose(SUBJECT, **PROFILE["ref"])` |
+
+```python
+import sys; sys.path.insert(0, 'art/prompts')
+from style_anchor import compose, PROFILE
+prompt = compose(SUBJECT, **PROFILE["tile"])      # 七层 + 底色自动拼好
+```
+
+### 4.1 帧表专属：洋红底 + 绿分割线
+
+锚点里的 `bed="magenta"` 只负责"背景是纯洋红、不许有纸"。
+**帧表还需要分割线**，这一段不在锚点里（它只对多格帧表有意义），由
+`sprite_prompt.py` 自己写进 subject 段：
 
 ```
-STYLE ANCHOR（每个 prompt 必带，一字不改）：
-real wax crayon on warm cream paper, waxy and slightly broken colour,
-irregular hand-drawn contour ~3px, wobbly lines, no smooth vector curves,
-the paper showing through at the edges of every stroke.
-Flat 2D graphic art only. Palette strictly the 12-crayon box in STYLE_LOCK §L5:
-cream #E8DCBE, wax white #FBF7EC, charcoal #2B2320, cool grey #8C8B84,
-deep blue #1F2E5C, slate blue #4C6E8C, blood red #9B2226, ochre #B98A2E,
-umber #6B4B32, skin #D9A16B, moss #4F6B3A, violet black #3B2340.
-
-TECHNICAL（抠图用，每个素材图必带）：
-flat solid PURE SATURATED MAGENTA RGB 255,0,255 — bright neon magenta, edge to edge.
-NOT mauve, NOT dusty rose, NOT pink, NOT maroon, NOT muted. No paper in the background.
-For frame strips: EXACTLY {N-1} vertical bars of pure saturated green RGB 0,255,0,
-~14px wide, perfectly straight, running the FULL height top to bottom,
-dividing the row into {N} equal columns. Bars must not be interrupted.
-No green and no magenta anywhere inside the figures.
-no cast shadow, no contact shadow, ambient occlusion excluded,
-no text, no watermark, no signature, no frame, no border.
-
-EXCLUDE（固定负面）：
-photograph, photo of paper, paper texture, cream background, white background,
-3D render, perspective, vanishing point, drop shadow, soft shadow, gradient, airbrush,
-pixel art, dithering, clean vector linework, front view, three-quarter view,
-dark gothic mood, fog, glow effects, magic aura, UI, HUD.
+SEPARATORS: exactly {N-1} vertical bars of pure saturated green #00FF00,
+each about 14px wide, perfectly straight, running the FULL height of the image
+from the very top edge to the very bottom edge, dividing the row into {N} equal columns;
+the bars must not be interrupted. No green and no magenta anywhere inside the figures.
 ```
 
 **为什么底色和分割线这么死板**：`STYLE_LOCK.md` §L3.5 有完整推导（白 T 与纸底的
 G 通道只差 27，洋红底差 247）。这一步选错，后面要补泛洪抠纸、去纸色、能量切刀口
 三个补丁，而且每个补丁都会带来新的缺陷 —— 已经踩过一整轮。
 
-水印处理：图生模型会在右下角打"AI生成/WORKBUDDY"。
+### 4.2 每类资产还要自己补的负面项
+
+L5 是**风格级**否定（3D / 水彩 / 厚涂 / 描边干净）。**物体级**的否定必须由 subject 段自己给，
+而且只给"这一张不该出现的东西"：
+
+| 资产 | subject 里必须有的额外负面 | 为什么 |
+|---|---|---|
+| 角色 attack / dash | `weapon, sword` | 空手设定，模型爱给刀 |
+| 角色 cast | `magic glow, aura, sparkles, orb, staff` | 一加光效就变魔法游戏 |
+| 角色 hurt | `blood, wound, gore` | 这个项目的残酷来自反差，不来自血 |
+| 角色帧表 | `front view, three-quarter view` | 必须侧视，正面帧在游戏里是躺着的 |
+| 瓦片 | `green, moss, olive, yellow-green` | 赭石与苔绿相邻，不排会读成发霉的石头 |
+
+> ⚠ 这些负面**不能**搬进 L5。L5 一长就会把 subject 淹掉（`STYLE_LOCK §L0.5.4` 第 4 条），
+> 而且"瓦片不要绿"这种约束对角色帧表毫无意义，写进全局只会稀释真正重要的那几条。
+
+### 4.3 水印
+
+图生模型会在右下角打"AI生成/WORKBUDDY"。
 洋红底上可直接用 `process_spritesheet.patch_watermark()`（把浅色低饱和像素涂回背景色），
 **不要用 `crop` 硬裁底部** —— 会切到靴子。旧文档写的 `crop((0,0,w,h-84))` 作废。
 
@@ -154,52 +175,79 @@ G 通道只差 27，洋红底差 247）。这一步选错，后面要补泛洪�
 平铺后是歪的（v3e~v7 连错五版就是这么错的）。让它画一片散石，再让脚本切，
 两个短板都规避掉了。
 
-### 4.5.2 提示词（逐字复用，只改块数和比例）
+### 4.5.2 提示词（subject 段逐字复用，锚点自动拼）
+
+**先说一句最关键的：这段 subject 里不许出现 `block` / `brick` / `masonry`。**
+这三个词自带 3D 语义先验，实测连出三版全是立体砖块（`shots/prompt_trials.png` T1–T3）。
+换成 `flat-faced stones` + "建筑立面图"这个类比之后，第一次出平面形状（T4）。
+这条规则是 2026-11-26 六次出图里唯一稳定复现的结论。
 
 ```
-A tile source sheet for a hand-drawn 2D side-scroller game.
+TWELVE separate flat-faced stones on an empty sheet, laid out in four columns and
+three rows.
 
-Exactly TWELVE separate stone blocks, arranged in a loose grid of 4 columns and
-3 rows, floating on a flat solid PURE SATURATED MAGENTA background RGB 255,0,255,
-bright neon magenta, edge to edge.
+PROPORTION, every stone the same: four units wide for every three units high (4 by 3), so
+each one is a landscape rectangle, wider than it is tall. Not a portrait rectangle, not
+taller than wide.
 
-Each stone is a BLOCKY, NEARLY RECTANGULAR masonry block — a cut ashlar stone,
-not a pebble. Its four edges are almost straight with only small hand-drawn
-wobbles and a few chipped corners. It must NOT be round, NOT oval, NOT a boulder,
-NOT a cobblestone. Width to height ratio about 1.35, so slightly wider than tall.
+What you see is a DRAWING of a stone and not the stone itself: four near-straight edges with
+small soft hand-drawn wobbles, a couple of tiny nicks taken out of the corners, and flat
+crayon colour between them. Picture the way a wall is drawn in an architect's elevation
+drawing, or the way a child draws a paved path seen from straight ahead: just the outline
+and the flat colour inside it, with nothing to suggest depth. Edges stay calm and close to
+straight, with no star points, no spikes, no petals, no flower shapes. A nick shows the
+magenta background through, never another colour.
 
-Each stone is outlined with a wobbly dark charcoal #2B2320 contour about 3px
-thick. It is filled with flat wax crayon colour: mainly warm umber #6B4B32 and
-cool grey #8C8B84 in large calm patches, a few short strokes of ochre #B98A2E as
-highlights, and a slightly darker band along the bottom edge to sit it down.
-STRICTLY NO green, NO moss colour, NO yellow-green, NO olive. The palette is
-warm brown-grey stone, not diseased or mossy.
+Colour the interior mainly with warm umber #6B4B32 in large calm patches, cool grey #8C8B84
+as the second tone, and a few short strokes of ochre #B98A2E. Each stone reads as a mid-tone
+warm brown-grey, clearly darker than the magenta around it.
 
-The twelve stones differ from one another in outline shape and in where the
-crayon shading sits, but all are clearly drawn by the same hand with the same
-twelve-crayon box.
+The twelve differ in the shape of their outline and in where the crayon shading sits, but
+all are drawn by the same hand.
 
-CRITICAL COMPOSITION: every stone must be completely separated from every other
-stone by at least 24 pixels of clean empty magenta. No stone may touch another
-stone. No stone may touch the edge of the image.
-
-Flat 2D graphic art, orthographic front view, no perspective, no vanishing point,
-real wax crayon on paper feel, wobbly hand-drawn lines, no smooth vector curves.
-
-EXCLUDE: cast shadow, contact shadow, ambient occlusion, gradient, glow, airbrush,
-3D render, photograph, paper background, cream background, white background,
-green, text, numbers, watermark, signature, border, frame, grid lines, arrows,
-labels.
+CRITICAL COMPOSITION: every stone is separated from every other by at least 40 pixels of
+clean empty magenta, and none touches the edge of the image. The sheet holds the twelve
+stones and nothing else.
 ```
+
+用法：
+
+```bash
+python art/prompts/style_anchor.py --show tile     # 看锚点全长
+```
+
+```python
+import sys; sys.path.insert(0, 'art/prompts')
+from style_anchor import compose, PROFILE
+prompt = compose(SUBJECT, tail="Count: exactly twelve stones, four columns by three rows.",
+                 **PROFILE["tile"])
+```
+
+**`tail` 是干什么的**：把可数的硬指标在末尾再说一遍。4000 字符的 prompt 里，开头那句
+`TWELVE` 会被稀释。但要说实话 —— 加了 tail 之后块数仍然不稳（9/12/13/16 都出过），
+所以产线不依赖它：切片按连通域走，出几块用几块。
 
 **参数**：`1024×1024`、`quality high`、`background opaque`。
 
-### 4.5.3 实测修订记录（两次出图，别重复踩）
+### 4.5.3 实测修订记录（六次出图，按顺序，别重复踩）
 
-| 版 | 提示词差异 | 结果 | 判据 |
+| 版 | 改了什么 | 结果 | 结论 |
 |---|---|---|---|
-| 1 | "irregular rounded polygon like a hand-cut fieldstone"，色板含 moss | **像鹅卵石**。石头偏圆，四角空隙大；黄绿色占主导，平铺是"长苔的碎石地" | 外观 1.09:1、平铺后横向缝是纵向的 3 倍 |
-| 2 | 改 "BLOCKY / NEARLY RECTANGULAR / NOT round / NOT pebble"；颜色改 umber+灰主导，加 **STRICTLY NO green** | **成**。块状、褐灰、缝均匀，平铺读作砌石墙 | 见 `shots/gen_tile_tilingB.png` |
+| 旧-1 | `irregular rounded polygon like a hand-cut fieldstone`，色板含 moss | 像鹅卵石，黄绿占主导 | 圆度一个词毁整批 |
+| 旧-2 | `BLOCKY / NEARLY RECTANGULAR / NOT round`，`STRICTLY NO green` | 成了，但见下条 | 当时以为措辞有效 |
+| T1 | 锚点初版 + 12 色板 + 6 个几何否定 | 13 块，**全部 3D 方块**，红蓝绿石头 | 否定清单加重 3D；色板被当清单 |
+| T2 | 改正向"剪纸剪影" + tail 复述数量 | 13 块，**仍全 3D** | 只改语气不够 |
+| T3 | 锚点压到 2117 + **旧-2 的 subject 逐字照抄** | 9 块，**仍全 3D** | **旧-2 的成功是采样运气，不是措辞** |
+| **T4** | **拿掉 block / brick / masonry** | **平面了**，但画出 4 根实体蜡笔 | 3D 先验来自这几个词 |
+| T5 | 改掉 `twelve crayons`，禁锯齿 | 12 块、平面、干净，但**竖比例 0.68:1** | `1.35 to 1` 有方向歧义 |
+| T6 | 明示 `four units wide per three high` | 16 块、平面、横比例正确，**洋红偏暗** | 比例可解；底色不稳 |
+
+证据图：`shots/prompt_trials.png`。失败样本：`art/tiles/gen/_trials/t1..t6`。
+
+**六次里只有 T4 之后的三次是平的。** 差别只有一个变量：物体名里有没有
+`block` / `brick` / `masonry`。这是本轮唯一敢写成"定版规则"的结论。
+
+**还不稳的三件事**（写在 `STYLE_LOCK §L0.5.8`）：块数、洋红纯净度、赭石读成橄榄绿。
 
 两条硬经验：
 
@@ -223,6 +271,25 @@ th = 48           →  tw = 54
 **不用 64 的原因**：64×48 是 4:3，装 1.086 的石头，横向会空 14px
 （每边 7px）。平铺后横向缝 14px、纵向缝 4px，整面墙是一道道竖白条。
 `shots/gen_tile_tiling.png`（错误版）与 `gen_tile_tilingB.png`（正确版）可直接对比。
+
+**新配方动摇了这个前提，必须标出来。**
+2026-11-26 起 subject 里写的是 `four units wide per three units high`，即 **4:3**。
+若这个比例能连续复现，画布就该从 54×48 改成 **64×48**（正好 4:3，不空边）。
+
+**但现在不改**，理由是证据不足：4:3 只出过 1 张（T6），而且那张洋红偏暗、不能切片。
+现存 `art/tiles/wall_0..5.png` 是 54×48，和 `game.js` 的 `WALL_SRC_W = 54` 绑死。
+
+改的顺序只能是：
+
+```
+4:3 素材连续两次切片合格
+  → tile_from_gen.py --tw 64 --th 48
+  → 同步 game.js 的 WALL_SRC_W（游戏内从 9×8 变 10.7×8，砖变大，平铺密度要重看）
+  → build.py → node test.js → 实机截图
+```
+
+**先验证出图，再动画布。** 反过来做会出现"图还是旧比例、代码已按新比例算"的错位，
+而在 9×8 这个尺度下，这种错位肉眼几乎看不出来。
 
 ### 4.5.5 命令
 
