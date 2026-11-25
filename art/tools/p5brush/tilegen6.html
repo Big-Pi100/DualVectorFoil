@@ -1,0 +1,142 @@
+<!doctype html>
+<meta charset="utf-8">
+<body style="margin:0;background:#222">
+<script type="module">
+/* SoulKeep 墙瓦片 v6 —— 控制变量版：风格 100% 沿用 v3e，只改排布。
+ *
+ * 背景：v5 为了"小砖 + 无缝"把 v3e 认可的风格也改掉了
+ *   （矩形切角→圆润鹅卵石、错缝→整齐网格、深棕缝+底涂→纸白缝）。
+ *   白哥指出这是没控制变量。本版严格遵守：
+ *
+ *   【不改】PAPER / STONE / SEAM / shade / stonePoly 的扰动算法与幅度 /
+ *           drawStone 的 mass(scribble)+乱向短笔+深棕缝 / 底涂 —— 全部逐字照搬 v3e。
+ *   【只改】排布循环：4 行×48px（v3e 原本就是这个尺寸），
+ *           偶数行 3 块整砖(64)，奇数行 半(32)+整(64)+整(64)+半(32)。
+ *           缝位：偶数行 0/64/128/192，奇数行 0/32/96/160/192 —— 错缝保留，
+ *           且 x=0 与 x=192 处都是缝中心，平铺无缝。
+ *   【唯一必要改动】stonePoly 的点 clamp 在格子内（v3e 会让扰动越过格界）——
+ *           不夹紧就会在瓦片边界切到砖，平铺断裂。扰动算法与幅度一个没动。
+ */
+import * as brush from '../../../.deps/p5.brush/dist/brush.esm.js';
+
+const q = new URLSearchParams(location.search);
+const S = +(q.get('seed') || 0);
+const SS = +(q.get('ss') || 6);
+const N = 192 * SS;
+const PAPER = '#F2EAD6';
+
+/* ───────── 以下全部逐字照搬 v3e（tilegen3.html），一个参数没改 ───────── */
+const STONE = ['#9A7C5E', '#8B8278', '#99919A', '#A69A82', '#857C6E'];
+const SEAM = '#6B5A4A';
+
+let s = 1;
+const srnd = k => { s = (k >>> 0) || 1; };
+const rnd = () => { s ^= s << 13; s >>>= 0; s ^= s >> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; };
+
+function shade(hex, k) {
+  const n = parseInt(hex.slice(1), 16);
+  const c = [n >> 16, (n >> 8) & 255, n & 255].map(v =>
+    Math.max(0, Math.min(255, Math.round(v + k))));
+  return '#' + c.map(v => v.toString(16).padStart(2, '0')).join('');
+}
+
+/* 不规则石块：矩形网格 + 每边中点扰动。
+ * 与 v3e 唯一差别：末尾 clamp —— 点不越格界，保证瓦片边界落在缝上。 */
+function stonePoly(x, y, w, h) {
+  const pts = [];
+  const jitter = () => (rnd() - 0.5) * Math.min(w, h) * 0.20;
+  pts.push([x + jitter(), y + jitter()]);
+  pts.push([x + w + jitter(), y + jitter()]);
+  pts.push([x + w + jitter(), y + h + jitter()]);
+  pts.push([x + jitter(), y + h + jitter()]);
+  const out = [];
+  for (let i = 0; i < 4; i++) {
+    const a = pts[i], b = pts[(i + 1) % 4];
+    const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
+    const nx = -(b[1] - a[1]), ny = b[0] - a[0];
+    const len = Math.hypot(nx, ny) || 1;
+    const d = (rnd() - 0.35) * Math.min(w, h) * 0.22;
+    out.push(a, [mx + nx / len * d, my + ny / len * d]);
+  }
+  // 唯一的无缝改动：夹在格内（扰动算法与幅度没动）
+  return out.map(([px, py]) => [
+    Math.max(x + 1.2, Math.min(x + w - 1.2, px)),
+    Math.max(y + 1.2, Math.min(y + h - 1.2, py)),
+  ]);
+}
+
+function drawStone(poly, base) {
+  brush.mass('crayon', base, {
+    strength: 0.86, precision: 0.76,
+    style: 'scribble',
+    follow: 0.35, length: 13 * SS,
+  });
+  brush.polygon(poly.map(([x, y]) => [x * SS, y * SS]));
+  brush.noMass();
+
+  const xs = poly.map(p => p[0]), ys = poly.map(p => p[1]);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs);
+  const y0 = Math.min(...ys), y1 = Math.max(...ys);
+  const n = Math.round((x1 - x0) * (y1 - y0) / 95);
+  for (let i = 0; i < n; i++) {
+    const px = x0 + rnd() * (x1 - x0), py = y0 + rnd() * (y1 - y0);
+    const a = (rnd() - 0.5) * 2.45;
+    const len = 3 + rnd() * 8;
+    const col = shade(base, rnd() < 0.5 ? -10 : 9);
+    brush.set('crayon', col, (0.5 + rnd() * 0.8) * SS);
+    brush.line(px * SS, py * SS,
+               (px + Math.cos(a) * len) * SS, (py + Math.sin(a) * len) * SS);
+  }
+
+  brush.set('crayon', SEAM, 1.0 * SS);
+  brush.wiggle(0.10);
+  for (let i = 0; i < poly.length; i++) {
+    const a = poly[i], b = poly[(i + 1) % poly.length];
+    brush.line(a[0] * SS, a[1] * SS, b[0] * SS, b[1] * SS);
+  }
+  brush.wiggle(0);
+}
+/* ───────── 风格部分照搬结束 ───────── */
+
+try {
+  brush.createCanvas(N, N);
+  brush.angleMode(brush.DEGREES);
+  brush.clear(PAPER);
+  brush.translate(-N / 2, -N / 2);
+  srnd(9101 + S * 31);
+
+  // 底涂：照搬 v3e —— 缝里是被蹭过的石色，不是生纸白
+  brush.mass('crayon', '#8E806D', {
+    strength: 0.72, precision: 0.70, style: 'scribble',
+    follow: 0.35, length: 13 * SS,
+  });
+  brush.rect(-N/2, -N/2, N, N);
+  brush.noMass();
+
+  /* 只改这里：错缝排布，边界落在缝中心。
+   * 4 行 × 48px = 192（与 v3e 相同的行高、相同的砖大小：48px 高 × 64px 宽）
+   * 偶数行：整 64 ×3 → 缝在 0/64/128/192
+   * 奇数行：半 32 + 整 64 + 整 64 + 半 32 → 缝在 0/32/96/160/192
+   * 两行错开半块 = v3e 的错缝；边界 0/192 都是缝 → 平铺无缝 */
+  const BH = 48;
+  for (let r = 0; r < 4; r++) {
+    const y = r * BH;
+    const cuts = (r % 2 === 0)
+      ? [0, 64, 128, 192]           // 偶数行
+      : [0, 32, 96, 160, 192];      // 奇数行（两端半砖）
+    for (let k = 0; k < cuts.length - 1; k++) {
+      const x = cuts[k], w = cuts[k + 1] - cuts[k];
+      // 砖与砖之间留 2.4px 缝（v3e 的 0.8 内缩 + 1.6 宽补偿 ≈ 1.6px，取其量级）
+      const poly = stonePoly(x + 1.2, y + 1.2, w - 2.4, BH - 2.4);
+      drawStone(poly, STONE[Math.floor(rnd() * STONE.length)]);
+    }
+  }
+
+  brush.render();
+  window.__ok = true;
+} catch (e) {
+  window.__err = String(e && e.stack || e);
+}
+</script>
+</body>
+</html>

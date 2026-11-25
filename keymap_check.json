@@ -7,7 +7,7 @@
       "dy": 0,
       "state": "walk",
       "simMs": 167,
-      "wallMs": 176,
+      "wallMs": 163,
       "pass": true
     },
     "A 左": {
@@ -32,34 +32,34 @@
   },
   "lookUp": {
     "before": 324,
-    "after": 292.7390663996339,
-    "dy": -31.3,
-    "simMs": 58,
+    "after": 296.3883374929428,
+    "dy": -27.6,
+    "simMs": 50,
     "pass": true
   },
   "atk": {
     "state": "attack",
-    "lock": 0.28,
-    "simMs": 25,
+    "lock": 0.27,
+    "simMs": 33,
     "pass": true
   },
   "jump": {
-    "vy": -912,
+    "vy": -971,
     "onGround": false,
-    "simMs": 33,
+    "simMs": 8,
     "pass": true
   },
   "redKey": {
     "n": 1,
-    "cd": 1.59,
-    "wallMs": 14,
+    "cd": 1.58,
+    "wallMs": 32,
     "pass": true
   },
   "back": {
-    "dx": -61.3,
+    "dx": -64.2,
     "state": "dash",
     "dashSeen": true,
-    "invulnInDash": 0.095,
+    "invulnInDash": 0.112,
     "pass": true
   },
   "blueKey": {
@@ -74,18 +74,18 @@
     },
     "state": "cast",
     "n": 1,
-    "cd": 1.5333333333333337,
+    "cd": 1.541666666666667,
     "pass": true
   },
   "plainAtk": {
     "state": "attack",
     "n": 0,
-    "simMs": 33,
+    "simMs": 8,
     "pass": true
   },
   "reloadGuard": {
-    "xBefore": 474,
-    "xAfter": 474,
+    "xBefore": 472,
+    "xAfter": 472,
     "hint": "再按一次 R 重开",
     "hit": 1,
     "pass": true
@@ -155,18 +155,18 @@
   },
   "touchJump": {
     "state": "jump",
-    "vy": -814,
+    "vy": -893,
     "onGround": false,
     "held": {
       "jump": 1
     },
-    "wallMs": 29,
+    "wallMs": 16,
     "pass": true
   },
   "touchAtk": {
     "state": "attack",
-    "lock": 0.25,
-    "wallMs": 6,
+    "lock": 0.27,
+    "wallMs": 3,
     "pass": true
   },
   "touchEmptySlot": {
@@ -176,12 +176,12 @@
   },
   "touchBack": {
     "state": "dash",
-    "invuln": 0.09,
-    "wallMs": 31,
+    "invuln": 0.1,
+    "wallMs": 45,
     "pass": true
   },
   "touchStick": {
-    "dx": 47,
+    "dx": 28,
     "stateRight": "walk",
     "stateDown": "crouch",
     "pass": true
