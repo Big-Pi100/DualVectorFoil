@@ -20,3 +20,8 @@ timestep_check.json
 verify_fix.json
 audit_probe.json
 shots/ours_rect.json
+
+# Godot 导入缓存（可重建，别入库）
+godot/.godot/
+# Godot 导出的可执行包
+godot/build/

@@ -84,6 +84,16 @@
 
 ---
 
+> **Godot 工程（`godot/`）另有一条独立回归。** 改 `godot/` 下任何东西都跑：
+>
+> ```bash
+> "E:/godot/Godot_v4.4.1-stable_win64_console.exe" --headless --path godot --script res://tests/feel_smoke.gd
+> ```
+>
+> 要求：满跳 `203.9 ± 8 px`、水平 `270 ± 20 px/s`、松手后 `vx` 归零、轻点跳 `≤ 80 px`。
+> **改跳跃/重力数值必须重跑**，并把新标定值同步到 `godot/README.md` 的参数表。
+> 换了积分器就要重新标定——web 的 971.3 在 Godot 里只跳到 195.8px，补到 991 才对齐。
+
 ## 5. 文档同步矩阵：改什么，必须同步哪份
 
 | 改了什么 | 必须同时改 |
