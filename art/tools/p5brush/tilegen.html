@@ -93,6 +93,24 @@ brush.add('waxline', { weight: 1.0, scatter: 0.45, sharpness: 0.80, grain: 1,
 brush.add('seam', { weight: 0.30, scatter: 0.22, sharpness: 0.80, grain: 1.1,
                     opacity: 210, spacing: 0.04, pressure: [1.05, 0.95],
                     type: 'default', rotate: 'natural', noise: 0.35 });
+/* stripe：画**斜向粗条带**用的笔（2026-11-25，照生图砖块 ref_gen 加的）。
+ *
+ * ‼ 为什么不能直接用 wax：wax 的 scatter 0.38 在 5px 笔上会横向甩开 ±1.9px，
+ *   而我们条带之间的缝只有 2~4px —— 缝被甩过来的笔尖舔掉一半，条带就糊成一片。
+ *   蜡笔在实心排线时手更稳（一笔就是一笔），只有端点才散。
+ *   grain 1.5 保留蜡笔颗粒（那是"蜡"的来源），scatter 压到 0.24 保住缝。
+ *   opacity 165（65%）: 一笔不到实底，同一条带蹭两遍才实 —— 深浅差就来自这里。 */
+brush.add('stripe', { weight: 1.0, scatter: 0.28, sharpness: 0.76, grain: 1.5,
+                      opacity: 165, spacing: 0.05, pressure: [1.10, 0.90],
+                      type: 'default', rotate: 'natural', noise: 0.45 });
+
+/* 调亮/调暗一个 hex 色：amt 是 -255~255 的通道加法偏移。 */
+function shade(hex, amt) {
+  const n = parseInt(hex.slice(1), 16);
+  const cl = v => Math.max(0, Math.min(255, v + amt));
+  return '#' + ((cl(n >> 16) << 16) | (cl((n >> 8) & 255) << 8) | cl(n & 255))
+    .toString(16).padStart(6, '0');
+}
 
 /* 手涂一块石头：一道一道短线，方向统一。
  * clip 到石头包围盒，超出的笔尾自动裁掉（p5.brush 的 clip 只吃矩形，
@@ -222,6 +240,127 @@ function coatStone(pts, x, y, w, h, base) {
      *   因为一块砖只有 4600 像素，任何一道 4px 的异色笔都占 1/10 面积。
      *   参考图那种亮笔触是服务 100px 以上的大形体的，瓦片尺度用不上。
      *   层次只能靠"叠几遍"来出：同一支笔 1 遍浅、2 遍中、3 遍深。 */
+  } else if (COAT === 'S' || COAT === 'T' || COAT === 'U' || COAT === 'V') {
+    /* ## 细密斜条带（2026-11-25 v2，照生图砖块 ref_gen 复现）
+     *
+     * 生图砖块读起来是"蜡笔"，靠的不是涂满，是**一条条看得见的斜笔**。
+     * 但它有三条很容易抄错的细节（第一版 S 全踩了，渲染出"木地板"）：
+     *
+     * ① **带很细**：1024 图上带宽约 20px、砖宽 690px → 只占 3%。
+     *    第一版按 3.4~7.2px 画（占砖宽 5~7%），粗了一倍，直接成条纹布。
+     *    正确值：96px 砖上 2.2~3.6px。
+     * ② **缝很窄且不亮**：缝只占 1.5~2px，而且缝里是"浅灰"不是"纯纸"。
+     *    第一版缝 1.7~4.5px 还透纯纸色 → 对比过大，读成"地板缝"。
+     * ③ **条带不长通长**：三成条带只走半程，端点错落；再撒十几笔短笔打散。
+     *    全部通长 + 同一起止，就是"印上去的条纹"（P 版老病）。
+     *
+     * ‼ 角度：生图砖是方形（690×595）所以 -35° 好看；我们的砖是 2:1 横条，
+     *   同样的角度会显得"太斜"、读成斜纹布。参考图 p6_crayon 的台阶石
+     *   （同样是横长条石材）条纹是**接近水平**的 —— 这里取 -17° 左右。
+     */
+    /* ## 角度与带宽（2026-11-25 v3）
+     *
+     * ‼ 横长条石材的条纹**接近水平**，不是 30°。
+     *   定版图 p6_crayon 的台阶石（同样是 2:1 横长条）条纹只斜 3~6° ——
+     *   顺长边涂是最省力的手部动作，人也这么画。
+     *   前几版照生图的方形砖取 -17°/-30°，在 2:1 的砖上读成"斜纹布"。
+     *   V 变体保留斜档做对照，其余走水平。
+     *
+     * ‼ 带宽也要按参考图量：台阶石一层约占石高的 1/5（48px 砖上 8~10px）。
+     *   前几版 2.2~3.6px 只有 1/15，太碎，读成"纹理"而不是"笔触"。 */
+    const horiz = COAT !== 'V';
+    const a = (horiz ? -0.07 : -0.34) + (rnd() - 0.5) * (horiz ? 0.14 : 0.24);
+    const ux = Math.cos(a), uy = Math.sin(a);    // 带方向
+    const nx = -uy, ny = ux;                     // 法线：沿它排带
+    const cx = x + w / 2, cy = y + h / 2;
+    let mn = 1e9, mx = -1e9;
+    for (const [px, py] of [[x, y], [x + w, y], [x, y + h], [x + w, y + h]]) {
+      const t = (px - cx) * nx + (py - cy) * ny;
+      if (t < mn) mn = t;
+      if (t > mx) mx = t;
+    }
+    /* 淡底：T 先垫一层很薄的 crayon。
+     * ‼ 目的不是"涂满"，而是把缝填成**浅灰**。参考图里蜡笔来回蹭过的地方
+     *   从来不是白纸 —— 缝里透纯纸色的墙，铺满一屏就读成"破了很多洞"。 */
+    if (COAT === 'T') {
+      brush.mass('crayon', base, { strength: 0.30, precision: 0.56 });
+      brush.polygon(pts); brush.noMass();
+    }
+    brush.clip([x + 0.5, y + 0.5, x + w - 0.5, y + h - 0.5]);
+    const L = Math.hypot(w, h);
+    /* 法线区间外多铺 3px：条带顶到砖角，否则四角留一圈纸色
+     * （"贴纸贴上去"的老毛病，见 handCoat 顶部注释）。 */
+    let t = mn - 3;
+    while (t < mx + 3) {
+      /* U 变体：细带 + 宽缝（露更多底色，对照"要不要透"）。 */
+      const bw = COAT === 'U' ? (3.0 + Math.pow(rnd(), 1.3) * 2.2)
+                              : (4.8 + Math.pow(rnd(), 1.3) * 3.4);
+      const gp = COAT === 'U' ? (2.6 + rnd() * 1.8)
+                              : (1.7 + rnd() * 1.1);
+      /* ## 明暗必须来自"条带在哪"，不是"另叠一层亮笔"
+       *
+       * 这是本次最关键的一条。前几版条带之间只有 ±12 的色差，
+       * 量化出来 std 17~19，而参考图同一口径是 59 —— 差三倍。
+       * 差在哪：参考图一块石头的**上沿条带是浅的、下沿是深的**，
+       * 整块石头就是从亮到暗的渐变；我们画的是"均匀中灰 + 微微抖动"。
+       *
+       * ‼ 而且 `stripe` 的 opacity 只有 165/255（65%），笔色会被纸色抬亮：
+       *   合成后 = 0.647×笔色 + 0.353×纸(≈220)。所以想让砖面读到 90，
+       *   笔色得压到 20 左右 —— 按"看起来的亮度"设偏移，永远对比不足
+       *   （前几版 grad 只给 ±25，合成后差距只剩十几，全糊在一起了）。
+       *   这里按合成公式反推：顶部 pen≈base、底部 pen 直接压到很暗。
+       */
+      const rel = Math.min(1, Math.max(0, (t - mn) / Math.max(1, mx - mn)));
+      const grad = 48 - 104 * rel;                   // 顶亮、底压暗（整体位置已按实测校准）
+      const q = rnd();
+      const col = shade(base, grad + (q - 0.5) * 20);
+      const off = (rnd() - 0.5) * 0.8;   // 条带位置轻抖：缝宽才不均匀
+      /* 三成条带只走 50~75% 长度，起点随机 → 端点错落，不成"通长条纹"。 */
+      const part = rnd() < 0.30;
+      const lf = part ? (0.50 + rnd() * 0.25) : 1.0;
+      const s0 = part ? -(1 - lf) * L * rnd() : 0;
+      brush.set('stripe', col, bw);
+      /* ## 条带必须"断成几段"，不能一笔拉通
+       *
+       * 一笔拉通的条带（上一版）读成"机织斜纹"——因为蜡笔做不到 96px 不断。
+       * 参考图放大看，每条"带"其实由 2~4 段短笔接起来，段间有 1~3px 缺口，
+       * 段尾还翘一点。这样条带的整体方向还在，但"印上去"的整齐感没了。
+       *
+       * 段长度不是均分：每段 60%~110% 的均分长度 → 缺口宽度自然不均。 */
+      const segs = 2 + Math.floor(rnd() * 3);
+      const segBase = (2 * L) / segs;
+      let pos = -(L - s0) + (rnd() - 0.5) * 4;
+      for (let si = 0; si < segs; si++) {
+        const segLen = segBase * (0.60 + rnd() * 0.50);
+        /* 段尾角度翘 ±3°：手画长笔的收笔会偏，全平行就没有这个细节。 */
+        const a2 = a + (rnd() - 0.5) * 0.10;
+        const vx = Math.cos(a2), vy = Math.sin(a2);
+        brush.line(cx + nx * (t + off) + ux * pos,
+                   cy + ny * (t + off) + uy * pos,
+                   cx + nx * (t + off) + vx * (pos + segLen),
+                   cy + ny * (t + off) + vy * (pos + segLen));
+        pos += segLen + 1.0 + rnd() * 2.4;   // 缺口 1~3.4px
+      }
+      t += bw + gp;
+    }
+    /* 短笔打散：十几笔 10~24px 的同向短蹭。
+     * 只靠通长条带，砖面会读成"整齐的机织纹"；短笔是"手在局部来回蹭"的痕迹，
+     * 也是参考图里条带边缘毛糙的原因。短笔跟着同一套明暗走（位置越高越亮）。 */
+    const nb = COAT === 'U' ? 14 : 10;
+    for (let i = 0; i < nb; i++) {
+      const px = x + rnd() * w, py = y + rnd() * h;
+      const aa = a + (rnd() - 0.5) * 0.55;
+      const ln = 10 + rnd() * 14;
+      const rg = (py - y) / h;
+      brush.set('stripe', shade(base, 48 - 104 * rg + (rnd() - 0.5) * 22), 1.8 + rnd() * 1.6);
+      brush.line(px, py, px + Math.cos(aa) * ln, py + Math.sin(aa) * ln);
+    }
+    /* 顶亮底暗：给石头方向感。窄一点，别压过条带。 */
+    brush.set('stripe', shade(base, 34), 1.6);
+    brush.line(x + 1, y + 1.2, x + w - 1, y + 1.2);
+    brush.set('stripe', shade(base, -36), 1.8);
+    brush.line(x + 1, y + h - 1.2, x + w - 1, y + h - 1.2);
+    brush.noClip();
   } else if (COAT === 'X') {
     /* 淡底 + 三成亮笔。底不是 mass（mass 一铺就满），是宽笔 wash。 */
     const ang = -0.50 + (rnd() - 0.5) * 0.16;
@@ -450,15 +589,18 @@ function paint() {
           /* 石头之间的基色差：四成石头亮一档、三成暗一档。
            * ‼ 全部同色时，靠笔触叠出来的差别只有 ±10%，整面墙还是"一个色"。 */
           const q = rnd();
-          const b = q < 0.40 ? '#929188' : (q < 0.70 ? '#83827B' : P.cold);
+          const b = q < 0.40 ? '#A4A398' : (q < 0.72 ? '#9C9B90' : '#96958A');
           stone(x, r * 48, 96, 48, b);
         }
       }
     }
     /* 缝：两道 —— 一道宽炭线（沟），一道窄深线（投影）。
      * 单线读成"描边"，两道才有"砌进去"的深度。 */
-    brush.set('seam', P.charcoal, 1.8);
-    brush.wiggle(0.16);
+    /* ‼ 缝宽从 1.8 提到 2.6、wiggle 0.16→0.30：
+     *   参考图石头的轮廓是**粗炭笔抖线**，边缘毛糙、宽窄不一。
+     *   1.8px 的规整细线读成"描边"或"贴图接缝"，是"非手绘感"的最后一道破绽。 */
+    brush.set('seam', P.charcoal, 2.2);
+    brush.wiggle(0.30);
     for (let r = 0; r <= 4; r++) brush.line(-6, r * 48, N + 6, r * 48);
     for (let r = 0; r < 4; r++) {
       const off = (r % 2) * 48;

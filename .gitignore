@@ -8,3 +8,4 @@ __pycache__/
 
 # 瓦片实验图（涂法变体，中间产物）
 art/tiles/_exp/
+art/tiles/_coat_*.png

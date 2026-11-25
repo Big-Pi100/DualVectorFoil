@@ -114,13 +114,16 @@ im.save(r"${dst}")
       /* 正式瓦片：墙 6 变体 + 地 2 变体。前缀 _new_ 便于与旧版对比，
        * 确认后用 --publish 参数写出正式名。 */
       const pub = process.argv.includes('--publish');
+      /* `--coat=X` 让正式瓦片走指定的涂法变体（默认不放参数 = tilegen 的 Z 定版）。 */
+      const coatA = process.argv.find(a => a.startsWith('--coat='));
+      const cq = coatA ? `&coat=${coatA.split('=')[1]}` : '';
       const plan = [['wall', 6], ['floor', 6], ['slab', 6]];
       await page.setViewportSize({ width: 220, height: 220 });
       for (const [k, n] of plan) {
         for (let i = 0; i < n; i++) {
           const t = Date.now();
           await page.goto(
-            `http://127.0.0.1:${PORT}/${base}/tilegen.html?kind=${k}&seed=${i}`,
+            `http://127.0.0.1:${PORT}/${base}/tilegen.html?kind=${k}&seed=${i}${cq}`,
             { waitUntil: 'load' });
           await page.waitForFunction(() => window.__ok || window.__err, { timeout: 90000 }).catch(() => {});
           const r3 = await page.evaluate(() => ({ ok: window.__ok, err: window.__err }));
