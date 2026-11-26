@@ -123,8 +123,9 @@ const BODY_H := 100.0
 #
 # ── 缺帧怎么处理：一律回退到语义最近的一态，绝不放旧素材 ────────────
 # 母版只有 8 态（idle/side/back/run/jump/climb/attack/hurt），
-# 蹲 / 后跃 / 施法 / 下落 这 4 态**没有对应资产**。回退表在 _fallback_note()，
-# 由 tests/asset_wiring.gd 断言「引用的每张图都存在且是单帧」。
+# 蹲 / 后跃 / 施法 / 下落 这 4 态**没有对应资产**，上表 # 号后标了「缺」。
+# 完整回退对照见 `art/ART_GUIDE.md §12.4` 那张表；补齐 4 张图后删掉回退项。
+# 守门：`tests/asset_wiring.gd` 会断言这里每一张图都存在、且是 340×340 单帧。
 const ANIM := {
 	"stand":  "res://assets/art/Characters/player_side_00_sprite.png",    # 横版站立 → 侧面
 	"walk":   "res://assets/art/Characters/player_run_00_sprite.png",
