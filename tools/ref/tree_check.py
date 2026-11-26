@@ -29,10 +29,11 @@ REF = ROOT / "docs" / "ref"
 DOC05 = GDD / "05_叙事与主角.md"
 DOC03 = GDD / "03_经营与种植.md"
 DOC04 = GDD / "04_关卡与地图.md"
+DOC02 = GDD / "02_战斗系统.md"
 DOC_REF = REF / "REF_TREE_PHYSIOLOGY.md"
 JSON_REF = REF / "tree_physiology_refs.json"
 
-# 六处翻译：系统词 → 生理词（必须同一行出现）
+# 八处翻译：系统词 → 生理词（必须同一行出现）
 MAPPINGS = [
     ("清完一个区域", "打通一段被堵的管"),
     ("得到一块地", "断面"),
@@ -40,6 +41,8 @@ MAPPINGS = [
     ("种植 → 收成", "愈伤组织"),
     ("守卫军", "免疫细胞"),
     ("袭击", "感染复发"),
+    ("两类怪物", "女巫扫帚"),
+    ("物资两分", "原住民培育"),
 ]
 
 # 04 五层各自的生理角色（区名 → 关键词）
@@ -101,8 +104,37 @@ def check_internal(d: dict) -> list[str]:
                     "与'小伤口 1–2 季封口'对不上")
     if w["small_wound_growing_seasons"][0] < 1:
         errs.append("JSON: 小伤口封口少于 1 个生长季 —— 树不可能当周长好")
-    if len(d["design_map"]) != 6:
-        errs.append(f"JSON: design_map 有 {len(d['design_map'])} 条，05 里写的是六处翻译")
+    if len(d["design_map"]) != len(MAPPINGS):
+        errs.append(f"JSON: design_map 有 {len(d['design_map'])} 条，脚本认的是 {len(MAPPINGS)} 处翻译")
+
+    # ── 第二轮：寄生 / 黑化 / 物资（2026-11-27）
+    p, dk, df, ms = d["parasite"], d["darkening"], d["deformity"], d["material_split"]
+
+    # 吸器必须是双向的。单向的话"注入黑暗物质"就没有通道，得另编一套机制
+    if "双向" not in p["direction"]:
+        errs.append("JSON: 吸器不是双向 —— '注入黑暗物质'失去了物理通道，整条设定要另编")
+    # 必须同时接木质部与韧皮部，否则"吸养料"只吸到一半
+    if not ("木质部" in p["connects_to"] and "韧皮部" in p["connects_to"]):
+        errs.append("JSON: 吸器没同时接木质部与韧皮部 —— 吸养料吸不全")
+    # 网络属性：没有它，"感染跨区/复发"就没有依据
+    if not p["network"]:
+        errs.append("JSON: parasite.network=false —— 感染会跨区、会复发这两条失去依据")
+
+    # 变黑必须有物质机制（黑色素/栓塞），不能是滤镜
+    if "黑色素" not in dk["melanin"]:
+        errs.append("JSON: darkening 没写黑色素 —— '黑'会变成纯美术，撑不住'黑就是堵'")
+    if not ("栓塞" in dk["mechanism"] or "堵" in dk["mechanism"]):
+        errs.append("JSON: darkening 机制里没有栓塞/堵塞 —— 黑暗化与运输中断就不是同一件事了")
+
+    # 潜伏期必须长于 0：病先在皮下长几年才冒芽，这条支撑"表面健康其实已感染"
+    if df["latency_years"][0] <= 0:
+        errs.append("JSON: 女巫扫帚没有潜伏期 —— '看着健康的枝条早已感染'这句失去依据")
+
+    # 物资两分：可种必须可再生，不可种必须不可再生（反过来整个经济就塌）
+    if not ms["cultivated"]["renewable"]:
+        errs.append("JSON: 战斗物资标成不可再生 —— 种田就没有产出循环了")
+    if ms["wild"]["renewable"]:
+        errs.append("JSON: 稀有/任务物品标成可再生 —— 主线可以被刷绕过")
     return errs
 
 
@@ -131,9 +163,9 @@ def check_05(doc: str, d: dict) -> list[str]:
     # 3. 禁令必须在位：只做表现、不接数值
     seg15 = tree_section(doc, "### 1.5", "## 2.")
     if "不接数值" not in seg15:
-        errs.append("05 §1.5: 没有「不接数值」的禁令 —— 树会变成第四个系统")
+        errs.append("05 §1.7: 没有「不接数值」的禁令 —— 树会变成第四个系统")
     if not same_line(seg15, "健康度", "不做"):
-        errs.append("05 §1.5: 没写「不做健康度进度条」—— 迟早有人加")
+        errs.append("05 §1.7: 没写「不做健康度进度条」—— 迟早有人加")
 
     # 4. 结局方向：不是复原，是带疤活着
     if "带着疤" not in doc:
@@ -185,21 +217,93 @@ def check_ref(doc: str) -> list[str]:
     return errs
 
 
+def check_parasite(r05: str, r03: str, r02: str) -> list[str]:
+    """第二轮：怪物本质、黑化、物资两分（2026-11-27 白哥定）。"""
+    errs: list[str] = []
+
+    # 1. 05 §1.5 入侵者：四件事必须在位
+    seg = tree_section(r05, "### 1.5", "### 1.6")
+    if not seg:
+        errs.append("05: 找不到 §1.5「入侵者」—— 怪物是什么又变成空白")
+        return errs
+    for k in ("寄生虫", "黑暗世界树", "双向", "外来物种"):
+        if k not in seg:
+            errs.append(f"05 §1.5: 少了「{k}」—— 白哥定的怪物本质缺一块")
+    if "黑和堵是同一件事" not in seg:
+        errs.append("05 §1.5: 少了「黑和堵是同一件事」—— 黑暗化会变成独立于堵塞的第二套设定")
+    if "女巫扫帚" not in seg:
+        errs.append("05 §1.5: 少了「女巫扫帚」—— 原生物种被改写没有可辨识形态")
+    if not same_line(seg, "能不能招安", "只能打"):
+        errs.append("05 §1.5: 两类怪的招安分工表没了 —— 分类就不再长出一个选择")
+
+    # 2. 05 §1.6 物资两分
+    seg16 = tree_section(r05, "### 1.6", "### 1.7")
+    if not seg16:
+        errs.append("05: 找不到 §1.6「物资两个来路」")
+    else:
+        if "不可种" not in seg16:
+            errs.append("05 §1.6: 没写「不可种」那一侧 —— 物资又只剩一个来路")
+        if not same_line(seg16, "稀有", "永远不能种"):
+            errs.append("05 §1.6: 少了「稀有物品永远不能种」这条红线")
+
+    # 3. 03 §0.1 田的主人 + §0.2 物资两分
+    seg03 = tree_section(r03, "## 0.", "## 1.")
+    if "原住民" not in seg03:
+        errs.append("03 §0.1: 没写「田的主人是原住民」—— 主角又变回农夫")
+    if "不会这门手艺" not in seg03:
+        errs.append("03 §0.1: 没写「主角不会这门手艺」—— '他为什么能种田'又成了漏洞")
+    if "永远不能种" not in seg03:
+        errs.append("03 §0.2: 没写「稀有物品永远不能种」—— 主线可以被种田刷过去")
+
+    # 4. 旧口径必须清掉：守卫军不是'吸血虫'（外来寄生虫不能招安）
+    if "吸血虫" in r03:
+        errs.append("03 §6: 仍写着守卫军是「吸血虫」—— 外来寄生虫不能招安，与 05 §1.5 直接矛盾")
+
+    # 5. 02 §5.3 的敌人表必须有「来源」列，且首发全是原生
+    seg02 = tree_section(r02, "### 5.3", "### 5.4")
+    if seg02:
+        # 必须查**表头行**：整段含"来源"不够 —— 表下面那句解释里也有"来源"两个字，
+        # 删掉列名照样能糊过去（这条是反向验证抓出来的，别改回去）
+        hdr = [ln for ln in seg02.splitlines() if ln.strip().startswith("| 名 |")]
+        if not hdr or "来源" not in hdr[0]:
+            errs.append("02 §5.3: 敌人表头没有「来源」列 —— 两类怪只活在叙事文档里")
+        else:
+            ncol = hdr[0].count("|")
+            bad = [ln for ln in seg02.splitlines()
+                   if ln.strip().startswith("| **") and ln.count("|") != ncol]
+            if bad:
+                errs.append(f"02 §5.3: 有 {len(bad)} 行敌人数据列数与表头不一致 —— "
+                            "「来源」列被删了但数据没跟着删，表会错位")
+        if not same_line(seg02, "**纸团**", "原生"):
+            errs.append("02 §5.3: 「纸团」没标「原生」—— 来源列填了也不对")
+        n_native = sum(1 for ln in seg02.splitlines()
+                       if ln.strip().startswith("| **") and "原生" in ln and "外来" not in ln)
+        if n_native < 5:
+            errs.append(f"02 §5.3: 只有 {n_native} 个敌人标了「原生」，首发应为 5 个")
+    else:
+        errs.append("02: 找不到 §5.3「根系 5 种」—— 敌人表被挪走了，来源列无人守")
+    return errs
+
+
 def main() -> int:
     d = load()
     r05 = DOC05.read_text(encoding="utf-8")
     r03 = DOC03.read_text(encoding="utf-8")
     r04 = DOC04.read_text(encoding="utf-8")
+    r02 = DOC02.read_text(encoding="utf-8")
     rref = DOC_REF.read_text(encoding="utf-8")
 
     if "--json" in sys.argv:
         print(json.dumps(d, ensure_ascii=False, indent=2))
         return 0
 
-    errs = check_internal(d) + check_05(r05, d) + check_03(r03) + check_04(r04) + check_ref(rref)
+    errs = (check_internal(d) + check_05(r05, d) + check_03(r03) + check_04(r04)
+            + check_ref(rref) + check_parasite(r05, r03, r02))
 
     g = d["girdling"]
     w = d["wound"]
+    p = d["parasite"]
+    ms = d["material_split"]
     print("── 两条流 ──")
     print(f"上行 {d['two_streams']['xylem']['carries']} · 下行 {d['two_streams']['phloem']['carries']} · "
           f"可独立切断={d['two_streams']['independently_cuttable']}")
@@ -211,15 +315,23 @@ def main() -> int:
     print(f"愈伤 {w['callus_starts_weeks'][0]}–{w['callus_starts_weeks'][1]} 周开始；"
           f"小伤 {w['small_wound_growing_seasons'][0]}–{w['small_wound_growing_seasons'][1]} 季；"
           f"大伤 {w['large_wound_years'][0]}–{w['large_wound_years'][1]} 年")
-    print(f"\n── 六处翻译 ──")
+    print(f"\n── 八处翻译 ──")
     for m in d["design_map"]:
         print(f"{m['system']:<12} → {m['physiology']}")
+    print(f"\n── 寄生 ──")
+    print(f"{p['organ']} · {p['direction']} · 接{p['connects_to']}")
+    print(f"可传病毒 {p['viruses_transmitted_between_hosts']} 种 · 成网={p['network']}")
+    print(f"黑化机制：{d['darkening']['mechanism'][:40]}…")
+    print(f"改写形态：{d['deformity']['name']}（潜伏 {d['deformity']['latency_years'][0]}–"
+          f"{d['deformity']['latency_years'][1]} 年）")
+    print(f"物资：可种={ms['cultivated']['system_side'][:12]} · "
+          f"不可种={ms['wild']['system_side'][:12]}")
     print()
     if errs:
         for e in errs:
             print("FAIL  " + e)
         return 1
-    print("PASS  两条流自洽 + 六处翻译齐全 + 禁令在位 + 03/04 已接上背景")
+    print("PASS  两条流自洽 + 八处翻译齐全 + 寄生/黑化/物资两分在位 + 禁令在位 + 03/04/02 已接上背景")
     return 0
 
 
