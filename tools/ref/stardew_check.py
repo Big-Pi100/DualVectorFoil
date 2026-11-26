@@ -118,7 +118,7 @@ def check_doc(d: dict, doc: str) -> list[str]:
         ("互斥产生决策", "叠加只产生数值"),
         ("品质对料理和加工品完全无效", ""),
         ("先亲手浇过", "135 格"),
-        ("算不通的", "待裁决"),
+        ("算不通的", "已被种子方案取代"),
     ]
     for a, b in must:
         ok = same_line(doc, a, b) if b else (a in doc)
@@ -143,12 +143,16 @@ def check_cross(doc: str, farming: str) -> list[str]:
 
 
 def check_gdd_open_issue(d03: str) -> list[str]:
-    """03 的星级表若仍"伤害+产量"双出口，只提醒不判失败 —— 已标待裁决，不是漏改。"""
+    """03 换成种子方案后，旧的「星级双出口」冲突已经消失。
+    此时只剩一件事要确认：新方案必须自己把「第一版零决策」说出来，不能装作有深度。"""
+    if "种子" in d03 and "1 块地" in d03:
+        if "零决策" not in d03:
+            return ["03: 换成了种子方案，但没承认「第一版播种零决策」—— 这是粉饰"]
+        return []
     if "待裁决" in d03 and "星级" in d03:
-        print("NOTE  03 的星级双出口仍标「待裁决」—— §10.3 的建议还没落地，属已知未决")
-    else:
-        return ["03: 星级双出口既没修也没标待裁决 —— 会在读者那里变成既成事实"]
-    return []
+        print("NOTE  03 仍是旧的投料方案且标着「待裁决」—— §10.3 的负收益表还没处理")
+        return []
+    return ["03: 既不是种子方案，星级双出口也没标待裁决 —— 两种状态都不合法"]
 
 
 def parse_03(d03: str):
@@ -192,8 +196,17 @@ def payback(rows: dict, drop: float, melee: float) -> dict:
 def check_matrix_payback(d03: str, doc: str) -> list[str]:
     errs: list[str] = []
     rows, drop = parse_03(d03)
-    if len(rows) != 3 or drop is None:
-        return ["03: 星级表或基质掉率解析失败 —— 表结构变了，10.3 的回本表要重算"]
+    superseded = "已被种子方案取代" in doc
+
+    # 情形 A：03 里已经没有星级表（11-27 换成种子方案）。
+    # 此时本节必须被明确标成史料，否则读者会拿一张作废的表当待办。
+    if not rows or drop is None:
+        if superseded and "种子" in d03 and "1 块地" in d03:
+            return []
+        return [
+            "03 星级表已消失（换了种子方案），但 REF_STARDEW §10.3 没标「已被种子方案取代」"
+            " —— 作废的结论会以「待裁决」的样子留在文档里"
+        ]
 
     pure = payback(rows, drop, 0.0)
     at50 = payback(rows, drop, 0.5)
@@ -239,12 +252,16 @@ def main() -> int:
           f"一管体力 {d['energy']['tiles_per_full_bar']} 格 / 6 铱制 {d['space']['sprinkler_iridium']['tiles']*6} 格")
     if pb:
         print(f"投料回本（近战 60%）: ★★ {pb[2]:+.2f} 房 / ★★★ {pb[3]:+.2f} 房")
+        tail = "投料回本表未失效"
+    else:
+        print("03 已无星级表 → §10.3 走史料分支（标了「已被种子方案取代」即通过）")
+        tail = "§10.3 已正确标为史料"
     print()
     if errs:
         for x in errs:
             print("FAIL  " + x)
         return 1
-    print("PASS  派生数自洽 + 文档数字一致 + 6 条结论句在位 + 投料回本表未失效")
+    print(f"PASS  派生数自洽 + 文档数字一致 + 6 条结论句在位 + {tail}")
     return 0
 
 
