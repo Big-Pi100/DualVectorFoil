@@ -37,10 +37,11 @@
 | 类型 | 典型动作 | 开工前 | 完工前 |
 |---|---|---|---|
 | **代码逻辑** | 改物理/绘制/输入/UI | 影响面三问 + 找到对应回归套 | 该套回归 + `node test.js` |
-| **资产贴图** | 换 PNG、改生成器 | 确认 PNG 尺寸/命名/是否内嵌（判据见 `ART_SKILLS §14`） | `python build.py` + 实机截图 |
-| **角色帧表** | 重出某状态 / 改帧数 | `ART_SKILLS §3`（S1 出图）→ §4（S2 切片） | `--proof.png` 看脚线 → `build.py` → 实机 → 重拼 `_ALL_STATES.png` |
-| **瓦片（生图产线）** | 重出素材板 / 重切 / 重挑 | subject 里**不许有 block/brick/masonry**（会出 3D 砖）；先量素材比例算画布（`ART_PIPELINE §4.5.4`） | `style_anchor.py --budget` → 生图 → `tile_from_gen.py --preview` 看平铺 → `pick_tiles.py` 挑 6 块 → `build.py` → `node test.js` → 实机 |
-| **改画风 / 调提示词** | 改措辞、加约束 | 常量层不许动；改的是槽位（`STYLE_LOCK §L0.5.1`） | `style_anchor.py --check` + `--budget` → 出一张 `ref` 验同一支笔 → 再批量出资产 |
+| **资产贴图** | 换 PNG、新增入库 | 先查 `art/approved/manifest.json` 有没有现成的（**别重出**）；命名/尺寸照 `art/ART_GUIDE §7` | `python art/tools/asset_audit.py` + `python build.py` + 实机截图 |
+| **新出一张资产** | 生图 → 抠图 → 入库 | `art/README.md §4` 八步；prefix 用 `art/prompts/Master_v1.3.md` 全文 | `extract_magenta.py` → 三背景检 → 960×540 实机 → 登记 manifest |
+| **角色帧表** | 补某状态 | 复用来的角色是**单帧/态**（340 帧框，脚底 295）；换形态先定 `CANON.md` 主角 | 缩放 0.51 → 显示高 128 → 脚底对齐碰撞盒（`ART_GUIDE §12.2`） |
+| **瓦片（可平铺）** | 重出素材板 / 重切 / 重挑 | ① `Terrain/` 摆件**不能当瓦片**；② subject 里不许有 block/brick/masonry（会出 3D 砖）；③ 先量素材比例算画布 | 生图（洋红底）→ `extract_magenta.py` → `tile_from_gen.py --preview` 看平铺 → `pick_tiles.py` 挑 6 块 → 实机 |
+| **改画风 / 调提示词** | 改措辞 | `ART_GUIDE §1–§5` 是冻结的，改它要走 REWORK 流程（每轮只动一个变量、重出 ≥3 样本） | 出一张 `ref` 验"同一支笔" → 再批量 |
 | **收工前** | 任何资产改动 | — | `python art/tools/asset_audit.py`（P0 必须为 0） |
 | **数值手感** | 改跳跃/速度/伤害 | 先改 `CANON.md §5` | `timestep_check` + `dc_feel_check` |
 | **纯文档** | 改 md | 确认它是不是唯一真源 | 改 `INDEX.md` 状态 |
@@ -122,8 +123,9 @@
 | 改了什么 | 必须同时改 |
 |---|---|
 | 世界设定 / 数值 / 裁定 | `CANON.md`（唯一设定真源） |
-| 画风 / 色板 / 瓦片 / UI 皮肤 | `STYLE_LOCK.md` |
-| 美术工具 / 命令 / 判据 | `ART_SKILLS.md`（技能手册，命令与阈值） |
+| 画风 / 色板 / 纸感 / 禁区 / 抠图规则 | ⭐ **`art/ART_GUIDE.md`**（唯一规范，v1.3） |
+| 提示词前缀 / 怎么出图 | `art/prompts/Master_v1.3.md` + `art/README.md §4` |
+| 美术工具 / 命令 / 判据 | `art/tools/extract_magenta.py`（抠图）+ `asset_audit.py`（体检） |
 | 动作帧 / 判定 / 无敌 | `MOVESET.md` |
 | 美术资产增减 | `ASSET_MANIFEST.md` |
 | 新增/废弃/降级任何文档 | `INDEX.md`（状态表） |

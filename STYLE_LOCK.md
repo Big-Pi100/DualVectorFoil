@@ -1,5 +1,11 @@
 # STYLE_LOCK · 蜡笔（P6）定版
 
+> 🔴 **2026-11-26 起本文降级为 LEGACY（风格方向仍有效，参数已退场）**
+> 本项目美术已统一到 [`art/ART_GUIDE.md`](art/ART_GUIDE.md)（《二向箔》美术规范 v1.3，门禁 G1–G5 全过）
+> 配 [`art/prompts/Master_v1.3.md`](art/prompts/Master_v1.3.md) 与 [`art/reference/`](art/reference/) 母版。
+> **§L0「为什么是蜡笔」的判断依据保留有效**（反差 > 合题）；**§L0.5 起全部七层锚点参数、槽位表、六条实测结论退场**，
+> 改由 `Master_v1.3.md` 承担。旧产线产物仍在 `art/hero|bg|tiles|out|src|ref/`，未删除。
+
 > 状态：**已锁定**（白哥 2026-11-25 02:58 定方向："最相反的最好"）
 > 本文件是美术执行参数。与 `CANON.md` §6 冲突时以本文件为准，改本文件必须同步 §6。
 > 依据：`docs/ref/STYLE_CANDIDATES.md` P6 + `art/ref/p6_crayon.png`

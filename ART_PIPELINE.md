@@ -1,5 +1,9 @@
 # ART_PIPELINE · 素材管线与规格
 
+> 🔴 **2026-11-26 起本文降级为 LEGACY**：美术规范统一到 [`art/ART_GUIDE.md`](art/ART_GUIDE.md)（v1.3，G1–G5 全过），
+> 提示词统一到 [`art/prompts/Master_v1.3.md`](art/prompts/Master_v1.3.md)，抠图统一到 [`art/tools/extract_magenta.py`](art/tools/extract_magenta.py)（P1–P11）。
+> 本文的配方（瓦片生图、画布算式、pick_tiles）保留为历史记录；**新资产按 `art/README.md` §4 的八步走**。
+
 > 建 2026-11-25。起因：canvas 代码绘制被判定为 programmer art，全部推翻。
 > 结论：**美术 100% 走生图；代码只做分层平移、视差、合成、动画、特效，不画任何形状。**
 >

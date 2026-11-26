@@ -23,30 +23,37 @@
 |---|---|---|
 | **`CANON.md`** | **唯一设定真源**：世界/迷宫/主角/敌人/数值/裁定 | 11-25 |
 | **`DEV_FLOW.md`** | **唯一流程真源**：影响面三问、改动类型→动作、构建时机、回归矩阵、文档同步矩阵、收工检查单、反面清单 | 11-25 |
-| `STYLE_LOCK.md` | **画风定版 = 蜡笔（P6）**：统一机制、L2 完成度判据、分辨率分档、§L3.5 出图底色（洋红 + 绿分割线）+ **§L0.5 提示词七层锚点（含六条实测结论）**、蜡笔四条物理、12 色板、动画帧数、UI 落点、验收清单、反面清单、**§L11 瓦片（当前：生图素材板 → 切片，一张 PNG = 一块砖，54×48，游戏内按 1/6 显示；§L11.4 p5.brush 退场结论）** | 11-26 |
-| `MOVESET.md` | **主角 10 状态完整定义 + 31 帧全部出齐**：状态 × 帧 × 时间区间 × 判定 × 无敌 × 取消 × 反馈 × 脚滑判据，锚点统一脚底 (80,152)、检测方法 T1–T4、§7 出图工艺 | 🟢 现行 |
-| `art/prompts/style_anchor.py` | **七层提示词锚点，唯一真源**（11-26 建）：L1 媒介 / L2 笔触 / L3 可读 / L3.5 朝向 / L3.6 投影 / L4 色板 / L5 禁区 + 底色（工序参数）+ 5 个 profile。`--check` 与定版模板对账，`--budget` 卡 2200 字符。理由与六条实测在 `STYLE_LOCK §L0.5` | 🟢 现行 |
-| `art/prompts/sprite_prompt.py` | **出图唯一入口**：骨架锁死在 `sprite_template.txt`，只允许改四处背景句；10 状态配置 + 帧数 + fps | 🟢 现行 |
+| **`art/ART_GUIDE.md`** | ⭐ **美术唯一真源（2026-11-26 起）**：《二向箔》美术风格规范 **v1.3**。风格六特征 / 主角锁定 / 门禁流水线 G0→G5 / 评分与 PASS 判据 / 洋红底与青色分隔线规则 **P1–P11** / Godot 尺寸链 / **§12 本项目 Canvas 适配（尺寸换算、资产可用性、主角变更）**。（来自 `E:/Dual_Vector_Foil`，门禁全过原样移植） | 11-26 |
+| **`art/README.md`** | ⭐ **美术总索引 + 新资产八步流程**：目录路由（ACTIVE / LEGACY 逐条）、41 张资产清单与尺寸、接入前必知两件事（换主角 / 地形不是瓦片）、失败样本位置 | 11-26 |
+| `art/prompts/Master_v1.3.md` | **唯一提示词前缀**：风格身份 / 媒介 / 轮廓 / 造型 / 色彩 / 纸面 / 资产清晰度 / 技术附加段（独立资产 / 多格）。全文置于资产描述之前，不许逐图改写 | 11-26 |
+| `art/tools/extract_magenta.py` | **唯一抠图工具**：P9 实测底色（非死阈值）/ P1 连通域只删边界连通 / P4 despill / P8 水印 / P10 采样避水印 / P11 最近邻扩散防双线性混洋红 | 11-26 |
+| `art/approved/` | **正式资产 41 张**（29 正式 + 12 精灵派生）+ `manifest.json` 追溯。过门禁才能进 | 11-26 |
+| `art/reference/` | 视觉母版 `character_style_sheet.jpg` + `derived/` 20 张派生裁剪 | 11-26 |
+| `art/reports/Gate_Review.md` · `Experiment_Log.md` | G1–G5 门禁评审 + E01–E04 实验记录（改规范前先看判定依据） | 11-26 |
+| `STYLE_LOCK.md` | **画风定版 = 蜡笔（P6）**：统一机制、L2 完成度判据、分辨率分档、§L3.5 出图底色（洋红 + 绿分割线）+ **§L0.5 提示词七层锚点（含六条实测结论）**、蜡笔四条物理、12 色板、动画帧数、UI 落点、验收清单、反面清单、**§L11 瓦片（当前：生图素材板 → 切片，一张 PNG = 一块砖，54×48，游戏内按 1/6 显示；§L11.4 p5.brush 退场结论）** | 🔴 LEGACY |
+| `MOVESET.md` | **主角 10 状态完整定义 + 31 帧全部出齐**：状态 × 帧 × 时间区间 × 判定 × 无敌 × 取消 × 反馈 × 脚滑判据，锚点统一脚底 (80,152)、检测方法 T1–T4、§7 出图工艺 | 🟠 待重做 |
+| `art/prompts/style_anchor.py` | **七层提示词锚点，唯一真源**（11-26 建）：L1 媒介 / L2 笔触 / L3 可读 / L3.5 朝向 / L3.6 投影 / L4 色板 / L5 禁区 + 底色（工序参数）+ 5 个 profile。`--check` 与定版模板对账，`--budget` 卡 2200 字符。理由与六条实测在 `STYLE_LOCK §L0.5` | 🔴 LEGACY |
+| `art/prompts/sprite_prompt.py` | **出图唯一入口**：骨架锁死在 `sprite_template.txt`，只允许改四处背景句；10 状态配置 + 帧数 + fps | 🔴 LEGACY |
 | `art/tools/crayon.py` | 受约束的蜡笔笔刷原语（stroke/fill/outline/hatch/speck），只收 12 色板名 + 有限笔宽。**当前零调用者**，仅作机制存档，见 `STYLE_LOCK §L11.5` | 🟠 存档 |
 | `godot/` | **Godot 4.4 工程（正式发行形态）**：与 web 原型并存。玩家移动/跳跃/5 状态动画 + 战斗组件（Hitbox/Hurtbox/局部顿帧）+ WorldState 存档 + 沸腾线 shader + 单屏测试房。用 Godot 打开这个子目录，不是仓库根 | 🟠 移植中 |
 | `godot/README.md` | Godot 工程说明：打开方式、手感标定记录、资产同步、渲染设置、移植顺序 | 🟢 现行 |
 | `docs/ref/OTHERS_GDD_REVIEW.md` | 别人那份 GDD/TDD 的逐条核对：可吸收 / 照抄会炸（9 处）/ 不适用；**§6 说明它的数值已抄成 `F2` 对照预设的用途**。再收到同类文档先看这份 | 🟢 现行 |
-| `art/tools/tile_from_gen.py` | **瓦片切片**（11-26 起）：洋红底素材板 → 洋红键 → 连通域分行 → 每块归一化到 54×48（保持比例、贴底、居中）→ 平铺预览。用法见 `ART_SKILLS §6`，配方见 `ART_PIPELINE §4.5` | 🟢 现行 |
-| `art/tools/pick_tiles.py` | **选砖**：从 12~16 块里按贪心最大最小距离挑 6 块 → `wall_0..5.png`。不许"取前 6 张" | 🟢 现行 |
+| `art/tools/tile_from_gen.py` | **瓦片切片**（11-26 起）：洋红底素材板 → 洋红键 → 连通域分行 → 每块归一化到 54×48（保持比例、贴底、居中）→ 平铺预览。用法见 `ART_SKILLS §6`，配方见 `ART_PIPELINE §4.5` | 🔴 LEGACY |
+| `art/tools/pick_tiles.py` | **选砖**：从 12~16 块里按贪心最大最小距离挑 6 块 → `wall_0..5.png`。不许"取前 6 张" | 🔴 LEGACY |
 | `art/tools/asset_audit.py` | **资产体检**：尺寸 / 真 alpha / 帧数与配置对账 / 同类尺寸一致 / 有无消费点 / 死引用。`--strict` 有 P0 则非零退出 | 🟢 现行 |
-| `art/ref/style_ref_v1.png` | **风格参考图**（11-26）：主角 + 石头 + 草 + 史莱姆同框，验"同一支笔"与颗粒感。**不进游戏**，用途是改风格后花一张图确认没漂 | 🟢 现行 |
+| `art/ref/style_ref_v1.png` | **风格参考图**（11-26）：主角 + 石头 + 草 + 史莱姆同框，验"同一支笔"与颗粒感。**不进游戏**，用途是改风格后花一张图确认没漂 | 🔴 LEGACY |
 | `art/tiles/gen/_trials/` | 本轮 6 张**失败样本** `t1..t6`，每张一个变量。**不删** —— 半年后要能复查"为什么这句话不能写" | 🟠 证据 |
-| `art/tiles/gen/` | 瓦片生图**素材板原图**（1024×1024，洋红底）+ `wallB_sheet.png` 切片位置可视化。**调瓦片先看这里，别改切好的 PNG** | 🟢 现行 |
-| `art/prompts/bg_prompt.md` | **背景出图配方**：与精灵表共用 Medium / 12 色板，只改三处 | 🟢 现行 |
-| `art/bg/bg_<room>.png` | **背景板**：960×540 整幅蜡笔背景（96 色量化），镜像拼接平铺，视差 0.28 | 🟢 现行（仅 hall） |
-| `art/hero/` | **主角 10 状态成表**：`hero_<state>.png` + `.gif` + `_proof.png`，总表 `_ALL_STATES.png` | 🟢 现行 |
-| `art/tools/build_sheet_magenta.py` | **切片薄适配层**：160×160 网格/锚点/连通域过滤/缩放基准（tallest·head） | 🟢 现行 |
+| `art/tiles/gen/` | 瓦片生图**素材板原图**（1024×1024，洋红底）+ `wallB_sheet.png` 切片位置可视化。旧产线，只读 | 🔴 LEGACY |
+| `art/prompts/bg_prompt.md` | **背景出图配方**：与精灵表共用 Medium / 12 色板，只改三处 | 🔴 LEGACY |
+| `art/bg/bg_<room>.png` | **背景板**：960×540 整幅蜡笔背景（96 色量化），镜像拼接平铺，视差 0.28 | 🔴 LEGACY |
+| `art/hero/` | **主角 10 状态成表**：`hero_<state>.png` + `.gif` + `_proof.png`，总表 `_ALL_STATES.png` | 🔴 LEGACY |
+| `art/tools/build_sheet_magenta.py` | **切片薄适配层**：160×160 网格/锚点/连通域过滤/缩放基准（tallest·head） | 🔴 LEGACY |
 | `_probe_crayon.js` | **接入验收**：脚底/地面差、蹲站身高比、离锚点、翻转横移，全出数字 | 🟢 现行 |
 | `UI_SKIN.md` | **UI 皮肤方案**：三层分离、九宫格、离散量条、UI 在明度阶梯的站位、迁移顺序 | 🟢 现行 |
-| `ASSET_MANIFEST.md` | **美术资产清单**：7 类实盘（精灵/瓦片/背景/道具/特效/UI/角色卡线），含数量与生产顺序 | 🟢 现行 |
-| `ART_INVENTORY.md` | **美术资产实盘盘点**（11-26 二次）：三条生图产线各自怎么跑、样图索引、问题分级（**背景盖住 95% 画面** / 地砖废件 / 墙砖亮边）、下一步排序。**问"美术现在什么状态"看这份** | 🟢 现行 |
-| `ART_PIPELINE.md` | 素材管线：分层规格、生成配方（锚点由代码提供，本节只写槽位）、瓦片六次实测修订记录、分件骨骼、成本台账 | 11-26 |
-| **`ART_SKILLS.md`** | **美术生产技能手册**：10 个 skill（出图/切片/选砖/内嵌/取证/手感/体检）各自的触发、参数、命令、判据、失败模式；三条端到端管线与门；判据速查表；接入新资产的 9 步检查单。**动手做资产时照着这份做** | 11-26 |
+| `ASSET_MANIFEST.md` | **美术资产清单**：7 类实盘（精灵/瓦片/背景/道具/特效/UI/角色卡线），含数量与生产顺序 | 🟠 待改 |
+| `ART_INVENTORY.md` | **美术资产实盘盘点**（11-26 二次）：三条生图产线各自怎么跑、样图索引、问题分级（**背景盖住 95% 画面** / 地砖废件 / 墙砖亮边）、下一步排序。**问"美术现在什么状态"看这份** | 🟠 存档 |
+| `ART_PIPELINE.md` | 素材管线：分层规格、生成配方（锚点由代码提供，本节只写槽位）、瓦片六次实测修订记录、分件骨骼、成本台账 | 🔴 LEGACY |
+| **`ART_SKILLS.md`** | **美术生产技能手册**：10 个 skill（出图/切片/选砖/内嵌/取证/手感/体检）各自的触发、参数、命令、判据、失败模式；三条端到端管线与门；判据速查表；接入新资产的 9 步检查单。**动手做资产时照着这份做** | 🔴 LEGACY |
 | `ACTION_CHAIN.md` | 操作-动作五段链路（意图→输入→动作→判定→反馈）+ 待裁定 | 11-25 |
 | `DOC_CONTROLS.md` | 操控代码完整实现与核对清单 | 11-25 |
 | `FEEL_TABLE.md` | 手感数字表（**自动生成，勿手改**，源头是 `feel_table.js`） | 11-24 |
@@ -112,7 +119,7 @@
 
 1. 先在本文抢一个状态（🟢/🔵/🟡/⚪/🔴），并决定放根目录还是 `docs/`
 2. 写清"管什么"——一句话，写不出就是没想清楚
-3. 若与已有文档冲突，**当场改唯一真源**（设定 → CANON，画风 → STYLE_LOCK，流程 → DEV_FLOW），不要两边都留
+3. 若与已有文档冲突，**当场改唯一真源**（设定 → CANON，**画风 → `art/ART_GUIDE.md`**，流程 → DEV_FLOW），不要两边都留
 
 ---
 
@@ -121,14 +128,21 @@
 ```
 game-soulkeep/
 ├─ CANON.md  INDEX.md  PROJECT_MAP.md  DEV_FLOW.md  README.md   ← 先读这五个
-├─ STYLE_LOCK.md  MOVESET.md  DESIGN_A.md  ACTION_CHAIN.md
+├─ STYLE_LOCK.md  MOVESET.md  DESIGN_A.md  ACTION_CHAIN.md      ← 🔴 LEGACY（画风参数已并入 art/ART_GUIDE）
 ├─ DOC_CONTROLS.md  FEEL_TABLE.md  UI_SKIN.md  ASSET_MANIFEST.md
-├─ ART_PIPELINE.md  ART_SKILLS.md  ART_INVENTORY.md  STORY.md    ← 现行规格/手册，平铺根目录
-│    （规格 → ART_PIPELINE　怎么操作 → ART_SKILLS　现在什么样 → ART_INVENTORY）
+├─ ART_PIPELINE.md  ART_SKILLS.md  ART_INVENTORY.md  STORY.md   ← 🔴 LEGACY = 旧产线记录，别再照做
 ├─ docs/
 │  ├─ ref/       参考分析（别人的东西，需要时读）
 │  └─ history/   历史报告（只读，追根因时读）
 ├─ src/          游戏代码
-├─ art/          素材与生成器
+├─ art/          ← ⭐ 美术唯一入口，先开 art/README.md
+│  ├─ ART_GUIDE.md      唯一规范 v1.3（含 §12 本项目适配）
+│  ├─ README.md         总索引 + 新资产八步
+│  ├─ approved/         41 张正式资产 + manifest.json
+│  ├─ reference/        母版 + derived 派生裁剪
+│  ├─ prompts/          Master_v1.3.md（唯一前缀）
+│  ├─ reports/          Gate_Review + Experiment_Log
+│  ├─ tools/            extract_magenta.py（唯一抠图）
+│  └─ hero|bg|tiles|out|src|ref/   ← 🔴 LEGACY 旧资产，只读
 └─ shots/        截图证据
 ```
