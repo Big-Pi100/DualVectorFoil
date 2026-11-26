@@ -26,6 +26,7 @@
 | `tools/slice_ground.py` | **ACTIVE** | 把 `terrain_grass_top` 切成「左端+中间+右端」三段，镜像构造保证三条接缝逐像素相等；自带接缝/回文/收口/无洞断言 |
 | `tools/asset_rules_check.py` | **ACTIVE** | 按 role 复检全库：manifest 覆盖、role 合法、tile 三段全套判据、摆件不进关卡 |
 | `tools/sync_godot.py` | **ACTIVE** | `approved/` → `godot/assets/art/` 单向镜像（sha256 + SYNC_STAMP） |
+| `tools/contact_sheet.py` | **ACTIVE** | 出 `reports/ASSET_SHEET.html`：44 张缩略图 + 尺寸 + 接入状态，可勾选取舍。**只给人看**，不做判据 |
 | `tools/asset_audit.py` | ACTIVE | 资产体检（尺寸 / 真 alpha / 死引用 / 有无消费点） |
 | `tools/build_sheet_magenta.py` | LEGACY | 旧精灵表构建（洋红底 + 纯绿分割线 → 160 网格）。新资产走 `approved/` 标准化帧，不再需要 |
 | `tools/tile_from_gen.py` · `pick_tiles.py` | LEGACY | 旧瓦片产线（生图散石 → 连通域分行 → 54×48） |
