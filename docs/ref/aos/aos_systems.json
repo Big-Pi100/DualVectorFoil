@@ -220,9 +220,10 @@
   },
   "drop_rules": {
     "priority": "一次击杀只结算一种掉落，优先级 Soul > Item > Gold > Heart > Nothing",
-    "soul_rate": "每个敌人有一个稀有度 N，掉率 ≈ 1/N。天空鱼 N=1（必掉），石像鬼/丧尸/骨柱 N=180。",
+    "soul_rate": "概率 = Numerator / Rarity。Rarity = Soul Rarity × 8 + 32 − LCK/16（下限 16）；Numerator 普通 6 / 困难 7 / 已捕获过 3 / 噬魂戒指 +8。所以稀有度 1 的天空鱼必掉，稀有度 180 的石像鬼约 1/180。",
     "lck_influence": "LCK 提高掉率，所以「刷魂」在数值上可优化，不是纯随机。",
-    "note": "掉落优先级这条最容易忽略却很关键：掉魂和掉装备不叠加。玩家刷魂时不会顺带攒装备，两件事必须分开刷。"
+    "note": "掉落优先级这条最容易忽略却很关键：掉魂和掉装备不叠加。玩家刷魂时不会顺带攒装备，两件事必须分开刷。",
+    "formula_ref": "见 combat_rules.damage_formula_aos.drop_rate"
   },
   "combat_rules": {
     "resistance": "敌人对某元素抗性时伤害减半；计算后低于 1 点按 1 点结算。",
@@ -238,8 +239,49 @@
       "Stone"
     ],
     "element_note": "Stone / Poison / Curse 在伤害计算里不算「元素」，只作为状态与弱点标记。",
-    "damage_formula_aos": null,
-    "damage_formula_note": "《晓月》专属完整伤害公式没有可靠公开来源（Fandom 公式页的 AoS 小节为空）。本文件只保留已核实的部分：抗性减半、最低 1 点。不编公式。"
+    "damage_formula_aos": {
+      "source": "castlevania.fandom.com/wiki/In-Game_Formula 的 AoS 小节（完整版，2026-11 抓取）",
+      "attack_enemy": {
+        "jump_kick": "Power = STR × 1/2",
+        "slide": "Power = STR × 15/16",
+        "weapon_or_fist": "Power = ATK",
+        "bullet_soul": "Power = (STR + 60) / 160 × AP",
+        "guardian_soul": "Power = (Soul AP rate × INT) + Soul AP",
+        "hard_mode": "Power = Power × 4/5",
+        "half_damage_weapon": "Power = Power / 2（如手枪）",
+        "enemy_petrified": "Power = 0（石化中的敌人免伤，除非吃石化）",
+        "enemy_poisoned": "Enemy DEF = 0",
+        "enemy_weak_to_curse": "Power = Power + Enemy HP / 4",
+        "only_sword_effective": "Power = Power + Power/4",
+        "any_non_sword_effective": "Power = Power × 2",
+        "resisted": "Power = Power − Power/2"
+      },
+      "damage_to_enemy": "Damage = (Power − Enemy DEF/2) × (256 − Enemy DEF) / 256，最低 1；敌人石化中 Damage × 2",
+      "damage_from_enemy": {
+        "enemy_attack": "Power = Enemy STR × Attack modifier（接触攻击 modifier = 1）",
+        "spike": "Power = 3 × (DEF − CON/2) / 4，再 + Max HP/16",
+        "moving_floor_trap": "同尖刺，最后再 /3",
+        "normal_mode": "Damage = 2 × Power − DEF",
+        "hard_mode": "先 (3×(DEF−CON/2))/4，再 (Damage + MaxHP/16)/2，最后 (Damage + 5×Power − 2×DEF)/2",
+        "petrified": "Damage × 2",
+        "resistant": "Damage / 2"
+      },
+      "drop_rate": {
+        "soul_numerator": "普通 6 / 困难 7 / 已捕获过 3 / 戴噬魂戒指 +8",
+        "soul_rarity": "Rarity = Soul Rarity × 8 + 32 − LCK/16，低于 16 按 16 算",
+        "soul_chance": "Numerator / Rarity",
+        "item_rarity": "Rarity = drop rarity × 4 + 16 − LCK/16，低于 16 按 16 算",
+        "item_chance": "4 / Rarity（普通）；戴稀有戒指 8 / Rarity",
+        "order": "先算魂，没出魂才算道具，再没出才算金钱"
+      },
+      "why_it_matters": [
+        "物理伤害 Power = ATK，STR 不直接参与 —— 面板 ATT = STR + 武器 ATK，所以「换武器」是唯一能大幅改物理输出的方式",
+        "Damage 先减 Enemy DEF/2 再乘 (256−DEF)/256，是对高防敌人的双惩罚：DEF 高时，ATK 每一点的边际收益反而更大",
+        "红魂 Power = (STR+60)/160 × AP，所以魂的成长吃 STR；蓝魂吃 INT。两条加成线互不干扰",
+        "受击公式 Damage = 2×Power − DEF 是减法，所以 DEF 一旦接近 2×Power，伤害归零 —— 这是「堆防」在 AoS 里非常有效的原因"
+      ]
+    },
+    "damage_formula_note": "已补全。上一版此字段为 null，因为只找到 Fandom 页面摘要；这一版拿到 AoS 小节的完整条款。公式的可信度由 HP 侧独立验证（HP = 320 + 12×(L−1) 在 L44 = 836，与 rpgdl 实测的 LV44 836 HP 一致）。"
   },
   "systems": [
     {

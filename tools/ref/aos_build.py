@@ -34,6 +34,7 @@ ENEMIES_JSON = AOS / "aos_enemies.json"
 AREAS_JSON = AOS / "aos_areas.json"
 BOSSES_JSON = AOS / "aos_bosses.json"
 SYSTEMS_JSON = AOS / "aos_systems.json"
+EQUIP_JSON = AOS / "aos_equipment.json"
 MD = AOS / "REF_AOS_COMPLETE.md"
 HTML = AOS / "aos_atlas.html"
 
@@ -179,6 +180,75 @@ def build() -> tuple[dict, list[str]]:
             t, n = BOSS_SOUL_FALLBACK[e["name"]]
             e["soul_type"], e["soul_name"] = t, n
             e["soul_note"] = "源页面 BOSS 段未填魂字段，按魂表回填"
+
+    # ── BOSS 与装备的断言 ──
+    #
+    # 这一组断言的共同目标：文档里写的「中位数 2 招」「8/11 个非单体」
+    # 必须是**从这里算出来的**。如果只在正文写死一句话，数据一改就悄悄过期。
+    bosses = json.loads(BOSSES_JSON.read_text(encoding="utf-8"))
+    legend = bosses["meta"]["hurtbox_legend"]
+
+    for b in bosses["bosses"]:
+        # 受击面类型必须全部在 legend 里有定义，否则读表的人不知道这个词什么意思
+        for t in [x.strip() for x in b["hurtbox"]["type"].split("+")]:
+            if t not in legend:
+                bad.append(f"BOSS {b['name']} 的受击面类型「{t}」没有在 meta.hurtbox_legend 里定义")
+        if not b["moves"]:
+            bad.append(f"BOSS {b['name']} 一招都没有 —— 招式表不能空")
+        for m in b["moves"]:
+            for f in ("name", "counter"):
+                if not m.get(f):
+                    bad.append(f"BOSS {b['name']} 的招式缺「{f}」字段：{m}")
+        if b["hp"] is None and not b.get("hp_split"):
+            bad.append(f"BOSS {b['name']} 的 hp 为空，且没有 hp_split 说明为什么")
+
+    # 招式数中位数：正文里写了「中位数 2」，这里算一遍对上才让过
+    #
+    # 但中位数对单点改动不敏感 —— 反向验证时删掉一个 BOSS 的一招，
+    # 中位数仍然是 2，断言照样通过。所以统计量不能当唯一守卫，
+    # 真正的守卫得是「设计不变量」：哪些性质一旦被破坏，这份参照物就不能用了。
+    import statistics
+    mv = sorted(len(b["moves"]) for b in bosses["bosses"])
+    med = statistics.median(mv)
+    if f"中位数 {med:g}" not in " ".join(bosses["pacing"]["numbers"]):
+        bad.append(f"BOSS 招式数中位数实算为 {med:g}，但 pacing.numbers 里没有写对")
+
+    # 设计不变量 1：AoS 里没有「一招 BOSS」。2 招是下界
+    thin = [b["name"] for b in bosses["bosses"] if len(b["moves"]) < 2]
+    if thin:
+        bad.append(f"以下 BOSS 少于 2 招，与「没有单一技能 BOSS」这条参照不符：{thin}")
+
+    # 设计不变量 2：至少有一个 BOSS 招数上到 5+（说明它确实会用「多阶段多行为」压轴）
+    if not any(len(b["moves"]) >= 5 for b in bosses["bosses"]):
+        bad.append("没有任何 BOSS 的招式数达到 5 —— 最终 BOSS 的复杂度数据可能被抹平了")
+
+    # 设计不变量 3：非单体受击面必须过半，否则「受击面是主要变量」这个结论不成立
+    n_single_ = sum(1 for b in bosses["bosses"] if b["hurtbox"]["type"] == "single")
+    if n_single_ * 2 >= len(bosses["bosses"]):
+        bad.append(f"单体受击面的 BOSS 有 {n_single_} 个，已过半 —— "
+                   f"「受击面是 AoS 的主要变化维度」这个结论不再成立，正文需要重写")
+
+    # 非单体受击面的个数，同样要在 pacing.numbers 里对上
+    n_single = sum(1 for b in bosses["bosses"] if b["hurtbox"]["type"] == "single")
+    n_all = len(bosses["bosses"])
+    if f"{n_all - n_single}/{n_all}" not in " ".join(bosses["pacing"]["numbers"]):
+        bad.append(f"非单体受击面实算为 {n_all - n_single}/{n_all}，"
+                   f"但 pacing.numbers 里没有这个数")
+
+    eq = json.loads(EQUIP_JSON.read_text(encoding="utf-8"))
+    w, ar, ac = eq["weapons"], eq["armor"], eq["accessories"]
+    for key, real in (("weapons", len(w)), ("armor", len(ar)), ("accessories", len(ac))):
+        if eq["meta"]["counts"][key] != real:
+            bad.append(f"装备 {key} 实有 {real} 件，meta.counts 写的是 "
+                       f"{eq['meta']['counts'][key]}")
+    names = [x["name"] for x in w]
+    if len(names) != len(set(names)):
+        bad.append("武器表有重名条目")
+    lo, hi = min(x["atk"] for x in w), max(x["atk"] for x in w)
+    if f"{lo}（竹刀）" not in eq["meta"]["data_quality"]["atk_range"]:
+        bad.append(f"武器 ATK 下限实算 {lo}，与 meta.data_quality.atk_range 不符")
+    if f"→ {hi}" not in eq["meta"]["data_quality"]["atk_range"]:
+        bad.append(f"武器 ATK 上限实算 {hi}，与 meta.data_quality.atk_range 不符")
 
     doc = {
         "meta": {
@@ -326,6 +396,87 @@ def render_tables(doc: dict) -> str:
                "`STR` 分段 +1/+2/+3/+2/+1（10→198）；`CON` 分段 +1/+2/+3/+2/+1（12→170）；"
                "`ATT ≡ STR`。分段累加到 L99 与端点完全吻合，这是两个独立来源互证的结果。\n")
 
+    # E. BOSS 招式与受击面
+    #
+    # 这张表是本轮最重要的产物。AoS 的 BOSS 招式数只有 2–3 招，
+    # 真正让每场不一样的是「你打哪里」—— 受击面。所以招式列只写「怎么躲」，
+    # 受击面列才是重点。
+    out.append("### 附 E · 11 个 BOSS 的招式与受击面\n")
+    legend = bosses["meta"]["hurtbox_legend"]
+    out.append("> 受击面的九种类型见 `aos_bosses.json` 的 `meta.hurtbox_legend`。"
+               "缩写：`single` 单体 / `directional` 方向性 / `part_immune` 部位免疫 / "
+               "`threat_split` 威胁与受击分离 / `shell_core` 壳与核 / `multi_part` 多部位选一 / "
+               "`decoy` 假目标 / `form_swap` 形态切换 / `threshold_end` 阈值终止。\n")
+    rows = []
+    for b in bosses["bosses"]:
+        # 招式压成一行：名字（怎么躲）。table 里不写前摇，前摇太长，放到 JSON
+        mv = "<br>".join(f"{m['name']}：{m['counter']}" for m in b["moves"])
+        rows.append(
+            f"| {b['order']} | {b['cn']} | **{len(b['moves'])}** | {b['phases']} | "
+            f"`{b['hurtbox']['type']}` | {mv} |")
+    out += table(rows,
+                 "| # | BOSS | 招 | 阶段 | 受击面 | 招式与应对 |",
+                 "|---|---|---|---|---|---|")
+    out.append("")
+
+    # E2. 受击面统计 —— 这张小表是「BOSS 复杂度来自哪里」的量化答案
+    out.append("**受击面分布**\n")
+    from collections import Counter
+    cnt = Counter(b["hurtbox"]["type"] for b in bosses["bosses"])
+    rows = []
+    for t, n in cnt.most_common():
+        names = "、".join(b["cn"] for b in bosses["bosses"] if b["hurtbox"]["type"] == t)
+        # 组合类型（如 multi_part + decoy）没有单条说明，拆开逐条取
+        why = "；".join(legend.get(x.strip(), "") for x in t.split("+") if legend.get(x.strip()))
+        rows.append(f"| `{t}` | **{n}** | {names} | {why} |")
+    out += table(rows, "| 受击面 | 个数 | 是谁 | 判据 |", "|---|---|---|---|")
+    out.append("")
+    n_single = cnt.get("single", 0)
+    n_all = len(bosses["bosses"])
+    out.append(f"> **{n_all - n_single}/{n_all} 个 BOSS 的受击面不是「全身一个判定」。**"
+               f"而招式数的中位数是 2。这两条放在一起就是本文件的核心结论："
+               f"AoS 用「打哪里」制造变化，不用「多几招」。\n")
+
+    # F. 装备分布
+    out.append("### 附 F · 104 件装备的数值分布\n")
+    eq = json.loads(EQUIP_JSON.read_text(encoding="utf-8"))
+    w, ar, ac = eq["weapons"], eq["armor"], eq["accessories"]
+    rows = []
+    for cat in ["剑斧锤", "短刀", "矛与刺剑", "拳套", "枪与特殊"]:
+        g = [x for x in w if x["cat"] == cat]
+        if not g:
+            continue
+        atks = sorted(x["atk"] for x in g)
+        rows.append(f"| 武器 · {cat} | {len(g)} | {atks[0]}–{atks[-1]} | {atks[len(atks)//2]} | "
+                    f"{sum(1 for x in g if x.get('element'))} 件带属性 |")
+    defs = sorted(x["def"] for x in ar)
+    rows.append(f"| 防具 | {len(ar)} | {defs[0]}–{defs[-1]} | {defs[len(defs)//2]} | "
+                f"{sum(1 for x in ar if x.get('bonus'))} 件带属性加成 |")
+    ads = sorted(x["def"] for x in ac)
+    rows.append(f"| 饰品 | {len(ac)} | {ads[0]}–{ads[-1]} | {ads[len(ads)//2]} | "
+                f"{sum(1 for x in ac if x.get('bonus'))} 件带特殊效果 |")
+    out += table(rows, "| 类别 | 件数 | 数值范围 | 中位数 | 附加 |", "|---|---|---|---|---|")
+    out.append("")
+    top = sorted([x for x in w if not x.get("hard_only")], key=lambda x: -x["atk"])[:8]
+    out.append("**普通模式 ATK 前 8**（困难模式专属不参与排序）\n")
+    rows = [f"| {x['cn']} | {x['name']} | {x['atk']} | {'、'.join(x['element']) or '—'} | "
+            f"{x['range']} | {'/'.join(x.get('bonus') or []) or '—'} | {x['found']} |" for x in top]
+    out += table(rows, "| 武器 | 英文 | ATK | 属性 | 范围 | 加成 | 获取 |",
+                 "|---|---|---|---|---|---|---|")
+    out.append("")
+    _top = sorted([x for x in w if not x.get("hard_only")], key=lambda x: -x["atk"])[:16]
+    _src = [weapon_src(x) for x in _top]
+    _shop = sum(1 for x in w if weapon_src(x) == "商店")
+    out.append(f"> ATK 从 {min(x['atk'] for x in w)}（竹刀）到 {max(x['atk'] for x in w)}"
+               f"（死神镰刀，困难模式）；普通模式上限 "
+               f"{max(x['atk'] for x in w if not x.get('hard_only'))}（王者之剑，Boss Rush 奖励）。"
+               f"**买得到的最强武器只有 92（阿斯卡隆）** —— 剩下的 28 点差距全部要靠探索和挑战换。\n")
+    out.append(f"> 分布上更直白：**强的前 16 件里只有 {_src.count('商店')} 件能买**，"
+               f"{_src.count('探索')} 件靠探索拾取、{_src.count('掉落')} 件靠敌人掉落、"
+               f"{_src.count('Boss Rush')} 件靠 Boss Rush。"
+               f"全 59 件里也只有 {_shop} 件进商店 —— **商店只负责「不掉队」，不负责「变强」**。"
+               f"这是探索型数值设计的通用做法：把最强的装备放在「走过去」而不是「买得到」后面。\n")
+
     out.append("<!-- TABLES:END -->")
     return "\n".join(out)
 
@@ -389,6 +540,14 @@ svg text{font-family:"PingFang SC","Microsoft YaHei",sans-serif}
 
 def esc(s: str) -> str:
     return (s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;"))
+
+
+def md_bold(s: str) -> str:
+    """HTML 输出专用：数据里为了让 Markdown 表格加粗而写的 **x**，
+    直接塞进 HTML 会把星号原样显示出来。这里统一转成 <b>。
+    只在 HTML 侧用，Markdown 侧保留原文。"""
+    import re
+    return re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", esc(s))
 
 
 def scatter(enemies: list[dict]) -> str:
@@ -498,6 +657,88 @@ def curve(sysdoc: dict) -> str:
             + "</svg>")
 
 
+def hbars(bosses: dict) -> str:
+    """受击面分布的横条图。
+
+    这里不用饼图：受击面只有 9 类而样本只有 11 个，
+    饼图会把「1 个」画成一小块看不出差别，横条至少能对齐比较。
+    """
+    from collections import Counter
+    cnt = Counter(b["hurtbox"]["type"] for b in bosses["bosses"])
+    items = cnt.most_common()
+    W, rowh, pad = 780, 30, 8
+    H = len(items) * rowh + 22
+    label_w, num_w = 210, 46
+    bar_max = W - label_w - num_w
+    mx = max(n for _, n in items)
+    parts = []
+    for i, (t, n) in enumerate(items):
+        y = pad + i * rowh
+        # single 用灰色（它是「没有变化」的基线），其余用红
+        color = "var(--gray)" if t == "single" else "var(--red)"
+        w = max(6, bar_max * n / mx)
+        parts.append(f'<text x="0" y="{y+14}" font-size="11.5" fill="#2b2620">{esc(t)}</text>')
+        parts.append(f'<rect x="{label_w}" y="{y+3}" width="{w:.1f}" height="{rowh-10}" '
+                     f'fill="{color}" opacity="0.75" rx="2"/>')
+        parts.append(f'<text x="{label_w+w+7:.1f}" y="{y+14}" font-size="11.5" '
+                     f'fill="#2b2620">{n}</text>')
+    return (f'<svg viewBox="0 0 {W} {H}" width="100%" style="height:auto">'
+            + "".join(parts)
+            + f'<text x="0" y="{H-4}" font-size="10.5" fill="#6b6153">'
+              f'灰色 = 全身一个判定（没有变化）；红 = 受击面本身就是机制</text></svg>')
+
+
+WEAPON_SRC_COLOR = {"Boss Rush": "var(--yellow)", "商店": "var(--gray)",
+                    "掉落": "var(--blue)", "探索": "var(--red)"}
+
+
+def weapon_src(x: dict) -> str:
+    """一件武器的主获取方式。
+
+    顺序有讲究：一件武器可能同时「能在某处捡到」和「某个敌人会掉」。
+    主获取方式才算来源，所以「掉落」只在**开头**时才算掉落；
+    出现在后半句（「…；掉落：某某」）说明那是副产物。
+    """
+    f = x.get("found") or ""
+    if "Boss Rush" in f:
+        return "Boss Rush"
+    if "商店" in f:
+        return "商店"
+    if f.startswith("掉落"):
+        return "掉落"
+    return "探索"
+
+
+def atk_bars(eq: dict, top_n: int = 16) -> str:
+    """武器 ATK 阶梯。按来源着色，回答「多出的那 28 点 ATK 从哪来」。"""
+    ws = [x for x in eq["weapons"] if not x.get("hard_only")]
+    ws = sorted(ws, key=lambda x: -x["atk"])[:top_n]
+
+
+    W, rowh, pad = 820, 26, 6
+    H = len(ws) * rowh + 40
+    label_w, num_w = 205, 96
+    bar_max = W - label_w - num_w
+    mx = max(x["atk"] for x in eq["weapons"])
+    parts = []
+    for i, x in enumerate(ws):
+        y = pad + i * rowh
+        s = weapon_src(x)
+        color = WEAPON_SRC_COLOR[s]
+        w = max(4, bar_max * x["atk"] / mx)
+        parts.append(f'<text x="0" y="{y+12}" font-size="11" fill="#2b2620">'
+                     f'{esc(x["cn"])}</text>')
+        parts.append(f'<rect x="{label_w}" y="{y+2}" width="{w:.1f}" height="{rowh-9}" '
+                     f'fill="{color}" opacity="0.72" rx="2"/>')
+        parts.append(f'<text x="{label_w+w+7:.1f}" y="{y+12}" font-size="11" '
+                     f'fill="#2b2620">{x["atk"]}</text>')
+        parts.append(f'<text x="{W-num_w}" y="{y+12}" font-size="10.5" fill="#9a907e">{s}</text>')
+    leg = ('<text x="0" y="%d" font-size="10.5" fill="#6b6153">'
+           '红 探索拾取 · 蓝 敌人掉落 · 灰 商店 · 黄 Boss Rush 奖励</text>' % (H - 4))
+    return (f'<svg viewBox="0 0 {W} {H}" width="100%" style="height:auto">'
+            + "".join(parts) + leg + "</svg>")
+
+
 def render_html(doc: dict) -> str:
     areas = json.loads(AREAS_JSON.read_text(encoding="utf-8"))["areas"]
     bosses = json.loads(BOSSES_JSON.read_text(encoding="utf-8"))
@@ -558,10 +799,36 @@ def render_html(doc: dict) -> str:
             f'{b["name"]}</span></td><td>{area_cn.get(b["area"], b["area"])}</td>'
             f'<td class="num">{b["hp"] if b["hp"] is not None else "—"}</td>'
             f'<td class="num">{b["exp"] or "—"}</td>'
+            f'<td class="num">{len(b["moves"])}</td>'
+            f'<td><code style="font-size:10.5px">{b["hurtbox"]["type"]}</code></td>'
             f'<td>{esc("、".join(b["weak"]) or "—")}</td>'
-            f'<td style="font-size:11.5px">{esc(b["role"])}</td></tr>')
+            f'<td style="font-size:11.5px">{md_bold(b["role"])}</td></tr>')
+
+    # BOSS 卡片：每张卡的重点是「招式怎么躲」和「打哪里」
+    bcards = []
+    for b in bosses["bosses"]:
+        mv = "".join(
+            f'<div style="margin:0 0 4px"><b style="font-weight:600">{md_bold(m["name"])}</b>'
+            f'<span style="color:#9a907e"> · {md_bold(m["tell"])}</span><br>'
+            f'<span style="color:var(--red)">→</span> {md_bold(m["counter"])}</div>'
+            for m in b["moves"])
+        bcards.append(
+            f'<div class="card"><h4>{b["order"]}. {b["cn"]}'
+            f'<span>{len(b["moves"])} 招 / {b["phases"]} 阶段</span></h4>'
+            f'<div class="r"><code style="font-size:10.5px">{b["hurtbox"]["type"]}</code> · '
+            f'{md_bold(b["hurtbox"]["detail"])}</div>'
+            f'<div style="font-size:11.5px;color:var(--sub)">{mv}</div>'
+            f'<div style="margin-top:6px;padding-top:5px;border-top:1px dashed #e3dcc9;'
+            f'font-size:11px;color:#8a6a2f">教什么：{md_bold(b["teaches"])}</div></div>')
 
     area_btn = "".join(f'<button data-f="{a["en"]}">{a["cn"]}</button>' for a in areas)
+    hb = hbars(bosses)
+    _eq = json.loads(EQUIP_JSON.read_text(encoding="utf-8"))
+    ab = atk_bars(_eq)
+    _top = sorted([x for x in _eq["weapons"] if not x.get("hard_only")],
+                  key=lambda x: -x["atk"])[:16]
+    _src = [weapon_src(x) for x in _top]
+    n_shop, n_explore, n_drop = _src.count("商店"), _src.count("探索"), _src.count("掉落")
     return f"""<!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -601,12 +868,32 @@ HP 是完美线性（320 + 12×(L−1)）；LCK 也是纯直线；STR / CON 是�
 <h2>3. 13 个区域</h2>
 <div class="cards3">{"".join(cards)}</div>
 
-<h2>4. 11 个强制 BOSS</h2>
+<h2>4. 11 个强制 BOSS：招式少，受击面变</h2>
+<p style="font-size:12.5px;color:var(--sub);margin:0 0 8px">
+招式数的中位数是 <b>2</b>。前七个 BOSS 里六个只有 2–3 招。
+但 11 个里有 <b>8 个</b>的受击面不是「全身一个判定」——
+AoS 用「你打哪里、你站哪里」制造难度，不用「它多几招」。
+巴洛尔最极端：身体不伤人、拳头打不掉血，于是最安全的位置在砸下来的拳头正下方。
+</p>
 <div class="scroll"><table>
-<thead><tr><th>#</th><th>BOSS</th><th>区域</th><th>HP</th><th>EXP</th><th>弱点</th><th>它在这条流程里干什么</th></tr></thead>
+<thead><tr><th>#</th><th>BOSS</th><th>区域</th><th>HP</th><th>EXP</th><th>招</th><th>受击面</th><th>弱点</th><th>它在这条流程里干什么</th></tr></thead>
 <tbody>{"".join(brow)}</tbody></table></div>
 
-<h2>5. 全敌人表（{len(enemies)} 条，可按魂类型或区域筛）</h2>
+<h3>4.1 每场战斗：打哪里，怎么躲</h3>
+<div class="cards3">{"".join(bcards)}</div>
+
+<h3>4.2 受击面分布</h3>
+{hb}
+
+<h2>5. 武器的数值阶梯</h2>
+<p style="font-size:12.5px;color:var(--sub);margin:0 0 8px">
+59 件武器的 ATK 分布。买得到的最强只有 <b>92</b>（阿斯卡隆，12000 G），
+剩下的 28 点差距全部靠探索、掉落和 Boss Rush 换 —— 这是「探索」在数值上的定价。
+**强的前 16 件里，{n_shop} 件能买、{n_explore} 件靠探索、{n_drop} 件靠掉落。**
+</p>
+{ab}
+
+<h2>6. 全敌人表（{len(enemies)} 条，可按魂类型或区域筛）</h2>
 <div class="ctl">
   <button class="on" data-f="all">全部</button>
   <button data-f="bullet">红魂</button>
