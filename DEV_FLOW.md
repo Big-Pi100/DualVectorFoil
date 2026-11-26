@@ -108,6 +108,19 @@ G="/e/godot/Godot_v4.7.2-stable_win64_console.exe"     # 版本定版，别换�
 "$G" --headless --path godot --script res://tests/asset_wiring.gd   # 资产接线：旧路径清零 / ANIM / 镜像
 ```
 
+**改地图 / 加房间 / 调房间尺寸，跑这两条 + `world_data`：**
+
+```bash
+python tools/worldmap/build_world.py    # 房间矩形 → world_map.json（校验：不重叠/相邻/可达/尺寸）
+python tools/worldmap/slice_rooms.py    # 从大地图切房间 → rooms.json（校验：门双向/每屏有落脚点）
+"$G" --headless --path godot --script res://tests/world_data.gd   # Godot 侧读得进、行列数对得上
+```
+
+三条各管一层：`build_world` 管**房间摆得对不对**（重叠、斜着进门、能力门顺序）、
+`slice_rooms` 管**切出来的房间能不能走**（门是双向的、每屏至少一个落脚点）、
+`world_data` 管**数据交到 Godot 手里没走样**（字符地图行列数 = 矩形宽高）。
+它红了别手改 json —— 先重跑上面两条；两条都绿了还红，说明手改过数据。
+
 **换素材、加资产、改场景贴图都跑 `asset_wiring`。** 它查五件事：`res://` 下有没有旧产线路径、
 `player.gd` 的 ANIM 表每项能不能加载且是 340×340 单帧、场景里每个 Sprite2D 是不是指向
 `assets/art/`、镜像 `SYNC_STAMP` 与实际文件数对不对、以及本期接入了 41 张里的几张。
