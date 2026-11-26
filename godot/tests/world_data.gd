@@ -65,6 +65,23 @@ func _init() -> void:
 	else:
 		_bad("网格 %s ≠ 48" % meta["grid"])
 
+	# 包围盒长宽比：这一条守的是「地图不能是一条横线」。
+	# 旧版 1448×220 = 6.58:1，玩家一眼就看出是个横条。
+	# 《月下》正城 15648×12032 = 1.30:1，所以这里卡 1.15–1.45。
+	var bb: Dictionary = meta["bbox"]
+	var asp := float(bb["w"]) / float(bb["h"])
+	if asp >= 1.15 and asp <= 1.45:
+		_ok("包围盒 %d×%d 格 = %.2f:1（《月下》1.30）" % [bb["w"], bb["h"], asp])
+	else:
+		_bad("包围盒 %d×%d = %.2f:1，超出 1.15–1.45 —— 又变回横条了" % [bb["w"], bb["h"], asp])
+
+	# 独立环数 E-V+1：树形拓扑恒为 0。为 0 就是「只能一直往前推」。
+	var loops := int(meta["loops"])
+	if loops >= 6:
+		_ok("独立环 %d 个（树形拓扑会是 0）" % loops)
+	else:
+		_bad("独立环只有 %d 个（要求 ≥6）—— 地图退化成树，走不通就得原路返回" % loops)
+
 	# ── 2. 每间房：坐标是整格、尺寸在界内、像素值对得上 ──────────
 	print("\n[2] 房间矩形")
 	var ids: Array[String] = []
@@ -82,8 +99,21 @@ func _init() -> void:
 			_bad("%s 的 rect_px 与 rect×48 对不上" % id)
 		if x < 0 or y < 0 or x + w > mw or y + h > mh:
 			_bad("%s 越出地图 %d×%d" % [id, mw, mh])
-		if w < 40 or h < 11:
-			_bad("%s 尺寸异常 %d×%d" % [id, w, h])
+		# 尺寸区间从 world_map.json 的 kinds 读，不在这里写死。
+		# 写死 40/11 会把「竖井 16 格宽」「墓穴 12 格高」这类合法形状判成异常 ——
+		# 竖井本来就该窄，正是它让地图立起来。
+		var kinds: Dictionary = world["kinds"]
+		var kn := String(r["kind"])
+		if kinds.has(kn):
+			var kd: Dictionary = kinds[kn]
+			if w < int(kd["min_w"]) or w > int(kd["max_w"]) \
+					or h < int(kd["min_h"]) or h > int(kd["max_h"]):
+				_bad("%s %d×%d 超出 %s 的 %d–%d × %d–%d" % [
+					id, w, h, kd["name"],
+					int(kd["min_w"]), int(kd["max_w"]),
+					int(kd["min_h"]), int(kd["max_h"])])
+		else:
+			_bad("%s 未知 kind=%s" % [id, kn])
 	if _fail == 0:
 		_ok("%d 间房的坐标/像素/边界全部自洽" % wr.size())
 

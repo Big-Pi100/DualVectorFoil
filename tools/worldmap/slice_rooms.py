@@ -32,19 +32,48 @@ FLOOR_H = 2          # 地板厚 2 格（96px）
 WALL_TOP = 1         # 顶墙厚 1 格
 WALL_SIDE = 1        # 侧墙厚 1 格
 DOOR_H = 3           # 门洞高 3 格（144px = 一个底板高，角色 100px 能过）
+MAX_DOOR_GAP = 6     # 横向门的门底最多离地 6 格（再高就跳不进去了）
 
-# 房型 → 平台带。x 是房间宽的百分比，h 是「离地高度（格）」。
-# 高度全部落在 2–6 格里：2–4 是「走上去 / 一步跳」，5–6 是「要折叠」。
-# 刻意不在这里放 4.5–6.5 的折叠门 —— 门是枝入口的事，不是每间房都有。
-PLATFORMS = {
-    "safe":   [(0.12, 3, 0.14), (0.55, 2, 0.12)],
-    "combat": [(0.08, 3, 0.12), (0.30, 5, 0.14), (0.56, 3, 0.12), (0.78, 4, 0.10)],
-    "dark":   [],                                    # 暗房要空，站得住就行
-    "boss":   [(0.05, 4, 0.10), (0.85, 4, 0.10)],   # 两侧高台，中间空
-    "hub":    [(0.10, 3, 0.12), (0.45, 4, 0.16), (0.75, 3, 0.12)],
-    "hall":   [(0.10, 3, 0.10), (0.35, 5, 0.10), (0.60, 3, 0.10), (0.82, 4, 0.10)],
-    "corr":   [],                                    # 走廊不放东西
+# 房型 → 平台带。三项：(起点比例, 离地格数, 宽比例)。
+#
+# **横向房的平台数按宽度算，不写死 4 个。** 旧版一间 248 格宽的冠层回廊也只
+# 摆 4 个平台，中间 60 格是空的 —— 房间一变大，写死的数量就撑不住了。
+#
+# 竖向房（spire / well）是另一套：平台沿高度每 6 格错落一层，
+# 否则一整根 58 格高的塔里连个落脚点都没有，玩家只能一直往下掉。
+VERTICAL_PLATFORMS = {
+    # 竖塔：左右交错，每 6 格一层，一路垫到 48 格
+    "spire": [(0.10, 5, 0.42), (0.48, 11, 0.42), (0.10, 17, 0.42),
+              (0.48, 23, 0.42), (0.10, 29, 0.42), (0.48, 35, 0.42),
+              (0.10, 41, 0.42), (0.48, 47, 0.42)],
+    # 竖井：窄，平台占 55%，留两侧缝给角色穿过
+    "well":  [(0.20, 6, 0.55), (0.20, 13, 0.55),
+              (0.20, 20, 0.55), (0.20, 27, 0.55), (0.20, 34, 0.55)],
 }
+
+# 纯通路型：不放平台（走廊放东西会挡路）
+EMPTY_KINDS = {"corr", "bridge"}
+
+# 横向房的平台间距（格）。约 2/3 屏一个，保证每屏至少一个落脚点。
+PLATFORM_STEP = 26
+
+
+def platforms_for(kind: str, w: int, h: int) -> list[tuple[float, int, float]]:
+    """按房型和实际尺寸算平台。宽度越大铺得越多，不写死数量。"""
+    if kind in EMPTY_KINDS:
+        return []
+    if kind in VERTICAL_PLATFORMS:
+        return VERTICAL_PLATFORMS[kind]
+    if kind == "boss":
+        # Boss 房中间必须空出来打，只在两侧留高台
+        return [(0.04, 4, 0.10), (0.86, 4, 0.10)]
+    n = max(2, w // PLATFORM_STEP)
+    out: list[tuple[float, int, float]] = []
+    for i in range(n):
+        fx = (i + 0.5) / n - 0.5 * (0.45 / n)
+        lift = 3 if i % 2 == 0 else 5
+        out.append((fx, lift, 0.45 / n))
+    return out
 
 
 def blank(w: int, h: int) -> list[list[str]]:
@@ -92,18 +121,28 @@ def door_exits(room: dict, rooms_by_id: dict, links: list[dict]) -> dict:
         o = rooms_by_id[other_id]["rect"]
         ox = min(r["x"] + r["w"], o["x"] + o["w"]) - max(r["x"], o["x"])
         oy = min(r["y"] + r["h"], o["y"] + o["h"]) - max(r["y"], o["y"])
+
+        # 门的位置必须在**全局坐标**里算，两侧算出来的才是同一个洞。
+        # 各自按「本房重叠段中间」算，会在两侧得到不同高度 —— 门错位，
+        # 而截图上看不出来（两边都有洞，就是接不上）。
         if d in ("left", "right"):
-            if oy <= 0:
+            if oy < DOOR_H:
                 continue
-            lo = max(r["y"], o["y"])
-            mid = lo + oy // 2 - r["y"]
-            out.append(dict(dir=d, span=(mid, mid + DOOR_H), gate=l["gate"], to=other_id))
+            gy = max(r["y"], o["y"])
+            g0 = gy + (oy - DOOR_H) // 2
+            # 两侧都不能把洞开进天花板
+            g0 = max(g0, r["y"] + WALL_TOP, o["y"] + WALL_TOP)
+            span = (g0 - r["y"], g0 - r["y"] + DOOR_H)
         else:
-            if ox <= 0:
+            if ox < DOOR_H:
                 continue
-            lo = max(r["x"], o["x"])
-            mid = lo + ox // 2 - r["x"]
-            out.append(dict(dir=d, span=(mid - 1, mid + 2), gate=l["gate"], to=other_id))
+            gx = max(r["x"], o["x"])
+            g0 = gx + (ox - DOOR_H) // 2
+            # 两侧都不能贴到侧墙外（否则 check_room 会判「超出内墙」）
+            g0 = max(g0, r["x"] + 1, o["x"] + 1)
+            g0 = min(g0, r["x"] + r["w"] - 1 - DOOR_H, o["x"] + o["w"] - 1 - DOOR_H)
+            span = (g0 - r["x"], g0 - r["x"] + DOOR_H)
+        out.append(dict(dir=d, span=span, gate=l["gate"], to=other_id))
     return out
 
 
@@ -114,8 +153,8 @@ def build_room(room: dict, rooms_by_id: dict, links: list[dict]) -> dict:
     frame(g, w, h)
     walk = h - FLOOR_H - 1          # 可站立面的那一行（地板上沿的上一格）
 
-    # 平台：按房型百分比摆，离地高度从可站立面往上算
-    for fx, lift, fw in PLATFORMS.get(room["kind"], []):
+    # 平台：按房型和实际宽度算，离地高度从可站立面往上算
+    for fx, lift, fw in platforms_for(room["kind"], w, h):
         y = walk - lift
         if y <= WALL_TOP:
             continue
@@ -171,36 +210,55 @@ def check_room(rm: dict) -> list[str]:
         if not any(seg):
             bad.append(f"{rm['id']} 第 {sx}–{min(sx+20,w)} 列没有任何落脚点（一屏黑）")
 
-    # 2. 门洞必须通到房间内部：门格本身可站，且往里一格也可站
-    for info in rm["exits"]:
-        dir_ = info["dir"]
-        if dir_ in ("left", "right"):
-            x = 0 if dir_ == "left" else w - 1
-            xs = [x, 1 if dir_ == "left" else w - 2]
-            ys = [y for y in range(info["span"][0], info["span"][1]) if y < h]
-            if not any(ok[y][xx] for y in ys for xx in xs):
-                bad.append(f"{rm['id']} {dir_} 门洞不通（门里门外都没有可站立格）")
-        else:
-            y = 0 if dir_ == "up" else h - 1
-            xs = [x for x in range(info["span"][0], info["span"][1]) if 0 < x < w - 1]
-            if not any(g[y][x] == "D" for x in xs):
-                bad.append(f"{rm['id']} {dir_} 门洞没开出来")
-
-    # 3. 门开在重叠段上 —— 由 door_exits 保证，这里只查有没有落到墙外
+    # 2. 门洞必须真的开出来，且不塌进天花板/地板
+    #
+    # **旧版还要求「门格可站」，这条在房间变高之后是错的。**
+    # 塔底通向回廊的门开在回廊顶部、玩家掉 6 格落地，这是恶魔城的标准做法
+    # （《月下》外壁每一个窗口都是这么下来的）。要求可站会把这个设计判成 bug。
+    # 真正该守的是下面第 3 条：门底离地不能太高，否则玩家跳不进去。
     for info in rm["exits"]:
         dir_, a, b = info["dir"], info["span"][0], info["span"][1]
-        if dir_ in ("up", "down") and not (0 < a and b < w):
-            bad.append(f"{rm['id']} {dir_} 门 x={a}..{b} 超出内墙范围")
+        if dir_ in ("left", "right"):
+            x = 0 if dir_ == "left" else w - 1
+            got = [y for y in range(max(0, a), min(b, h)) if g[y][x] == "D"]
+            if not got:
+                bad.append(f"{rm['id']} {dir_} 门洞没开出来（y={a}..{b}）")
+        else:
+            y = 0 if dir_ == "up" else h - 1
+            got = [x for x in range(max(0, a), min(b, w)) if g[y][x] == "D"]
+            if not got:
+                bad.append(f"{rm['id']} {dir_} 门洞没开出来（x={a}..{b}）")
+            if a < 1 or b > w - 1:
+                bad.append(f"{rm['id']} {dir_} 门 x={a}..{b} 超出内墙范围")
+
+    # 3. 横向门的门底不能离地超过 6 格 —— 角色跳不上去，等于这扇门是堵的
+    #
+    # 竖塔/竖井豁免：它们本来就每 6 格一层平台，门开在高处是「从塔顶掉进来」，
+    # 回程靠爬平台。《月下》外壁的每扇窗都是这么用的。
+    if rm["kind"] in ("spire", "well"):
+        return bad
+    for info in rm["exits"]:
+        if info["dir"] not in ("left", "right"):
+            continue
+        gap = (h - FLOOR_H) - info["span"][1]
+        if gap > MAX_DOOR_GAP:
+            bad.append(f"{rm['id']} {info['dir']} 门底离地 {gap} 格"
+                       f"（上限 {MAX_DOOR_GAP}）—— 跳不上去，门等于堵的")
     return bad
 
 
+def cell_for(w: int) -> int:
+    """每格像素。宽房自动缩小 —— 248 格的冠层回廊按 9px/格是 2232px，会撑爆页面。"""
+    return 9 if w <= 100 else max(2, 900 // w)
+
+
 def render_html(rooms: list[dict], order: list[str]) -> str:
-    CELL = 9
     by_id = {r["id"]: r for r in rooms}
     cards = []
     for rid in order:
         rm = by_id[rid]
         w, h = rm["w"], rm["h"]
+        CELL = cell_for(w)
         parts = []
         for y, row in enumerate(rm["grid"]):
             for x, ch in enumerate(row):
@@ -299,6 +357,25 @@ def main() -> None:
         if (l["to"], l["from"]) not in have:
             bad.append(f"{l['to']} 没有通往 {l['from']} 的门")
 
+    # 双向还不够：两个洞必须在**全局坐标**上真的对上。
+    # 「两边都有洞、就是错位一格」是最阴的一种 —— 截图上看两边都是门，
+    # 走进去却穿不过去。房间高矮差得多的时候（塔 36 格 vs 回廊 12 格）特别容易出。
+    by_id = {r["id"]: r for r in rooms}
+    for l in links:
+        a, b = l["from"], l["to"]
+        ea = [e for e in by_id[a]["exits"] if e["to"] == b]
+        eb = [e for e in by_id[b]["exits"] if e["to"] == a]
+        for x, y in zip(ea, eb):
+            def abs_sp(rm, e):
+                r = rm["rect"]
+                return (r["y"] + e["span"][0], r["y"] + e["span"][1]) \
+                    if e["dir"] in ("left", "right") \
+                    else (r["x"] + e["span"][0], r["x"] + e["span"][1])
+            (a0, a1), (b0, b1) = abs_sp(by_id[a], x), abs_sp(by_id[b], y)
+            if min(a1, b1) - max(a0, b0) < 1:
+                bad.append(f"{a}↔{b} 两边的门错位：{a} 在 {a0}..{a1}，"
+                           f"{b} 在 {b0}..{b1} —— 都有洞，但接不上")
+
     if bad:
         print("[slice] 校验失败：")
         for b in bad:
@@ -314,9 +391,19 @@ def main() -> None:
         ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     print(f"[slice] {len(rooms)} 间 → {OUT_JSON.relative_to(ROOT)}")
 
-    # 预览：根系全部 + 主干前 3 + 一条走廊，够看出「同一种切法能出各种房」
-    order = ["R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "T1", "T2", "T3", "T5"]
-    order = [o for o in order if o in {r["id"] for r in rooms}]
+    # 预览：每个区域取前 3 间，再补上每一种「形状身份」的样本 ——
+    # 目的是用最少的卡片看出「同一种切法能出竖井、塔、廊桥、大厅四种东西」
+    have = {r["id"] for r in rooms}
+    order: list[str] = []
+    for layer in ["canopy", "trunk", "west", "east", "root", "deep"]:
+        order += [r["id"] for r in rooms if r["layer"] == layer][:3]
+    import json as _json  # noqa
+    kinds = _json.loads(SRC.read_text(encoding="utf-8"))["kinds"]
+    for kind in kinds:
+        same = [r["id"] for r in rooms if r["kind"] == kind]
+        if same and same[0] not in order:
+            order.append(same[0])
+    order = [o for o in order if o in have]
     OUT_HTML.parent.mkdir(parents=True, exist_ok=True)
     OUT_HTML.write_text(render_html(rooms, order), encoding="utf-8")
     print(f"[slice] 预览 {len(order)} 间 → {OUT_HTML.relative_to(ROOT)}")
