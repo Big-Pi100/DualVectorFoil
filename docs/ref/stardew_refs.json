@@ -1,0 +1,116 @@
+{
+  "_meta": {
+    "game": "Stardew Valley",
+    "version": "1.6.x",
+    "purpose": "种田体系机制数据。只记可直接引用、可被 wiki 原文核对的数值；不含攻略与流派。",
+    "sources": [
+      "https://stardewvalleywiki.com/Day_Cycle",
+      "https://stardewvalleywiki.com/Energy",
+      "https://stardewvalleywiki.com/Seasons",
+      "https://stardewvalleywiki.com/Crops",
+      "https://stardewvalleywiki.com/Keg",
+      "https://stardewvalleywiki.com/Sprinkler"
+    ],
+    "note": "洒水器解锁等级在旧版 wiki 快照里写作 3 级，现行版为 2 级；本文按现行版。"
+  },
+
+  "time": {
+    "day_start": "06:00",
+    "day_end": "02:00",
+    "day_hours": 20,
+    "real_seconds_per_game_minute": 0.7,
+    "skull_cavern_seconds_per_game_minute": 0.9,
+    "real_seconds_per_game_hour": 42,
+    "real_minutes_per_day": 14.0,
+    "real_minutes_per_day_used_in_docs": 14,
+    "real_hours_per_season": 6.53,
+    "real_hours_per_year": 26.13,
+    "_derivation": "1 游戏小时 = 42 秒 = 0.7 分；一天 20 小时 = 840 秒 = 14.0 分；一季 28 天 = 392 分 = 6h32m；一年 112 天 = 1568 分 = 26h08m",
+    "season_days": 28,
+    "seasons_per_year": 4,
+    "pauses": ["菜单", "对话", "过场动画", "钓鱼收线", "上下马"],
+    "pass_out_time": "02:00",
+    "pass_out_penalty": "损失 10% 金币（上限 1000g）；在农场屋内睡着无惩罚",
+    "sleep_restore": {
+      "before_midnight": 1.0,
+      "at_01:00": 0.75,
+      "near_02:00": 0.5,
+      "exhausted": 0.5
+    }
+  },
+
+  "energy": {
+    "start": 270,
+    "stardrops": 7,
+    "stardrop_bonus": 34,
+    "max": 508,
+    "watering_per_tile": 2,
+    "hoeing_per_tile": 2,
+    "harvest_scythe_per_tile": 0,
+    "planting_per_tile": 0,
+    "fishing_per_cast": 8,
+    "skill_level_energy_reduction": 0.1,
+    "tiles_per_full_bar": 135,
+    "exhausted_effect": "移速减半、无法使用工具、无法跑动与钓鱼"
+  },
+
+  "space": {
+    "sprinkler_basic": { "tiles": 4, "farming_level": 2 },
+    "sprinkler_quality": { "tiles": 8, "farming_level": 6 },
+    "sprinkler_iridium": { "tiles": 24, "farming_level": 9 },
+    "scarecrow_protected_tiles": 248,
+    "crow_trigger_crops": 15,
+    "trellis_crops_block_movement": true
+  },
+
+  "growth": {
+    "grow_time_excludes_planting_day": true,
+    "unwatered_effect": "当晚不生长，但不会死亡",
+    "quality_tiers": ["普通", "银", "金", "铱"],
+    "quality_price_multiplier": { "silver": 1.25, "gold": 1.5, "iridium": 2.0 },
+    "quality_energy_multiplier": { "silver": 1.4, "gold": 1.8, "iridium": 2.6 },
+    "iridium_requires": "豪华肥料",
+    "quality_no_effect_on": ["料理", "加工品"],
+    "giant_crop_size": 3,
+    "giant_crop_yield": [15, 21],
+    "normal_9_tile_yield": 9,
+    "giant_crop_survives_season_change": true
+  },
+
+  "season_change": {
+    "crops_die_unless_multi_season": true,
+    "fertilizer_expires": true,
+    "tilled_land_disappears": true,
+    "debris_spawns": true,
+    "multi_season_crops": ["上古水果", "咖啡豆", "玉米", "向日葵", "小麦"],
+    "planted_land_no_disrepair": true
+  },
+
+  "processing": {
+    "keg_unlock_level": 8,
+    "keg_wine": { "multiplier": 3.0, "minutes": 10000, "days": 6.25 },
+    "keg_juice": { "multiplier": 2.25, "minutes": 6000, "days": 4 },
+    "keg_beer": { "price": 200, "minutes": 1750 },
+    "keg_pale_ale": { "price": 300, "minutes": 2250 },
+    "keg_mead": { "price": 300, "minutes": 600 },
+    "preserves_jar": { "formula": "2 * base + 50" },
+    "keg_vs_jar_breakpoint_gold": { "fruit": 50, "vegetable": 200 },
+    "time_unit_note": "一天 20 小时记 1200 分钟；2:00-6:00 每小时记 100 分钟，故一整天记 1600 分钟"
+  },
+
+  "interpretation": {
+    "three_bottlenecks_in_order": [
+      "体力：一天能浇的格数有硬上限（270/2 = 135 格）",
+      "时间：一季 28 天，作物必须在季内回本",
+      "空间：耕地面积与洒水器覆盖，决定规模上限"
+    ],
+    "automation_ceiling": "6 个铱洒水器（24 格）覆盖 144 格，才超过一整管体力的 135 格",
+    "core_loop": "种子钱 → 作物 → 卖钱 → 洒水器/工具 → 更大地 → 更多作物",
+    "not_transferable": [
+      "每日逐格浇水（重复劳动，与动作支柱冲突）",
+      "纯金币经济（通货不回流战斗）",
+      "无失败惩罚（种田不会失去）",
+      "季节绑定的作物表（需要四套美术与数值）"
+    ]
+  }
+}
