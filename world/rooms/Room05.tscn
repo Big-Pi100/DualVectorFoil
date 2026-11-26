@@ -103,10 +103,11 @@ texture = ExtResource("98_block")
 position = Vector2(0, 10)
 scale = Vector2(1.2, 1.0)
 
+; 道具星星主体 36px；灯塔灯放大到 1.5（54px）足够醒目，不用 2.2（79px 属比例失控）
 [node name="LampStar" type="Sprite2D" parent="Lighthouse"]
 texture = ExtResource("97_star")
 position = Vector2(0, -60)
-scale = Vector2(2.2, 2.2)
+scale = Vector2(1.5, 1.5)
 
 [node name="HaloLeft" type="Sprite2D" parent="Lighthouse"]
 texture = ExtResource("97_star")

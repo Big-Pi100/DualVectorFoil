@@ -232,5 +232,17 @@
     "source": "art/experiments/E02_Item/origami_bird/raw/Create_original_2D_game_artwor_2026-11-26T08-44-34.png",
     "approved": "art/approved/Characters/origami_bird_idle_00.png",
     "note": "Origami bird NPC (Xiao Zhe); 3 independent samples, #2 chosen by user (white-crowned crouching bird with scarf ribbon); 128x128 frame, 48px game height; extracted P1-P11, cropped bbox+12% (F12), Godot gate PASS"
+  },
+  "terrain_stone_block_200": {
+    "category": "Terrain",
+    "source": "art/approved/Terrain/terrain_stone_block.png",
+    "approved": "art/approved/Terrain/terrain_stone_block_200.png",
+    "note": "Phase3 gameplay-size stone block (200x165) derived from G2/G4-approved 1024 source; used by Room04 book pile + Room05 lighthouse. Fixed 1024-original-in-scene proportion bug (2026-11-26)."
+  },
+  "terrain_stone_pillar_200": {
+    "category": "Terrain",
+    "source": "art/approved/Terrain/terrain_stone_pillar.png",
+    "approved": "art/approved/Terrain/terrain_stone_pillar_200.png",
+    "note": "Phase3 gameplay-size stone pillar (200x323) derived from G2/G4-approved 1024 source; used by Room03 windmill. Fixed 1024-original-in-scene proportion bug (2026-11-26)."
   }
 }
