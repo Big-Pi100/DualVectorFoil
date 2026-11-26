@@ -86,8 +86,9 @@
 | `docs/ref/NIGHTFALL_REVIEW.md` | 外部评审 | 技术与产品意见 |
 | `docs/ref/CRAYON_ODYSSEY_GDD.md` | 《色彩旅人》GDD/TDD **原文归档** | 数值出处（480 / 1320 / 460 / 0.14…）。已抄成 `F2` 预设，只作对照 |
 | `docs/ref/REF_ARIA_OF_SORROW.md` | 《晓月圆舞曲》魂/道具系统拆解 | **技能分层（4 层成本模型）、55:24:35:6 配比、贵≠强的效率表、能力门 5/6 确定获取**。数据在 `aos_souls.json`（120 条），可视化 `aos_souls.html` |
-| ⭐ `docs/ref/aos/` | **《晓月》完整资料库**（11-26 建）：**入口是 `REF_AOS_COMPLETE.md`**（§0 按开发工序索引），数据五份 `aos_enemies.json`（109 敌）/ `aos_areas.json`（13 区 + 能力门）/ `aos_bosses.json`（11 BOSS + **逐招表 + 受击面**）/ `aos_equipment.json`（**59 武器 + 25 防具 + 20 饰品**）/ `aos_systems.json`（**完整伤害公式**·掉落·结局），一页总览 `aos_atlas.html`。**109 敌 / 13 区 / 11 BOSS（招式中位数 2、8/11 非单体受击面）/ 104 装备 / 3 结局** | 🟡 参考 |
+| ⭐ `docs/ref/aos/` | **《晓月》完整资料库**（11-26 建）：**入口是 `REF_AOS_COMPLETE.md`**（§0 按开发工序索引），数据五份 `aos_enemies.json`（109 敌）/ `aos_areas.json`（13 区 + 能力门）/ `aos_bosses.json`（11 BOSS + **逐招表 + 受击面**）/ `aos_equipment.json`（**59 武器 + 25 防具 + 20 饰品**）/ `aos_systems.json`（**完整伤害公式**·掉落·结局）/ `aos_map_area.json`（**13 区面积实测**），一页总览 `aos_atlas.html`。**109 敌 / 13 区 / 11 BOSS（招式中位数 2、8/11 非单体受击面）/ 104 装备 / 3 结局 / 可走面积 1210.8 屏（647 格）** | 🟡 参考 |
 | `tools/ref/aos_build.py` | 资料库构建器 + 校验器：`--check` 跑公式端点回代、五点比对、区域聚合、魂名交叉引用。**原始抓取证据在 `tools/ref/_src/aos_enemies_raw.txt`，永不改** | 🟡 参考 |
+| `tools/ref/aos_measure.py` | **《晓月》面积测量器**：量 13 区实际可走面积，两条独立测量互证（逐区图 vs 整图，差 2.6%）。原图不入库，`--fetch` 重下，`tools/ref/_src/aos_maps/MANIFEST.json` 存地址+sha256 | 🟡 参考 |
 
 ## ⚪ 历史报告（`docs/history/`，只读，不再更新）
 

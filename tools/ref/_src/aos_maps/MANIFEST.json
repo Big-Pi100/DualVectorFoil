@@ -1,0 +1,201 @@
+{
+ "note": "地图原始文件不入库（13MB，可重新下载）。这里是下载地址 + 尺寸 + 指纹，用于复查。",
+ "base": "https://img.pixelguides.org/img/castlevania-aria-of-sorrow/maps/",
+ "files": {
+  "castle-corridor": {
+   "url": "https://img.pixelguides.org/img/castlevania-aria-of-sorrow/maps/castle-corridor.webp",
+   "vgmaps_size": [
+    10808,
+    2304
+   ],
+   "file_size": [
+    6000,
+    1279
+   ],
+   "bytes": 692726,
+   "sha256_16": "57e0cd35fd3880bb"
+  },
+  "chapel": {
+   "url": "https://img.pixelguides.org/img/castlevania-aria-of-sorrow/maps/chapel.webp",
+   "vgmaps_size": [
+    2576,
+    2304
+   ],
+   "file_size": [
+    2576,
+    2304
+   ],
+   "bytes": 1419574,
+   "sha256_16": "9338a0147ff5331b"
+  },
+  "study": {
+   "url": "https://img.pixelguides.org/img/castlevania-aria-of-sorrow/maps/study.webp",
+   "vgmaps_size": [
+    2576,
+    1280
+   ],
+   "file_size": [
+    2576,
+    1280
+   ],
+   "bytes": 997340,
+   "sha256_16": "eda8866b30ccd4df"
+  },
+  "dance-hall": {
+   "url": "https://img.pixelguides.org/img/castlevania-aria-of-sorrow/maps/dance-hall.webp",
+   "vgmaps_size": [
+    2920,
+    2016
+   ],
+   "file_size": [
+    2920,
+    2016
+   ],
+   "bytes": 1178854,
+   "sha256_16": "602806b0e7d95809"
+  },
+  "inner-quarters": {
+   "url": "https://img.pixelguides.org/img/castlevania-aria-of-sorrow/maps/inner-quarters.webp",
+   "vgmaps_size": [
+    3448,
+    2400
+   ],
+   "file_size": [
+    3448,
+    2400
+   ],
+   "bytes": 1291650,
+   "sha256_16": "3a49ea1e4335277d"
+  },
+  "floating-garden": {
+   "url": "https://img.pixelguides.org/img/castlevania-aria-of-sorrow/maps/floating-garden.webp",
+   "vgmaps_size": [
+    6680,
+    2160
+   ],
+   "file_size": [
+    6000,
+    1940
+   ],
+   "bytes": 1115586,
+   "sha256_16": "c255e8d618ba51b8"
+  },
+  "clock-tower": {
+   "url": "https://img.pixelguides.org/img/castlevania-aria-of-sorrow/maps/clock-tower.webp",
+   "vgmaps_size": [
+    2032,
+    2616
+   ],
+   "file_size": [
+    2032,
+    2616
+   ],
+   "bytes": 1177968,
+   "sha256_16": "bb101957eac7b71e"
+  },
+  "underground-reservoir": {
+   "url": "https://img.pixelguides.org/img/castlevania-aria-of-sorrow/maps/underground-reservoir.webp",
+   "vgmaps_size": [
+    8448,
+    3584
+   ],
+   "file_size": [
+    6000,
+    2545
+   ],
+   "bytes": 1034344,
+   "sha256_16": "63d294f4c1f5b8a4"
+  },
+  "underground-cemetery": {
+   "url": "https://img.pixelguides.org/img/castlevania-aria-of-sorrow/maps/underground-cemetery.webp",
+   "vgmaps_size": [
+    4504,
+    448
+   ],
+   "file_size": [
+    4504,
+    448
+   ],
+   "bytes": 464034,
+   "sha256_16": "09b1405445cc534f"
+  },
+  "the-arena": {
+   "url": "https://img.pixelguides.org/img/castlevania-aria-of-sorrow/maps/the-arena.webp",
+   "vgmaps_size": [
+    3272,
+    1536
+   ],
+   "file_size": [
+    3272,
+    1536
+   ],
+   "bytes": 1172254,
+   "sha256_16": "4b4793d4d2fd0214"
+  },
+  "forbidden-area": {
+   "url": "https://img.pixelguides.org/img/castlevania-aria-of-sorrow/maps/forbidden-area.webp",
+   "vgmaps_size": [
+    3528,
+    1440
+   ],
+   "file_size": [
+    3528,
+    1440
+   ],
+   "bytes": 448504,
+   "sha256_16": "c1fa792d89ebb937"
+  },
+  "top-floor": {
+   "url": "https://img.pixelguides.org/img/castlevania-aria-of-sorrow/maps/top-floor.webp",
+   "vgmaps_size": [
+    2200,
+    2560
+   ],
+   "file_size": [
+    2200,
+    2560
+   ],
+   "bytes": 1213850,
+   "sha256_16": "c2a736e5abf33844"
+  },
+  "chaotic-realm": {
+   "url": "https://img.pixelguides.org/img/castlevania-aria-of-sorrow/maps/chaotic-realm.webp",
+   "vgmaps_size": [
+    2800,
+    2352
+   ],
+   "file_size": [
+    2800,
+    2352
+   ],
+   "bytes": 1475898,
+   "sha256_16": "be65f037bd665f69"
+  },
+  "castle-sotn-style": {
+   "url": "https://img.pixelguides.org/img/castlevania-aria-of-sorrow/maps/castle-sotn-style.webp",
+   "vgmaps_size": [
+    1021,
+    923
+   ],
+   "file_size": [
+    1021,
+    923
+   ],
+   "bytes": 176576,
+   "sha256_16": "ef6f5e0cc3c00110"
+  },
+  "boss-rush": {
+   "url": "https://img.pixelguides.org/img/castlevania-aria-of-sorrow/maps/boss-rush.webp",
+   "vgmaps_size": [
+    5872,
+    1024
+   ],
+   "file_size": [
+    5872,
+    1024
+   ],
+   "bytes": 515000,
+   "sha256_16": "4764756a4f84b93c"
+  }
+ }
+}

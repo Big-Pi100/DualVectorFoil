@@ -35,6 +35,7 @@ AREAS_JSON = AOS / "aos_areas.json"
 BOSSES_JSON = AOS / "aos_bosses.json"
 SYSTEMS_JSON = AOS / "aos_systems.json"
 EQUIP_JSON = AOS / "aos_equipment.json"
+MAP_AREA_JSON = AOS / "aos_map_area.json"
 MD = AOS / "REF_AOS_COMPLETE.md"
 HTML = AOS / "aos_atlas.html"
 
@@ -477,6 +478,30 @@ def render_tables(doc: dict) -> str:
                f"全 59 件里也只有 {_shop} 件进商店 —— **商店只负责「不掉队」，不负责「变强」**。"
                f"这是探索型数值设计的通用做法：把最强的装备放在「走过去」而不是「买得到」后面。\n")
 
+    # G. 13 区面积实测
+    # 表格本身不手写：数字全部来自 aos_measure.py 量出的 aos_map_area.json。
+    # 手抄一遍就等于埋一个「文档与实测不一致」的坑。
+    out.append("### 附 G · 13 区实际面积（逐张图实测）\n")
+    ma = json.loads(MAP_AREA_JSON.read_text(encoding="utf-8"))
+    rows = []
+    for aid, r in sorted(ma["areas"].items(), key=lambda kv: -kv[1]["screens"]):
+        share = r["screens"] / ma["totals"]["screens_all_13"] * 100
+        rows.append(f"| {r['cn']} | **{r['screens']:g}** | {r['cells']:g} | "
+                    f"{r['extent'][0]:g}×{r['extent'][1]:g} | {r['fill']*100:.0f}% | {share:.1f}% |")
+    rows.append(f"| **合计** | **{ma['totals']['screens_all_13']:g}** | "
+                f"**{ma['totals']['cells_all_13']:g}** | — | — | 100% |")
+    out += table(rows,
+                 "| 区域 | 面积（屏） | 地图格 | 外接（屏） | 填充率 | 占比 |",
+                 "|---|---|---|---|---|---|")
+    out.append("")
+    t = ma["totals"]
+    out.append(f"> 一屏 = 240×160 场景像素；一格 = 256×256（游戏的地图计量单位）。"
+               f"计进地图 RATE 的是 12 区 {t['screens_rated_12']:g} 屏 / "
+               f"{t['cells_rated_12']:g} 格 —— 混沌领域不进百分比。"
+               f"**两条独立测量互相印证**：逐区 13 张图合计与全城堡整图（{t['whole_map_screens']:g} 屏）"
+               f"相差 {t['area_sum_vs_whole_pct']}%。"
+               f"填充率 = 面积 ÷ 外接，低于 30% 说明这个区是「长廊套房间」，不是方块。\n")
+
     out.append("<!-- TABLES:END -->")
     return "\n".join(out)
 
@@ -739,6 +764,44 @@ def atk_bars(eq: dict, top_n: int = 16) -> str:
             + "".join(parts) + leg + "</svg>")
 
 
+
+def area_bars(ma: dict, areas: list[dict]) -> str:
+    """13 区面积条形图。
+
+    用「面积当量（屏）」而不是「外接尺寸」：外接尺寸会被 L 形/十字形虚胖
+    （地下水域外接 35×22 屏，实际只有 204 屏，填充率 26%）。
+    条形后面缀的百分比是同区填充率 —— 它告诉你这个区是「块」还是「廊」。
+    """
+    rows = sorted(ma["areas"].items(), key=lambda kv: -kv[1]["screens"])
+    cn = {a["id"]: a for a in areas}
+    W, rowh, pad = 860, 26, 6
+    H = len(rows) * rowh + 42
+    label_w, num_w = 190, 186
+    # 末尾还要写「204.1 屏」，最长那条的标签不能顶到右列去
+    bar_max = W - label_w - num_w - 80
+    mx = rows[0][1]["screens"]
+    parts = []
+    for i, (aid, r) in enumerate(rows):
+        y = pad + i * rowh
+        a = cn.get(aid, {})
+        w = max(4, bar_max * r["screens"] / mx)
+        # 计 RATE 的区用红，混沌领域用灰（它不进百分比）
+        color = "var(--gray)" if aid == "chaotic_realm" else "var(--red)"
+        parts.append(f'<text x="0" y="{y+12}" font-size="11" fill="#2b2620">'
+                     f'{esc(r["cn"])}</text>')
+        parts.append(f'<rect x="{label_w}" y="{y+2}" width="{w:.1f}" height="{rowh-9}" '
+                     f'fill="{color}" opacity="0.72" rx="2"/>')
+        parts.append(f'<text x="{label_w+w+7:.1f}" y="{y+12}" font-size="11" '
+                     f'fill="#2b2620">{r["screens"]:g} 屏</text>')
+        parts.append(f'<text x="{W-num_w}" y="{y+12}" font-size="10.5" fill="#9a907e">'
+                     f'{r["extent"][0]:g}×{r["extent"][1]:g} · {r["fill"]*100:.0f}%</text>')
+    leg = ('<text x="0" y="%d" font-size="10.5" fill="#6b6153">'
+           '红 = 计进地图 RATE 的 12 区；灰 = 混沌领域（不进百分比）。'
+           '右侧「填」是填充率：越低越像长廊，越高越像块</text>' % (H - 4))
+    return (f'<svg viewBox="0 0 {W} {H}" width="100%" style="height:auto">'
+            + "".join(parts) + leg + "</svg>")
+
+
 def render_html(doc: dict) -> str:
     areas = json.loads(AREAS_JSON.read_text(encoding="utf-8"))["areas"]
     bosses = json.loads(BOSSES_JSON.read_text(encoding="utf-8"))
@@ -764,6 +827,8 @@ def render_html(doc: dict) -> str:
             (f"{n_by_type.get('ability',0)}", "敌人掉银魂（共 6 个，其余靠拾取）"),
         ])
 
+    MA = json.loads(MAP_AREA_JSON.read_text(encoding="utf-8"))
+    rowh = MA["areas"]
     cards = []
     for a in areas:
         names = pool.get(a["id"], [])
@@ -773,6 +838,8 @@ def render_html(doc: dict) -> str:
             f'<dl><dt>BOSS</dt><dd>{"、".join(a["boss"]) or "—"}</dd>'
             f'<dt>进门</dt><dd>{a["gate"]["entry"]}</dd>'
             f'<dt>走完</dt><dd>{a["gate"]["full"]}</dd>'
+            f'<dt>规模</dt><dd>{rowh.get(a["id"], {}).get("screens", "—")} 屏'
+            f' / {rowh.get(a["id"], {}).get("cells", "—")} 格</dd>'
             f'<dt>敌人</dt><dd>{len(names)} 种' 
             + (f'（{a["enemy_data_gap"][:14]}…）' if not names and a.get('enemy_data_gap') else '') 
             + '</dd></dl></div>')
@@ -822,6 +889,7 @@ def render_html(doc: dict) -> str:
             f'font-size:11px;color:#8a6a2f">教什么：{md_bold(b["teaches"])}</div></div>')
 
     area_btn = "".join(f'<button data-f="{a["en"]}">{a["cn"]}</button>' for a in areas)
+    ab_area = area_bars(MA, areas)
     hb = hbars(bosses)
     _eq = json.loads(EQUIP_JSON.read_text(encoding="utf-8"))
     ab = atk_bars(_eq)
@@ -867,6 +935,16 @@ HP 是完美线性（320 + 12×(L−1)）；LCK 也是纯直线；STR / CON 是�
 
 <h2>3. 13 个区域</h2>
 <div class="cards3">{"".join(cards)}</div>
+
+<h3>3.1 每个区实际多大（实测）</h3>
+<p style="font-size:12.5px;color:var(--sub);margin:0 0 8px">
+《晓月》不按「房间」计量，它按<b>地图格</b>：一格 = 场景 256×256 px，走进去就点亮，
+RATE 就是点亮格数的占比。所以这里量的是<b>面积当量</b>（一屏 = 240×160 px），
+而不是房间数 —— 房间大小在 1–4 屏之间浮动，跨游戏硬比房间数会把「大小不同」误读成「数量不同」。
+13 区合计 <b>{MA["totals"]["screens_all_13"]:g} 屏</b>（计 RATE 的 12 区 {MA["totals"]["screens_rated_12"]:g} 屏），
+折合 <b>{MA["totals"]["cells_rated_12"]:g} 个地图格</b>。
+</p>
+{ab_area}
 
 <h2>4. 11 个强制 BOSS：招式少，受击面变</h2>
 <p style="font-size:12.5px;color:var(--sub);margin:0 0 8px">
@@ -964,12 +1042,44 @@ def main() -> int:
         if not (b["name"] in names or probe in names or b["name"] in soul_names):
             bad.append(f"BOSS {b['name']} 在敌人表和魂表里都找不到")
 
+    # 面积实测：区域集合必须一一对应，总数必须等于逐项之和
+    ma = json.loads(MAP_AREA_JSON.read_text(encoding="utf-8"))
+    if set(ma["areas"]) != areas_ids:
+        bad.append(f"aos_map_area.json 的区域集合与 aos_areas.json 不一致："
+                   f"多 {set(ma['areas']) - areas_ids}，缺 {areas_ids - set(ma['areas'])}")
+    s_all = sum(r["screens"] for r in ma["areas"].values())
+    if abs(s_all - ma["totals"]["screens_all_13"]) > 0.5:
+        bad.append(f"面积合计对不上：逐项和 {s_all:g} vs 记录 {ma['totals']['screens_all_13']:g}")
+
+    # §3.8 是手写的，里面引了四个实测数。手写数字是最容易烂的地方（附 G 是生成的，
+    # 会自己更新，所以只查 §3.8 那一段，别让生成表把断言糊过去）。
+    if MD.exists():
+        md = MD.read_text(encoding="utf-8")
+        if "### 3.8" in md and "## 4." in md:
+            sec = md.split("### 3.8")[1].split("## 4.")[0]
+            t = ma["totals"]
+            lines = sec.splitlines()
+            def has(*needles: str) -> bool:
+                """同一行里同时出现这些片段才算数。
+                只查「文中出现过 1210.8」是不够的 —— 这个数在 §3.8 里出现两次，
+                改错一处另一处还能把断言糊过去（反向验证时踩过）。"""
+                return any(all(n in ln for n in needles) for ln in lines)
+            for needles, what in [
+                (("逐区", f"{t['screens_all_13']:.1f} 屏"), "A 路（逐区）面积"),
+                (("整图", f"{t['whole_map_screens']:.1f} 屏"), "B 路（整图）面积"),
+                (("混沌领域", f"{t['cells_rated_12']:.0f} 格"), "地图格数"),
+                (("中位数", "83.3 屏"), "单区面积中位数"),
+            ]:
+                if not has(*needles):
+                    bad.append(f"§3.8 的{what}对不上实测（同一行应同时出现 {'、'.join(needles)}）")
+
     if bad:
         die(bad)
 
     if "--check" in sys.argv:
         print(f"✓ 资料库一致：{len(doc['enemies'])} 敌人 / 13 区域 / "
-              f"{len(bosses['bosses'])} BOSS / 公式端点+五点回代全通过 / 魂名交叉引用全对上")
+              f"{len(bosses['bosses'])} BOSS / 公式端点+五点回代全通过 / 魂名交叉引用全对上 / "
+              f"面积 {ma['totals']['screens_all_13']:g} 屏")
         return 0
 
     ENEMIES_JSON.write_text(json.dumps(doc, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
