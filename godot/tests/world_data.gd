@@ -75,6 +75,27 @@ func _init() -> void:
 	else:
 		_bad("包围盒 %d×%d = %.2f:1，超出 1.15–1.45 —— 又变回横条了" % [bb["w"], bb["h"], asp])
 
+	# 轮廓：包围盒比例只描述外框，描述不了「有没有轮廓」。
+	# V2 的 1.30:1 和《月下》一模一样，视觉上还是一块填满的方砖 ——
+	# 因为每一行都从最左通到最右，占宽 94%。《晓月》只有 60%。
+	# 这三条是白哥「太粗糙，基本上就是一个横线」的最终落点。
+	var sil: Dictionary = meta["silhouette"]
+	var fill := float(sil["fill"])
+	var span := float(sil["row_span"])
+	var solid := int(sil["solid_rows"])
+	if fill >= 0.45 and fill <= 0.65:
+		_ok("轮廓覆盖 %.0f%%（《晓月》55%%）" % [fill * 100])
+	else:
+		_bad("轮廓覆盖 %.0f%%，超出 45–65%% —— 太高是一块填满的砖" % [fill * 100])
+	if solid == 0:
+		_ok("没有「从最左通到最右」的贯通行")
+	else:
+		_bad("有 %d 行贯通全宽 —— 这就是「一条横线」，只是横线比较粗" % solid)
+	if span <= 0.85:
+		_ok("最长横线占宽 %.0f%%（《晓月》60%%；V2 是 94%%）" % [span * 100])
+	else:
+		_bad("最长横线占宽 %.0f%%，上限 85%% —— 每一层都通到两边" % [span * 100])
+
 	# 独立环数 E-V+1：树形拓扑恒为 0。为 0 就是「只能一直往前推」。
 	var loops := int(meta["loops"])
 	if loops >= 6:

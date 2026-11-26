@@ -128,10 +128,22 @@ def door_exits(room: dict, rooms_by_id: dict, links: list[dict]) -> dict:
         if d in ("left", "right"):
             if oy < DOOR_H:
                 continue
+            # **横向门贴地，不取中点。**
+            #
+            # 取中点时，两间房一样高就碰巧是对的；一旦一高一矮（塔 36 格 vs
+            # 回廊 12 格），中点就跑到半空去了 —— C4 的门落在第 36 行，
+            # 玩家够不着。而且就算够得着，门在半空也不合《月下》的规矩：
+            # 那里面每一扇横向门都开在地面上。
+            #
+            # 所以门洞的**底边贴着重叠段的底边**，再整体抬进内墙以内。
             gy = max(r["y"], o["y"])
-            g0 = gy + (oy - DOOR_H) // 2
-            # 两侧都不能把洞开进天花板
+            gb = min(r["y"] + r["h"], o["y"] + o["h"])     # 重叠段底
+            g0 = gb - DOOR_H
+            # 不能高过任一侧的天花板
             g0 = max(g0, r["y"] + WALL_TOP, o["y"] + WALL_TOP)
+            # 也不能低过任一侧的地板（地板行不可挖）
+            g0 = min(g0, r["y"] + r["h"] - FLOOR_H - DOOR_H,
+                          o["y"] + o["h"] - FLOOR_H - DOOR_H)
             span = (g0 - r["y"], g0 - r["y"] + DOOR_H)
         else:
             if ox < DOOR_H:
