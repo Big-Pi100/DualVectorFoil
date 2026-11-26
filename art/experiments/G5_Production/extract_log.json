@@ -1,0 +1,82 @@
+[
+  {
+    "src": "art/experiments/G5_Production/raw\\Create_original_2D_game_artwor_2026-11-26T05-28-54.png",
+    "dst": "art/experiments/G5_Production/transparent/player_back.png",
+    "size": "1024x1024",
+    "bg": [
+      253.0,
+      7.0,
+      166.0
+    ],
+    "tolerance": 90,
+    "removed_px": 676267,
+    "interior_bg_kept_px": 254,
+    "despill_px": 3398,
+    "watermark_region": "x>84%, y>90%",
+    "label": "back"
+  },
+  {
+    "src": "art/experiments/G5_Production/raw\\Create_original_2D_game_artwor_2026-11-26T05-29-30.png",
+    "dst": "art/experiments/G5_Production/transparent/player_jump.png",
+    "size": "1024x1024",
+    "bg": [
+      250.0,
+      56.0,
+      188.0
+    ],
+    "tolerance": 90,
+    "removed_px": 677887,
+    "interior_bg_kept_px": 1733,
+    "despill_px": 1333,
+    "watermark_region": "x>84%, y>90%",
+    "label": "jump"
+  },
+  {
+    "src": "art/experiments/G5_Production/raw\\Create_original_2D_game_artwor_2026-11-26T05-29-54.png",
+    "dst": "art/experiments/G5_Production/transparent/player_attack.png",
+    "size": "1024x1024",
+    "bg": [
+      251.0,
+      39.0,
+      183.0
+    ],
+    "tolerance": 90,
+    "removed_px": 726892,
+    "interior_bg_kept_px": 253,
+    "despill_px": 1945,
+    "watermark_region": "x>84%, y>90%",
+    "label": "attack"
+  },
+  {
+    "src": "art/experiments/G5_Production/raw\\Create_original_2D_game_artwor_2026-11-26T05-30-18.png",
+    "dst": "art/experiments/G5_Production/transparent/player_hurt.png",
+    "size": "1024x1024",
+    "bg": [
+      243.0,
+      45.0,
+      170.0
+    ],
+    "tolerance": 90,
+    "removed_px": 526047,
+    "interior_bg_kept_px": 7395,
+    "despill_px": 1502,
+    "watermark_region": "x>84%, y>90%",
+    "label": "hurt"
+  },
+  {
+    "src": "art/experiments/G5_Production/raw\\Create_original_2D_game_artwor_2026-11-26T05-30-45.png",
+    "dst": "art/experiments/G5_Production/transparent/player_climb.png",
+    "size": "1024x1024",
+    "bg": [
+      245.0,
+      29.0,
+      161.0
+    ],
+    "tolerance": 90,
+    "removed_px": 411581,
+    "interior_bg_kept_px": 37628,
+    "despill_px": 34995,
+    "watermark_region": "x>84%, y>90%",
+    "label": "climb"
+  }
+]

@@ -1,0 +1,76 @@
+[gd_scene load_steps=7 format=3 uid="uid://bumtestu0lxjr"]
+
+[ext_resource type="Script" uid="uid://do21igf1h6n6j" path="res://entities/player/Player.gd" id="1_player"]
+[ext_resource type="Script" uid="uid://c2sluqc141ip3" path="res://core/components/Hitbox.gd" id="2_hitbox"]
+[ext_resource type="SpriteFrames" path="res://entities/player/PlayerFrames.tres" id="3_frames"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_sword"]
+size = Vector2(44, 24)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
+size = Vector2(28, 46)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_dive"]
+size = Vector2(90, 20)
+
+[node name="Player" type="CharacterBody2D"]
+collision_mask = 3
+script = ExtResource("1_player")
+
+[node name="Visuals" type="Node2D" parent="."]
+
+[node name="Sprite" type="AnimatedSprite2D" parent="Visuals"]
+position = Vector2(0, -296)
+sprite_frames = ExtResource("3_frames")
+animation = &"idle"
+
+[node name="WeaponPivot" type="Node2D" parent="Visuals"]
+position = Vector2(0, -24)
+
+[node name="SwordRect" type="ColorRect" parent="Visuals/WeaponPivot"]
+visible = false
+offset_left = 12.0
+offset_top = -5.0
+offset_right = 56.0
+offset_bottom = 5.0
+color = Color(0.85, 0.88, 0.92, 1)
+
+[node name="ShieldRect" type="ColorRect" parent="Visuals/WeaponPivot"]
+visible = false
+offset_left = 14.0
+offset_top = -18.0
+offset_right = 34.0
+offset_bottom = 22.0
+color = Color(0.55, 0.8, 0.95, 0.85)
+
+[node name="Hitbox" type="Area2D" parent="Visuals/WeaponPivot"]
+script = ExtResource("2_hitbox")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Visuals/WeaponPivot/Hitbox"]
+position = Vector2(34, 0)
+shape = SubResource("RectangleShape2D_sword")
+disabled = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -23)
+shape = SubResource("RectangleShape2D_body")
+
+[node name="LedgeCheckTop" type="RayCast2D" parent="."]
+position = Vector2(0, -48)
+target_position = Vector2(22, 0)
+
+[node name="LedgeCheckBottom" type="RayCast2D" parent="."]
+position = Vector2(0, -34)
+target_position = Vector2(22, 0)
+
+[node name="DiveHitbox" type="Area2D" parent="."]
+script = ExtResource("2_hitbox")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="DiveHitbox"]
+position = Vector2(0, 6)
+shape = SubResource("RectangleShape2D_dive")
+disabled = true
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position_smoothing_enabled = true
+position_smoothing_speed = 8.0

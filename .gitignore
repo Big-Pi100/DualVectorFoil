@@ -1,0 +1,18 @@
+# Godot 导入缓存（CI 会重新生成）
+.godot/
+
+# 出包产物（CI artifact，不进源码仓库）
+build/
+*.apks
+*.aab
+*.ipa
+
+# 编辑器/系统噪声
+*.tmp
+*.bak
+.DS_Store
+Thumbs.db
+
+# 临时探测脚本（用完即删，不入库）
+tests/probe_*.gd
+tests/probe_*.gd.uid

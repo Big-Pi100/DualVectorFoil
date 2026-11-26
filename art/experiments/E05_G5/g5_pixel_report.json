@@ -1,0 +1,194 @@
+{
+  "engine": "4.7.2-stable (official)",
+  "errors": [],
+  "foot_anchor_y": 296,
+  "frame_canvas": "340x340",
+  "rows": [
+    {
+      "asset": "player_attack_std",
+      "bbox_h": 200,
+      "bbox_w": 236,
+      "foot_y": 295,
+      "frame": "340x340",
+      "kind": "sprite_frame"
+    },
+    {
+      "asset": "player_back_std",
+      "bbox_h": 256,
+      "bbox_w": 149,
+      "foot_y": 295,
+      "frame": "340x340",
+      "kind": "sprite_frame"
+    },
+    {
+      "asset": "player_climb_std",
+      "bbox_h": 237,
+      "bbox_w": 176,
+      "foot_y": 295,
+      "frame": "340x340",
+      "kind": "sprite_frame"
+    },
+    {
+      "asset": "player_hurt_std",
+      "bbox_h": 218,
+      "bbox_w": 248,
+      "foot_y": 295,
+      "frame": "340x340",
+      "kind": "sprite_frame"
+    },
+    {
+      "asset": "player_jump_std",
+      "bbox_h": 226,
+      "bbox_w": 199,
+      "foot_y": 295,
+      "frame": "340x340",
+      "kind": "sprite_frame"
+    },
+    {
+      "asset": "fx_harvest",
+      "bbox_h": 32,
+      "bbox_w": 26,
+      "full": "40x40",
+      "kind": "game_scale",
+      "magenta_full": 0,
+      "magenta_stress": 0,
+      "stress": "30x30",
+      "target_h": 40.0,
+      "white_fringe": 0
+    },
+    {
+      "asset": "fx_hit",
+      "bbox_h": 32,
+      "bbox_w": 32,
+      "full": "40x40",
+      "kind": "game_scale",
+      "magenta_full": 0,
+      "magenta_stress": 0,
+      "stress": "30x30",
+      "target_h": 40.0,
+      "white_fringe": 0
+    },
+    {
+      "asset": "fx_jump_puff",
+      "bbox_h": 28,
+      "bbox_w": 32,
+      "full": "40x40",
+      "kind": "game_scale",
+      "magenta_full": 0,
+      "magenta_stress": 0,
+      "stress": "30x30",
+      "target_h": 40.0,
+      "white_fringe": 0
+    },
+    {
+      "asset": "fx_purify",
+      "bbox_h": 32,
+      "bbox_w": 30,
+      "full": "40x40",
+      "kind": "game_scale",
+      "magenta_full": 0,
+      "magenta_stress": 0,
+      "stress": "30x30",
+      "target_h": 40.0,
+      "white_fringe": 0
+    },
+    {
+      "asset": "player_attack",
+      "bbox_h": 56,
+      "bbox_w": 66,
+      "full": "72x72",
+      "kind": "game_scale",
+      "magenta_full": 0,
+      "magenta_stress": 0,
+      "stress": "54x54",
+      "target_h": 72.0,
+      "white_fringe": 0
+    },
+    {
+      "asset": "player_back",
+      "bbox_h": 72,
+      "bbox_w": 41,
+      "full": "72x72",
+      "kind": "game_scale",
+      "magenta_full": 0,
+      "magenta_stress": 0,
+      "stress": "54x54",
+      "target_h": 72.0,
+      "white_fringe": 0
+    },
+    {
+      "asset": "player_climb",
+      "bbox_h": 67,
+      "bbox_w": 49,
+      "full": "72x72",
+      "kind": "game_scale",
+      "magenta_full": 0,
+      "magenta_stress": 0,
+      "stress": "54x54",
+      "target_h": 72.0,
+      "white_fringe": 0
+    },
+    {
+      "asset": "player_hurt",
+      "bbox_h": 61,
+      "bbox_w": 70,
+      "full": "72x72",
+      "kind": "game_scale",
+      "magenta_full": 0,
+      "magenta_stress": 0,
+      "stress": "54x54",
+      "target_h": 72.0,
+      "white_fringe": 1
+    },
+    {
+      "asset": "player_jump",
+      "bbox_h": 63,
+      "bbox_w": 56,
+      "full": "72x72",
+      "kind": "game_scale",
+      "magenta_full": 0,
+      "magenta_stress": 0,
+      "stress": "54x54",
+      "target_h": 72.0,
+      "white_fringe": 0
+    },
+    {
+      "asset": "ui_button_base",
+      "bbox_h": 37,
+      "bbox_w": 38,
+      "full": "64x64",
+      "kind": "game_scale",
+      "magenta_full": 0,
+      "magenta_stress": 0,
+      "stress": "48x48",
+      "target_h": 64.0,
+      "white_fringe": 0
+    },
+    {
+      "asset": "ui_heart_icon",
+      "bbox_h": 14,
+      "bbox_w": 17,
+      "full": "40x40",
+      "kind": "game_scale",
+      "magenta_full": 0,
+      "magenta_stress": 0,
+      "stress": "30x30",
+      "target_h": 40.0,
+      "white_fringe": 0
+    },
+    {
+      "asset": "ui_hud_frame",
+      "bbox_h": 32,
+      "bbox_w": 50,
+      "full": "56x56",
+      "kind": "game_scale",
+      "magenta_full": 0,
+      "magenta_stress": 0,
+      "stress": "42x42",
+      "target_h": 56.0,
+      "white_fringe": 0
+    }
+  ],
+  "scale_rule": "player 72px / fx 40px / ui 40-64px; 75% stress",
+  "warnings": []
+}

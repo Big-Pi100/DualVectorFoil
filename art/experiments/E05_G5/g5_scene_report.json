@@ -1,0 +1,79 @@
+{
+  "engine": "4.7.2-stable (official)",
+  "errors": [],
+  "rows": [
+    {
+      "node": "Sprite_player_attack",
+      "position": "160,150",
+      "texture": "1024x1024",
+      "visible": true
+    },
+    {
+      "node": "Sprite_player_back",
+      "position": "480,150",
+      "texture": "1024x1024",
+      "visible": true
+    },
+    {
+      "node": "Sprite_player_climb",
+      "position": "800,150",
+      "texture": "1024x1024",
+      "visible": true
+    },
+    {
+      "node": "Sprite_player_hurt",
+      "position": "1120,150",
+      "texture": "1024x1024",
+      "visible": true
+    },
+    {
+      "node": "Sprite_player_jump",
+      "position": "160,370",
+      "texture": "1024x1024",
+      "visible": true
+    },
+    {
+      "node": "Sprite_fx_hit",
+      "position": "480,370",
+      "texture": "358x358",
+      "visible": true
+    },
+    {
+      "node": "Sprite_fx_jump_puff",
+      "position": "800,370",
+      "texture": "556x556",
+      "visible": true
+    },
+    {
+      "node": "Sprite_fx_purify",
+      "position": "1120,370",
+      "texture": "220x220",
+      "visible": true
+    },
+    {
+      "node": "Sprite_fx_harvest",
+      "position": "160,590",
+      "texture": "558x558",
+      "visible": true
+    },
+    {
+      "node": "Sprite_ui_hud_frame",
+      "position": "480,590",
+      "texture": "1024x1024",
+      "visible": true
+    },
+    {
+      "node": "Sprite_ui_heart_icon",
+      "position": "800,590",
+      "texture": "1024x1024",
+      "visible": true
+    },
+    {
+      "node": "Sprite_ui_button_base",
+      "position": "1120,590",
+      "texture": "1024x1024",
+      "visible": true
+    }
+  ],
+  "scene": "res://art/experiments/E05_G5/G5_Showcase.tscn"
+}

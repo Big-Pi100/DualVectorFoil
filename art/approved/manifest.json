@@ -1,0 +1,236 @@
+{
+  "player_idle_00": {
+    "category": "Characters",
+    "source": "art/experiments/E04_GodotScale/assets/E02_player_0.png",
+    "approved": "art/approved/Characters/player_idle_00.png",
+    "note": "front/idle, G2+G4"
+  },
+  "player_side_00": {
+    "category": "Characters",
+    "source": "art/experiments/E04_GodotScale/assets/E02_player_1.png",
+    "approved": "art/approved/Characters/player_side_00.png",
+    "note": "side view, G2+G4"
+  },
+  "player_run_00": {
+    "category": "Characters",
+    "source": "art/experiments/E04_GodotScale/assets/E02_player_2.png",
+    "approved": "art/approved/Characters/player_run_00.png",
+    "note": "run, G2+G4"
+  },
+  "player_back_00": {
+    "category": "Characters",
+    "source": "art/experiments/G5_Production/transparent/player_back.png",
+    "approved": "art/approved/Characters/player_back_00.png",
+    "note": "G5 new"
+  },
+  "player_jump_00": {
+    "category": "Characters",
+    "source": "art/experiments/G5_Production/transparent/player_jump.png",
+    "approved": "art/approved/Characters/player_jump_00.png",
+    "note": "G5 new"
+  },
+  "player_attack_00": {
+    "category": "Characters",
+    "source": "art/experiments/G5_Production/transparent/player_attack.png",
+    "approved": "art/approved/Characters/player_attack_00.png",
+    "note": "G5 new"
+  },
+  "player_hurt_00": {
+    "category": "Characters",
+    "source": "art/experiments/G5_Production/transparent/player_hurt.png",
+    "approved": "art/approved/Characters/player_hurt_00.png",
+    "note": "G5 new"
+  },
+  "player_climb_00": {
+    "category": "Characters",
+    "source": "art/experiments/G5_Production/transparent/player_climb.png",
+    "approved": "art/approved/Characters/player_climb_00.png",
+    "note": "G5 new; F13 rework x2 - final v3: scenery-free climb pose regenerated WITH cleaned character reference to prevent drift (2026-11-26)"
+  },
+  "player_attack_00_sprite": {
+    "category": "Characters",
+    "source": "art/experiments/E05_G5/sprites/player_attack_std.png",
+    "approved": "art/approved/Characters/player_attack_00_sprite.png",
+    "note": "G5 normalized frame 340x340 foot-anchor"
+  },
+  "player_back_00_sprite": {
+    "category": "Characters",
+    "source": "art/experiments/E05_G5/sprites/player_back_std.png",
+    "approved": "art/approved/Characters/player_back_00_sprite.png",
+    "note": "G5 normalized frame 340x340 foot-anchor"
+  },
+  "player_climb_00_sprite": {
+    "category": "Characters",
+    "source": "art/experiments/E05_G5/sprites/player_climb_std.png",
+    "approved": "art/approved/Characters/player_climb_00_sprite.png",
+    "note": "G5 normalized frame 340x340 foot-anchor; regenerated from F13 v3 (reference-locked, no drift)"
+  },
+  "player_hurt_00_sprite": {
+    "category": "Characters",
+    "source": "art/experiments/E05_G5/sprites/player_hurt_std.png",
+    "approved": "art/approved/Characters/player_hurt_00_sprite.png",
+    "note": "G5 normalized frame 340x340 foot-anchor"
+  },
+  "player_jump_00_sprite": {
+    "category": "Characters",
+    "source": "art/experiments/E05_G5/sprites/player_jump_std.png",
+    "approved": "art/approved/Characters/player_jump_00_sprite.png",
+    "note": "G5 normalized frame 340x340 foot-anchor"
+  },
+  "enemy_slime_idle_00": {
+    "category": "Enemies",
+    "source": "art/experiments/E04_GodotScale/assets/E02_enemy_0.png",
+    "approved": "art/approved/Enemies/enemy_slime_idle_00.png",
+    "note": "G2+G4"
+  },
+  "enemy_spike_idle_00": {
+    "category": "Enemies",
+    "source": "art/experiments/E04_GodotScale/assets/E02_enemy_1.png",
+    "approved": "art/approved/Enemies/enemy_spike_idle_00.png",
+    "note": "G2+G4"
+  },
+  "enemy_bat_idle_00": {
+    "category": "Enemies",
+    "source": "art/experiments/E04_GodotScale/assets/E02_enemy_2.png",
+    "approved": "art/approved/Enemies/enemy_bat_idle_00.png",
+    "note": "G2+G4"
+  },
+  "terrain_stone_block": {
+    "category": "Terrain",
+    "source": "art/experiments/E04_GodotScale/assets/E02_terrain_0.png",
+    "approved": "art/approved/Terrain/terrain_stone_block.png",
+    "note": "G2+G4"
+  },
+  "terrain_stone_pillar": {
+    "category": "Terrain",
+    "source": "art/experiments/E04_GodotScale/assets/E02_terrain_1.png",
+    "approved": "art/approved/Terrain/terrain_stone_pillar.png",
+    "note": "G2+G4"
+  },
+  "terrain_grass_top": {
+    "category": "Terrain",
+    "source": "art/experiments/E04_GodotScale/assets/E02_terrain_2.png",
+    "approved": "art/approved/Terrain/terrain_grass_top.png",
+    "note": "G2+G4"
+  },
+  "item_lantern_00": {
+    "category": "Items",
+    "source": "art/experiments/E04_GodotScale/assets/E02_item_0.png",
+    "approved": "art/approved/Items/item_lantern_00.png",
+    "note": "G2+G4"
+  },
+  "item_key_00": {
+    "category": "Items",
+    "source": "art/experiments/E04_GodotScale/assets/E02_item_1.png",
+    "approved": "art/approved/Items/item_key_00.png",
+    "note": "G2+G4"
+  },
+  "item_star_00": {
+    "category": "Items",
+    "source": "art/experiments/E04_GodotScale/assets/E02_item_2.png",
+    "approved": "art/approved/Items/item_star_00.png",
+    "note": "G2+G4"
+  },
+  "fx_hit_00": {
+    "category": "Effects",
+    "source": "art/experiments/G5_Production/transparent/fx_hit.png",
+    "approved": "art/approved/Effects/fx_hit_00.png",
+    "note": "G5 new, tightened bbox"
+  },
+  "fx_jump_puff_00": {
+    "category": "Effects",
+    "source": "art/experiments/G5_Production/transparent/fx_jump_puff.png",
+    "approved": "art/approved/Effects/fx_jump_puff_00.png",
+    "note": "G5 new, tightened bbox"
+  },
+  "fx_purify_00": {
+    "category": "Effects",
+    "source": "art/experiments/G5_Production/transparent/fx_purify.png",
+    "approved": "art/approved/Effects/fx_purify_00.png",
+    "note": "G5 new, tightened bbox"
+  },
+  "fx_harvest_00": {
+    "category": "Effects",
+    "source": "art/experiments/G5_Production/transparent/fx_harvest.png",
+    "approved": "art/approved/Effects/fx_harvest_00.png",
+    "note": "G5 new, tightened bbox"
+  },
+  "ui_hud_frame_00": {
+    "category": "UI",
+    "source": "art/experiments/G5_Production/transparent/ui_hud_frame.png",
+    "approved": "art/approved/UI/ui_hud_frame_00.png",
+    "note": "G5 new"
+  },
+  "ui_heart_icon_00": {
+    "category": "UI",
+    "source": "art/experiments/G5_Production/transparent/ui_heart_icon.png",
+    "approved": "art/approved/UI/ui_heart_icon_00.png",
+    "note": "G5 new"
+  },
+  "ui_button_base_00": {
+    "category": "UI",
+    "source": "art/experiments/G5_Production/transparent/ui_button_base.png",
+    "approved": "art/approved/UI/ui_button_base_00.png",
+    "note": "G5 new"
+  },
+  "player_idle_00_sprite": {
+    "category": "Characters",
+    "source": "art/approved/Characters/player_idle_00.png",
+    "approved": "art/approved/Characters/player_idle_00_sprite.png",
+    "note": "Phase2 normalized frame 340x340 foot-anchor for AnimatedSprite2D; derived from G2/G4-approved source"
+  },
+  "player_run_00_sprite": {
+    "category": "Characters",
+    "source": "art/approved/Characters/player_run_00.png",
+    "approved": "art/approved/Characters/player_run_00_sprite.png",
+    "note": "Phase2 normalized frame 340x340 foot-anchor for AnimatedSprite2D; derived from G2/G4-approved source"
+  },
+  "player_side_00_sprite": {
+    "category": "Characters",
+    "source": "art/approved/Characters/player_side_00.png",
+    "approved": "art/approved/Characters/player_side_00_sprite.png",
+    "note": "Phase2 normalized frame 340x340 foot-anchor for AnimatedSprite2D; derived from G2/G4-approved source"
+  },
+  "enemy_slime_idle_00_sprite": {
+    "category": "Enemies",
+    "source": "art/approved/Enemies/enemy_slime_idle_00.png",
+    "approved": "art/approved/Enemies/enemy_slime_idle_00_sprite.png",
+    "note": "Phase2 normalized frame 128x128 for InvaderVisual; 48px game height"
+  },
+  "enemy_spike_idle_00_sprite": {
+    "category": "Enemies",
+    "source": "art/approved/Enemies/enemy_spike_idle_00.png",
+    "approved": "art/approved/Enemies/enemy_spike_idle_00_sprite.png",
+    "note": "Phase2 normalized frame 128x128 for InvaderVisual; 48px game height"
+  },
+  "enemy_bat_idle_00_sprite": {
+    "category": "Enemies",
+    "source": "art/approved/Enemies/enemy_bat_idle_00.png",
+    "approved": "art/approved/Enemies/enemy_bat_idle_00_sprite.png",
+    "note": "Phase2 normalized frame 128x128 for InvaderVisual; 48px game height"
+  },
+  "terrain_grass_decor": {
+    "category": "Terrain",
+    "source": "art/approved/Terrain/terrain_grass_top.png",
+    "approved": "art/approved/Terrain/terrain_grass_decor.png",
+    "note": "Phase2 gameplay-size grass strip (200x103) for floor decor + soil plot"
+  },
+  "terrain_stone_bench": {
+    "category": "Terrain",
+    "source": "art/approved/Terrain/terrain_stone_block.png",
+    "approved": "art/approved/Terrain/terrain_stone_bench.png",
+    "note": "Phase2 gameplay-size stone (61x52) for RestBench body"
+  },
+  "item_star_sprite": {
+    "category": "Items",
+    "source": "art/approved/Items/item_star_00.png",
+    "approved": "art/approved/Items/item_star_sprite.png",
+    "note": "Phase2 gameplay-size star (48x48) ready for future item pickup"
+  },
+  "origami_bird_idle_00": {
+    "category": "Characters",
+    "source": "art/experiments/E02_Item/origami_bird/raw/Create_original_2D_game_artwor_2026-11-26T08-44-34.png",
+    "approved": "art/approved/Characters/origami_bird_idle_00.png",
+    "note": "Origami bird NPC (Xiao Zhe); 3 independent samples, #2 chosen by user (white-crowned crouching bird with scarf ribbon); 128x128 frame, 48px game height; extracted P1-P11, cropped bbox+12% (F12), Godot gate PASS"
+  }
+}

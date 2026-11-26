@@ -1,0 +1,17 @@
+[
+  {
+    "src": "art/experiments/G5_Production/raw/Create_original_2D_game_artwor_2026-11-26T05-57-24.png",
+    "dst": "art/experiments/G5_Production/transparent/player_climb.png",
+    "size": "1024x1024",
+    "bg": [
+      197.0,
+      55.0,
+      110.0
+    ],
+    "tolerance": 90,
+    "removed_px": 904978,
+    "interior_bg_kept_px": 13322,
+    "despill_px": 3,
+    "watermark_region": "x>84%, y>90%"
+  }
+]

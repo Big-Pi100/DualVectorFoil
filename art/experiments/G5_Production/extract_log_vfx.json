@@ -1,0 +1,66 @@
+[
+  {
+    "src": "art/experiments/G5_Production/raw\\Create_original_2D_game_VFX_ar_2026-11-26T05-32-44.png",
+    "dst": "art/experiments/G5_Production/transparent/fx_hit.png",
+    "size": "1024x1024",
+    "bg": [
+      255.0,
+      34.0,
+      252.0
+    ],
+    "tolerance": 90,
+    "removed_px": 1014252,
+    "interior_bg_kept_px": 4645,
+    "despill_px": 7455,
+    "watermark_region": "x>84%, y>90%",
+    "label": "hit"
+  },
+  {
+    "src": "art/experiments/G5_Production/raw\\Create_original_2D_game_VFX_ar_2026-11-26T05-33-03.png",
+    "dst": "art/experiments/G5_Production/transparent/fx_jump_puff.png",
+    "size": "1024x1024",
+    "bg": [
+      171.0,
+      82.0,
+      110.0
+    ],
+    "tolerance": 90,
+    "removed_px": 987454,
+    "interior_bg_kept_px": 10182,
+    "despill_px": 154,
+    "watermark_region": "x>84%, y>90%",
+    "label": "jump_puff"
+  },
+  {
+    "src": "art/experiments/G5_Production/raw\\Create_original_2D_game_VFX_ar_2026-11-26T05-33-23.png",
+    "dst": "art/experiments/G5_Production/transparent/fx_purify.png",
+    "size": "1024x1024",
+    "bg": [
+      223.0,
+      12.0,
+      143.0
+    ],
+    "tolerance": 90,
+    "removed_px": 1036981,
+    "interior_bg_kept_px": 940,
+    "despill_px": 890,
+    "watermark_region": "x>84%, y>90%",
+    "label": "purify"
+  },
+  {
+    "src": "art/experiments/G5_Production/raw\\Create_original_2D_game_VFX_ar_2026-11-26T05-33-44.png",
+    "dst": "art/experiments/G5_Production/transparent/fx_harvest.png",
+    "size": "1024x1024",
+    "bg": [
+      164.0,
+      24.0,
+      76.0
+    ],
+    "tolerance": 90,
+    "removed_px": 996182,
+    "interior_bg_kept_px": 1618,
+    "despill_px": 6,
+    "watermark_region": "x>84%, y>90%",
+    "label": "harvest"
+  }
+]

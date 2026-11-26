@@ -1,0 +1,200 @@
+[gd_scene load_steps=13 format=3]
+
+; Phase 3 生态区二：折纸图书馆
+; 继承 BaseRoom 的入侵/净化/零惩罚送回契约；棉花花坛接入 bounce_marshmallow（加生命）。
+
+[ext_resource type="Script" path="res://world/rooms/BaseRoom.gd" id="1_room"]
+[ext_resource type="PackedScene" path="res://entities/player/Player.tscn" id="2_player"]
+[ext_resource type="PackedScene" path="res://ui/TouchHUD.tscn" id="3_hud"]
+[ext_resource type="PackedScene" path="res://world/interactables/SoilPlot.tscn" id="4_plot"]
+[ext_resource type="Script" path="res://world/interactables/RoomDoor.gd" id="5_door"]
+[ext_resource type="Shader" path="res://world/shaders/desaturate_wipe.gdshader" id="6_shader"]
+[ext_resource type="Texture2D" path="res://art/approved/Terrain/terrain_grass_decor.png" id="99_grass"]
+[ext_resource type="Texture2D" path="res://art/approved/Terrain/terrain_stone_block.png" id="98_block"]
+[ext_resource type="Texture2D" path="res://art/approved/Items/item_star_sprite.png" id="97_star"]
+[ext_resource type="Shader" path="res://world/shaders/paper_grain.gdshader" id="96_paper"]
+[ext_resource type="Script" path="res://world/interactables/VistaZone.gd" id="95_vista"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_floor"]
+size = Vector2(1200, 40)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_door"]
+size = Vector2(60, 140)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_desat"]
+shader = ExtResource("6_shader")
+shader_parameter/desaturate_amount = 0.0
+shader_parameter/wipe_center = Vector2(0.5, 0.5)
+shader_parameter/wipe_radius = 0.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_paper"]
+shader = ExtResource("96_paper")
+shader_parameter/grain_strength = 0.14
+shader_parameter/fiber_strength = 0.10
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_vista"]
+size = Vector2(140, 120)
+
+[node name="Room04" type="Node2D"]
+script = ExtResource("1_room")
+room_id = "room_04"
+invader_count = 3
+
+[node name="SpawnFromLeft" type="Marker2D" parent="."]
+position = Vector2(180, 560)
+
+[node name="SpawnFromRight" type="Marker2D" parent="."]
+position = Vector2(1040, 560)
+
+[node name="Floor" type="StaticBody2D" parent="."]
+position = Vector2(640, 620)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Floor"]
+shape = SubResource("RectangleShape2D_floor")
+
+[node name="Visual" type="ColorRect" parent="Floor"]
+offset_left = -600.0
+offset_top = -20.0
+offset_right = 600.0
+offset_bottom = 20.0
+color = Color(0.90, 0.86, 0.72, 1.0)
+
+[node name="GrassDecor0" type="Sprite2D" parent="Floor"]
+position = Vector2(-420, -14)
+texture = ExtResource("99_grass")
+scale = Vector2(0.85, 0.85)
+
+[node name="GrassDecor1" type="Sprite2D" parent="Floor"]
+position = Vector2(420, -14)
+texture = ExtResource("99_grass")
+scale = Vector2(0.85, 0.85)
+
+; 折纸书堆地标：石块叠成书堆，星星做书签（已批准资产拼装）
+[node name="PaperBooks" type="Node2D" parent="."]
+position = Vector2(880, 480)
+
+[node name="Book0" type="Sprite2D" parent="PaperBooks"]
+texture = ExtResource("98_block")
+position = Vector2(-30, 80)
+scale = Vector2(1.3, 0.9)
+
+[node name="Book1" type="Sprite2D" parent="PaperBooks"]
+texture = ExtResource("98_block")
+position = Vector2(20, 40)
+scale = Vector2(1.1, 0.85)
+rotation = -0.08
+
+[node name="Book2" type="Sprite2D" parent="PaperBooks"]
+texture = ExtResource("98_block")
+position = Vector2(-10, 0)
+scale = Vector2(1.0, 0.8)
+rotation = 0.06
+
+[node name="Bookmark" type="Sprite2D" parent="PaperBooks"]
+texture = ExtResource("97_star")
+position = Vector2(40, -20)
+scale = Vector2(0.7, 0.7)
+
+[node name="LibraryLabel" type="Label" parent="PaperBooks"]
+offset_left = -130.0
+offset_top = -90.0
+offset_right = 130.0
+offset_bottom = -60.0
+theme_override_colors/font_color = Color(0.35, 0.2, 0.1, 1.0)
+theme_override_font_sizes/font_size = 18
+text = "折纸图书馆"
+horizontal_alignment = 1
+
+[node name="SoilPlot" parent="." instance=ExtResource("4_plot")]
+position = Vector2(360, 578)
+plot_id = "room_04_plot_01"
+room_id = "room_04"
+default_seed_id = "bounce_marshmallow"
+
+[node name="DoorToRoom03" type="Area2D" parent="."]
+position = Vector2(90, 540)
+script = ExtResource("5_door")
+target_scene_path = "res://world/rooms/Room03.tscn"
+target_spawn_name = "SpawnFromRight"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="DoorToRoom03"]
+shape = SubResource("RectangleShape2D_door")
+
+[node name="Label" type="Label" parent="DoorToRoom03"]
+offset_left = -60.0
+offset_top = -100.0
+offset_right = 60.0
+offset_bottom = -70.0
+theme_override_colors/font_color = Color(0.35, 0.2, 0.1, 1.0)
+theme_override_font_sizes/font_size = 20
+text = "← 风车草地"
+horizontal_alignment = 1
+
+[node name="DoorToRoom05" type="Area2D" parent="."]
+position = Vector2(1180, 540)
+script = ExtResource("5_door")
+target_scene_path = "res://world/rooms/Room05.tscn"
+target_spawn_name = "SpawnFromLeft"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="DoorToRoom05"]
+shape = SubResource("RectangleShape2D_door")
+
+[node name="Label" type="Label" parent="DoorToRoom05"]
+offset_left = -60.0
+offset_top = -100.0
+offset_right = 60.0
+offset_bottom = -70.0
+theme_override_colors/font_color = Color(0.35, 0.2, 0.1, 1.0)
+theme_override_font_sizes/font_size = 20
+text = "→ 糖果星光灯塔"
+horizontal_alignment = 1
+
+[node name="InvadersContainer" type="Node2D" parent="."]
+
+[node name="PostProcessLayer" type="CanvasLayer" parent="."]
+
+[node name="DesaturateRect" type="ColorRect" parent="PostProcessLayer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+material = SubResource("ShaderMaterial_desat")
+color = Color(1, 1, 1, 1)
+
+[node name="PaperGrainRect" type="ColorRect" parent="PostProcessLayer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+material = SubResource("ShaderMaterial_paper")
+color = Color(1, 1, 1, 1)
+
+[node name="Player" parent="." instance=ExtResource("2_player")]
+position = Vector2(220, 560)
+
+[node name="TouchHUD" parent="." instance=ExtResource("3_hud")]
+
+[node name="VistaPoint" type="Area2D" parent="."]
+position = Vector2(560, 560)
+script = ExtResource("95_vista")
+vista_title = "折纸书页间的静谧"
+vista_anim = "side"
+target_zoom = 0.72
+zoom_duration = 1.1
+hud_fade_duration = 0.35
+dwell_time = 0.45
+collision_layer = 1
+collision_mask = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="VistaPoint"]
+shape = SubResource("RectangleShape2D_vista")
+
+[node name="Label" type="Label" parent="VistaPoint"]
+offset_left = -70.0
+offset_top = -95.0
+offset_right = 70.0
+offset_bottom = -65.0
+theme_override_colors/font_color = Color(0.35, 0.2, 0.1, 1.0)
+theme_override_font_sizes/font_size = 18
+text = "驻足 · 眺望书堆"
+horizontal_alignment = 1

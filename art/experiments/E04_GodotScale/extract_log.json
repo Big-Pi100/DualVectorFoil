@@ -1,0 +1,328 @@
+{
+  "results": [
+    {
+      "asset": "E01_hair_0",
+      "bg": [
+        255.0,
+        22.0,
+        181.0
+      ],
+      "removed": 798864,
+      "interior_kept": 219,
+      "despill": 2465,
+      "rgb_fill": "nearest-neighbor color diffusion"
+    },
+    {
+      "asset": "E01_hair_1",
+      "bg": [
+        255.0,
+        18.0,
+        195.0
+      ],
+      "removed": 738714,
+      "interior_kept": 1563,
+      "despill": 5625,
+      "rgb_fill": "nearest-neighbor color diffusion"
+    },
+    {
+      "asset": "E01_hair_2",
+      "bg": [
+        253.0,
+        23.0,
+        192.0
+      ],
+      "removed": 720714,
+      "interior_kept": 1306,
+      "despill": 4852,
+      "rgb_fill": "nearest-neighbor color diffusion"
+    },
+    {
+      "asset": "E01_scarf_0",
+      "bg": [
+        245.0,
+        27.0,
+        176.0
+      ],
+      "removed": 878068,
+      "interior_kept": 137,
+      "despill": 1441,
+      "rgb_fill": "nearest-neighbor color diffusion"
+    },
+    {
+      "asset": "E01_scarf_1",
+      "bg": [
+        255.0,
+        31.0,
+        167.0
+      ],
+      "removed": 816660,
+      "interior_kept": 280,
+      "despill": 1022,
+      "rgb_fill": "nearest-neighbor color diffusion"
+    },
+    {
+      "asset": "E01_scarf_2",
+      "bg": [
+        251.0,
+        24.0,
+        229.0
+      ],
+      "removed": 908889,
+      "interior_kept": 284,
+      "despill": 3110,
+      "rgb_fill": "nearest-neighbor color diffusion"
+    },
+    {
+      "asset": "E01_bag_0",
+      "bg": [
+        255.0,
+        11.0,
+        166.0
+      ],
+      "removed": 718341,
+      "interior_kept": 43666,
+      "despill": 46397,
+      "rgb_fill": "nearest-neighbor color diffusion"
+    },
+    {
+      "asset": "E01_bag_1",
+      "bg": [
+        255.0,
+        11.0,
+        178.0
+      ],
+      "removed": 653998,
+      "interior_kept": 130,
+      "despill": 2132,
+      "rgb_fill": "nearest-neighbor color diffusion"
+    },
+    {
+      "asset": "E01_bag_2",
+      "bg": [
+        251.0,
+        10.0,
+        205.0
+      ],
+      "removed": 690255,
+      "interior_kept": 127,
+      "despill": 2446,
+      "rgb_fill": "nearest-neighbor color diffusion"
+    },
+    {
+      "asset": "E01_grass_0",
+      "bg": [
+        243.0,
+        24.0,
+        201.0
+      ],
+      "removed": 459893,
+      "interior_kept": 302,
+      "despill": 3298,
+      "rgb_fill": "nearest-neighbor color diffusion"
+    },
+    {
+      "asset": "E01_grass_1",
+      "bg": [
+        245.0,
+        25.0,
+        185.0
+      ],
+      "removed": 654686,
+      "interior_kept": 127,
+      "despill": 2219,
+      "rgb_fill": "nearest-neighbor color diffusion"
+    },
+    {
+      "asset": "E01_grass_2",
+      "bg": [
+        251.0,
+        16.0,
+        227.0
+      ],
+      "removed": 722170,
+      "interior_kept": 254,
+      "despill": 4021,
+      "rgb_fill": "nearest-neighbor color diffusion"
+    },
+    {
+      "asset": "E01_stone_0",
+      "bg": [
+        253.0,
+        16.0,
+        158.0
+      ],
+      "removed": 527897,
+      "interior_kept": 121,
+      "despill": 1231,
+      "rgb_fill": "nearest-neighbor color diffusion"
+    },
+    {
+      "asset": "E01_stone_1",
+      "bg": [
+        254.0,
+        8.0,
+        186.0
+      ],
+      "removed": 532777,
+      "interior_kept": 123,
+      "despill": 2010,
+      "rgb_fill": "nearest-neighbor color diffusion"
+    },
+    {
+      "asset": "E01_stone_2",
+      "bg": [
+        251.0,
+        21.0,
+        207.0
+      ],
+      "removed": 748061,
+      "interior_kept": 161,
+      "despill": 1738,
+      "rgb_fill": "nearest-neighbor color diffusion"
+    },
+    {
+      "asset": "E02_player_0",
+      "bg": [
+        249.0,
+        10.0,
+        144.0
+      ],
+      "removed": 688662,
+      "interior_kept": 1908,
+      "despill": 3111,
+      "rgb_fill": "nearest-neighbor color diffusion"
+    },
+    {
+      "asset": "E02_player_1",
+      "bg": [
+        249.0,
+        43.0,
+        157.0
+      ],
+      "removed": 784179,
+      "interior_kept": 8162,
+      "despill": 925,
+      "rgb_fill": "nearest-neighbor color diffusion"
+    },
+    {
+      "asset": "E02_player_2",
+      "bg": [
+        249.0,
+        20.0,
+        183.0
+      ],
+      "removed": 752673,
+      "interior_kept": 477,
+      "despill": 3619,
+      "rgb_fill": "nearest-neighbor color diffusion"
+    },
+    {
+      "asset": "E02_enemy_0",
+      "bg": [
+        247.0,
+        24.0,
+        182.0
+      ],
+      "removed": 562880,
+      "interior_kept": 135,
+      "despill": 208735,
+      "rgb_fill": "nearest-neighbor color diffusion"
+    },
+    {
+      "asset": "E02_enemy_1",
+      "bg": [
+        251.0,
+        18.0,
+        173.0
+      ],
+      "removed": 522638,
+      "interior_kept": 124,
+      "despill": 27909,
+      "rgb_fill": "nearest-neighbor color diffusion"
+    },
+    {
+      "asset": "E02_enemy_2",
+      "bg": [
+        251.0,
+        17.0,
+        161.0
+      ],
+      "removed": 760585,
+      "interior_kept": 538,
+      "despill": 46367,
+      "rgb_fill": "nearest-neighbor color diffusion"
+    },
+    {
+      "asset": "E02_terrain_0",
+      "bg": [
+        251.0,
+        14.0,
+        166.0
+      ],
+      "removed": 548270,
+      "interior_kept": 122,
+      "despill": 1384,
+      "rgb_fill": "nearest-neighbor color diffusion"
+    },
+    {
+      "asset": "E02_terrain_1",
+      "bg": [
+        250.0,
+        20.0,
+        184.0
+      ],
+      "removed": 670785,
+      "interior_kept": 133,
+      "despill": 1416,
+      "rgb_fill": "nearest-neighbor color diffusion"
+    },
+    {
+      "asset": "E02_terrain_2",
+      "bg": [
+        254.0,
+        22.0,
+        185.0
+      ],
+      "removed": 834504,
+      "interior_kept": 444,
+      "despill": 2115,
+      "rgb_fill": "nearest-neighbor color diffusion"
+    },
+    {
+      "asset": "E02_item_0",
+      "bg": [
+        254.0,
+        86.0,
+        231.0
+      ],
+      "removed": 785480,
+      "interior_kept": 16772,
+      "despill": 17140,
+      "rgb_fill": "nearest-neighbor color diffusion"
+    },
+    {
+      "asset": "E02_item_1",
+      "bg": [
+        251.0,
+        28.0,
+        184.0
+      ],
+      "removed": 898543,
+      "interior_kept": 154,
+      "despill": 988,
+      "rgb_fill": "nearest-neighbor color diffusion"
+    },
+    {
+      "asset": "E02_item_2",
+      "bg": [
+        252.0,
+        15.0,
+        201.0
+      ],
+      "removed": 795937,
+      "interior_kept": 142,
+      "despill": 2099,
+      "rgb_fill": "nearest-neighbor color diffusion"
+    }
+  ]
+}

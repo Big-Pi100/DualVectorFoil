@@ -1,0 +1,63 @@
+[gd_scene load_steps=13 format=3]
+[ext_resource type="Texture2D" path="res://art/experiments/E05_G5/assets/player_attack.png" id="t0"]
+[ext_resource type="Texture2D" path="res://art/experiments/E05_G5/assets/player_back.png" id="t1"]
+[ext_resource type="Texture2D" path="res://art/experiments/E05_G5/assets/player_climb.png" id="t2"]
+[ext_resource type="Texture2D" path="res://art/experiments/E05_G5/assets/player_hurt.png" id="t3"]
+[ext_resource type="Texture2D" path="res://art/experiments/E05_G5/assets/player_jump.png" id="t4"]
+[ext_resource type="Texture2D" path="res://art/experiments/E05_G5/assets/fx_hit.png" id="t5"]
+[ext_resource type="Texture2D" path="res://art/experiments/E05_G5/assets/fx_jump_puff.png" id="t6"]
+[ext_resource type="Texture2D" path="res://art/experiments/E05_G5/assets/fx_purify.png" id="t7"]
+[ext_resource type="Texture2D" path="res://art/experiments/E05_G5/assets/fx_harvest.png" id="t8"]
+[ext_resource type="Texture2D" path="res://art/experiments/E05_G5/assets/ui_hud_frame.png" id="t9"]
+[ext_resource type="Texture2D" path="res://art/experiments/E05_G5/assets/ui_heart_icon.png" id="t10"]
+[ext_resource type="Texture2D" path="res://art/experiments/E05_G5/assets/ui_button_base.png" id="t11"]
+
+[node name="G5Showcase" type="Node2D"]
+
+[node name="Sprite_player_attack" type="Sprite2D" parent="."]
+position = Vector2(160, 150)
+texture = ExtResource("t0")
+
+[node name="Sprite_player_back" type="Sprite2D" parent="."]
+position = Vector2(480, 150)
+texture = ExtResource("t1")
+
+[node name="Sprite_player_climb" type="Sprite2D" parent="."]
+position = Vector2(800, 150)
+texture = ExtResource("t2")
+
+[node name="Sprite_player_hurt" type="Sprite2D" parent="."]
+position = Vector2(1120, 150)
+texture = ExtResource("t3")
+
+[node name="Sprite_player_jump" type="Sprite2D" parent="."]
+position = Vector2(160, 370)
+texture = ExtResource("t4")
+
+[node name="Sprite_fx_hit" type="Sprite2D" parent="."]
+position = Vector2(480, 370)
+texture = ExtResource("t5")
+
+[node name="Sprite_fx_jump_puff" type="Sprite2D" parent="."]
+position = Vector2(800, 370)
+texture = ExtResource("t6")
+
+[node name="Sprite_fx_purify" type="Sprite2D" parent="."]
+position = Vector2(1120, 370)
+texture = ExtResource("t7")
+
+[node name="Sprite_fx_harvest" type="Sprite2D" parent="."]
+position = Vector2(160, 590)
+texture = ExtResource("t8")
+
+[node name="Sprite_ui_hud_frame" type="Sprite2D" parent="."]
+position = Vector2(480, 590)
+texture = ExtResource("t9")
+
+[node name="Sprite_ui_heart_icon" type="Sprite2D" parent="."]
+position = Vector2(800, 590)
+texture = ExtResource("t10")
+
+[node name="Sprite_ui_button_base" type="Sprite2D" parent="."]
+position = Vector2(1120, 590)
+texture = ExtResource("t11")

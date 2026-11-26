@@ -1,0 +1,50 @@
+[
+  {
+    "src": "art/experiments/G5_Production/raw\\Create_original_2D_game_UI_art_2026-11-26T05-35-02.png",
+    "dst": "art/experiments/G5_Production/transparent/ui_hud_frame.png",
+    "size": "1024x1024",
+    "bg": [
+      217.0,
+      80.0,
+      187.0
+    ],
+    "tolerance": 90,
+    "removed_px": 540081,
+    "interior_bg_kept_px": 166,
+    "despill_px": 21,
+    "watermark_region": "x>84%, y>90%",
+    "label": "hud_frame"
+  },
+  {
+    "src": "art/experiments/G5_Production/raw\\Create_original_2D_game_UI_art_2026-11-26T05-35-20.png",
+    "dst": "art/experiments/G5_Production/transparent/ui_heart_icon.png",
+    "size": "1024x1024",
+    "bg": [
+      184.0,
+      24.0,
+      98.0
+    ],
+    "tolerance": 90,
+    "removed_px": 938343,
+    "interior_bg_kept_px": 84434,
+    "despill_px": 5,
+    "watermark_region": "x>84%, y>90%",
+    "label": "heart_icon"
+  },
+  {
+    "src": "art/experiments/G5_Production/raw\\Create_original_2D_game_UI_art_2026-11-26T05-35-42.png",
+    "dst": "art/experiments/G5_Production/transparent/ui_button_base.png",
+    "size": "1024x1024",
+    "bg": [
+      247.0,
+      18.0,
+      170.0
+    ],
+    "tolerance": 90,
+    "removed_px": 766055,
+    "interior_bg_kept_px": 123,
+    "despill_px": 414,
+    "watermark_region": "x>84%, y>90%",
+    "label": "button_base"
+  }
+]
