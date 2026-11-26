@@ -41,8 +41,8 @@
 | **定玩法 / 定系统 / 定关卡 / 定数值** | ⭐ **`docs/gdd/`**（玩的唯一真源，先开 `README.md`） |
 | 查哪份文档算数 | **`INDEX.md`** |
 | 改代码 / 换资产要走什么流程 | **`DEV_FLOW.md`** |
-| 改美术 / 画风 / 出图 / 抠图 | ⭐ **`art/ART_GUIDE.md`（唯一规范）+ `art/README.md`（总索引 + 八步流程）** |
-| 做资产：出图 → 抠图 → 入库 | **`art/README.md` §4**（八步）+ `art/prompts/Master_v1.3.md` |
+| 改美术 / 画风 / 出图 / 抠图 | ⭐ **`art/ART_GUIDE.md`（唯一规范）+ `art/README.md`（总索引 + 九步流程）** |
+| 做资产：出图 → 抠图 → 入库 | **`art/README.md` §4**（九步）+ `art/prompts/Master_v1.3.md` |
 | 改手感 | `FEEL_TABLE.md`（实测数，自动生成） |
 | 改操控 | `DOC_CONTROLS.md` |
 

@@ -38,7 +38,7 @@
 |---|---|---|---|
 | **代码逻辑** | 改物理/绘制/输入/UI | 影响面三问 + 找到对应回归套 | 该套回归 + `node test.js` |
 | **资产贴图** | 换 PNG、新增入库 | 先查 `art/approved/manifest.json` 有没有现成的（**别重出**）；命名/尺寸照 `art/ART_GUIDE §7` | `python art/tools/asset_audit.py` + `python build.py` + 实机截图 |
-| **新出一张资产** | 生图 → 抠图 → 入库 | `art/README.md §4` 八步；prefix 用 `art/prompts/Master_v1.3.md` 全文 | `extract_magenta.py` → 三背景检 → 960×540 实机 → 登记 manifest |
+| **新出一张资产** | 生图 → 抠图 → 入库 | `art/README.md §4` 九步；prefix 用 `art/prompts/Master_v1.3.md` 全文 | `extract_magenta.py` → 三背景检 → 960×540 实机 → 登记 manifest |
 | **角色帧表** | 补某状态 | 复用来的角色是**单帧/态**（340 帧框，脚底 295）；换形态先定 `CANON.md` 主角 | 缩放 0.51 → 显示高 128 → 脚底对齐碰撞盒（`ART_GUIDE §12.2`） |
 | **瓦片（可平铺）** | 重出素材板 / 重切 / 重挑 | ① `Terrain/` 摆件**不能当瓦片**；② subject 里不许有 block/brick/masonry（会出 3D 砖）；③ 先量素材比例算画布 | 生图（洋红底）→ `extract_magenta.py` → `tile_from_gen.py --preview` 看平铺 → `pick_tiles.py` 挑 6 块 → 实机 |
 | **改画风 / 调提示词** | 改措辞 | `ART_GUIDE §1–§5` 是冻结的，改它要走 REWORK 流程（每轮只动一个变量、重出 ≥3 样本） | 出一张 `ref` 验"同一支笔" → 再批量 |

@@ -1,7 +1,7 @@
 # ART_SKILLS · 美术生产技能手册
 
 > 🔴 **2026-11-26 起本文降级为 LEGACY**：本手册描述的是旧产线（七层锚点 + 瓦片生图 + 精灵表拼装）。
-> 现行唯一规范是 [`art/ART_GUIDE.md`](art/ART_GUIDE.md)，现行流程是 [`art/README.md`](art/README.md) §4 的八步。
+> 现行唯一规范是 [`art/ART_GUIDE.md`](art/ART_GUIDE.md)，现行流程是 [`art/README.md`](art/README.md) §4 的九步。
 > 留本文是因为 §15「失败模式」16 条仍有参考价值（多数坑复用时同样会踩）；**但别再照 §1 的总表派活**。
 
 > 建 2026-11-26。这份写**每个能力怎么用、怎么验、坏了怎么判**。
