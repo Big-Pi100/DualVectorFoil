@@ -21,6 +21,14 @@ func _frames(count: int) -> void:
 	for i: int in range(count):
 		await process_frame
 
+## 条件轮询：等到 condition() 为真或超时（固定帧数在不同机器帧率下不稳）
+func _wait_until(condition: Callable, max_frames: int = 120) -> bool:
+	for i: int in range(max_frames):
+		if bool(condition.call()):
+			return true
+		await process_frame
+	return bool(condition.call())
+
 func _run_tests() -> void:
 	_ws = root.get_node_or_null("WorldState")
 	_transition = root.get_node_or_null("SceneTransition")
@@ -64,12 +72,16 @@ func _run_tests() -> void:
 	var player = player_scene.instantiate()
 	root.add_child(player)
 	player.global_position = Vector2(500, 500)
-	await _frames(6) # 让物理帧稳定推进、body_entered 触发（2 帧在连跑负载下偶发不足）
+	# 条件轮询：CI 上帧率不稳定，固定帧数会偶发漏掉 body_entered（实测踩过）
+	var in_range: bool = await _wait_until(func() -> bool: return bench.get("_player_in_range") == player, 120)
+	_check(in_range, "玩家进入长椅互动范围（body_entered 已触发）")
 	player.call("take_damage", 40.0)
 	player.set("flasks", 1)
 	_check(float(player.get("hp")) < float(player.get("max_hp")), "互动前应处于受伤状态")
 	player.call("request_interact")
-	await _frames(6) # 互动信号转发 + full_restore 需跨帧，连跑负载下留足余量
+	var restored: bool = await _wait_until(func() -> bool: \
+		return is_equal_approx(float(player.get("hp")), float(player.get("max_hp"))), 120)
+	_check(restored, "互动信号已转发到 full_restore（条件轮询等待）")
 	_check(str(_ws.last_rest_scene_path) == "res://world/rooms/SafeHouse.tscn", "长椅互动更新最近休息点")
 	_check(is_equal_approx(float(player.get("hp")), float(player.get("max_hp"))), "长椅应回满血")
 	_check(int(player.get("flasks")) == int(player.get("max_flasks")), "长椅应回满颜料瓶")
