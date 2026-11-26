@@ -34,6 +34,21 @@ SRC_CN = {"drop": "敌人掉落", "boss": "Boss 获得", "pedestal": "固定拾�
 ABILITY_ORDER = ["Grave Keeper", "Skeleton Blaze", "Malphas",
                  "Kicker Skeleton", "Hippogryph", "Galamoth"]
 
+# ── 第二把尺子：战斗角色（《重生细胞》体系）──────────────────────────────
+#
+# 四类魂回答的是「这个技能怎么收费」（按次 / 按秒 / 免费 / 永久），
+# 角色回答的是「它在战斗里顶哪个位置」（贴脸 / 远打 / 挡 / 摆 / 强 / 挂 / 走）。
+# 两把尺子正交，不互相替代：一个技能既有层，也有角色。
+#
+# 判据不看效果文本里的动词，看「玩家要付出什么代价才用得上它」：
+ROLE_ORDER = ["melee", "ranged", "defense", "deploy", "power", "passive", "mobility"]
+ROLE_CN = {"melee": "近战", "ranged": "远程", "defense": "防御", "deploy": "放置",
+           "power": "强化", "passive": "被动", "mobility": "位移"}
+ROLE_SLOT = {"melee": "武器", "ranged": "武器", "defense": "武器",
+             "deploy": "技能", "power": "技能", "passive": "被动", "mobility": "符文"}
+ROLE_TAG = {"melee": "r", "ranged": "r", "defense": "b", "deploy": "b",
+            "power": "y", "passive": "g", "mobility": "g"}
+
 
 def load() -> dict:
     d = json.loads(SRC.read_text(encoding="utf-8"))
@@ -68,7 +83,7 @@ def yellow_bucket(s: dict) -> str:
     return "未分类"
 
 
-def checks(d: dict) -> list[str]:
+def checks(d: dict, verify_md: bool = True) -> list[str]:
     bad: list[str] = []
     souls = d["souls"]
 
@@ -117,11 +132,36 @@ def checks(d: dict) -> list[str]:
             bad.append(f"重名 {s['en']}")
         seen.add(s["en"])
 
-    # 7. Markdown 表格块必须和 JSON 生成的结果**逐行一致**
+    # 7. 每条魂必须落进一个战斗角色，且 meta 声明的计数与实际一致
+    legal_role = set(ROLE_ORDER)
+    for s in souls:
+        if s.get("role") not in legal_role:
+            bad.append(f"{s['en']} 的战斗角色非法/缺失：{s.get('role')!r}")
+    for r in ROLE_ORDER:
+        got = sum(1 for s in souls if s.get("role") == r)
+        want = d["meta"]["by_role"].get(r)
+        if got != want:
+            bad.append(f"角色 {r} {got} ≠ 声明的 {want}")
+
+    # 8. 角色必须与层自洽：黄魂只能是 passive，银魂只能是 mobility
+    #
+    # 这不是审美，是 §1.8 全部推论的支点 —— 一旦有黄魂混进 deploy，
+    # 「被动 35 个」就不再等价于「35 个不用按的」，后面所有配比论证全部作废。
+    # 反过来，银魂跑进战斗角色，等于把「位移能力零消耗」这条规范从数据里抹掉。
+    for s in souls:
+        if s["type"] == "enchanted" and s.get("role") != "passive":
+            bad.append(f"黄魂 {s['en']} 的角色是 {s.get('role')}，应为 passive")
+        if s["type"] == "ability" and s.get("role") != "mobility":
+            bad.append(f"银魂 {s['en']} 的角色是 {s.get('role')}，应为 mobility")
+
+    # 9. Markdown 表格块必须和 JSON 生成的结果**逐行一致**
     #
     # 一开始只比行数，反向验证时删掉一列就抓不到 —— 行数没变，内容变了。
     # 表格块是纯生成物（「勿手改」），所以正确的不变量不是「行数对」，是「整块相同」。
-    if MD.exists():
+    #
+    # 只在 --check 下比：生成模式的目的就是把 MD 重写成新结果，
+    # 拿旧 MD 去拦新数据，会让生成器永远自举不起来（改了 JSON 就再也写不进去）。
+    if verify_md and MD.exists():
         text = MD.read_text(encoding="utf-8")
         if BEGIN in text and END in text:
             block = text.split(BEGIN, 1)[1].split(END, 1)[0].strip()
@@ -137,6 +177,36 @@ def checks(d: dict) -> list[str]:
                             hint = f"（第 {i + 1} 行起不同）"
                             break
                 bad.append(f"MD 表格块与 JSON 不一致{hint} —— 跑 python tools/ref/aos_ref.py")
+
+    # 10. §1.8 的分布表是**手写**的（要带解读，没法整块生成），所以必须逐格核对。
+    #     生成物靠「整块相同」守，手写物靠「逐格相同」守 —— 两种守法的错误不同：
+    #     前者防格式漂移，后者防数字被人顺手改错。
+    if verify_md and MD.exists():
+        t = MD.read_text(encoding="utf-8")
+        types = ("bullet", "guardian", "enchanted", "ability")
+        for r in ROLE_ORDER:
+            want = [sum(1 for s in souls if s.get("role") == r and s["type"] == ty)
+                    for ty in types]
+            m = re.search(rf"^\| {ROLE_CN[r]} \| ([0-9—]+) \| ([0-9—]+) \| "
+                          rf"([0-9—]+) \| ([0-9—]+) \| ([0-9]+) \|\s*$", t, re.M)
+            if not m:
+                bad.append(f"§1.8 分布表找不到「{ROLE_CN[r]}」这一行")
+                continue
+            got = [0 if c == "—" else int(c) for c in m.groups()[:4]]
+            if got != want:
+                bad.append(f"§1.8 分布表「{ROLE_CN[r]}」写的是 {got}，数据是 {want}")
+            if int(m.group(5)) != sum(want):
+                bad.append(f"§1.8 分布表「{ROLE_CN[r]}」合计 {m.group(5)} ≠ {sum(want)}")
+
+        # 对比表里最要命的两个数：近战 10/18%、远程 37/67% —— J1 全靠它们
+        melee = sum(1 for s in souls if s.get("role") == "melee")
+        ranged_red = sum(1 for s in souls if s.get("role") == "ranged" and s["type"] == "bullet")
+        for sig, where in (
+            (f"{melee} 个 · 红魂 55 的 **{melee / 55 * 100:.0f}%**", "近战"),
+            (f"{ranged_red} 个 · **{ranged_red / 55 * 100:.0f}%**", "远程"),
+        ):
+            if sig not in t:
+                bad.append(f"§1.8 对比表的「{where}」一格与数据不符（应含 `{sig}`）")
     return bad
 
 
@@ -160,11 +230,11 @@ def md_tables(d: dict) -> str:
         p = "—" if s["power"] is None else s["power"]
         r = "—" if s["rarity"] is None else s["rarity"]
         no = "—" if s["no"] is None else s["no"]
-        rows.append(f"| {no} | {s['cn']} | {s['cost']} | {p} | {r} | {area_cn(s['area'])} | {s['effect']} |")
+        rows.append(f"| {no} | {s['cn']} | {ROLE_CN[s['role']]} | {s['cost']} | {p} | {r} | {area_cn(s['area'])} | {s['effect']} |")
     out.append(f"**红魂 55 个（按 MP 升序）**\n")
     table(rows,
-          "| # | 魂 | MP | 威力 | 稀有度 | 区域 | 效果 |",
-          "|---|---|---|---|---|---|---|")
+          "| # | 魂 | 角色 | MP | 威力 | 稀有度 | 区域 | 效果 |",
+          "|---|---|---|---|---|---|---|---|")
 
     blue = sorted((s for s in souls if s["type"] == "guardian"),
                   key=lambda s: (s["cost"], s["en"]))
@@ -173,11 +243,11 @@ def md_tables(d: dict) -> str:
         p = "—" if s["power"] is None else s["power"]
         r = "—" if s["rarity"] is None else s["rarity"]
         no = "—" if s["no"] is None else s["no"]
-        rows.append(f"| {no} | {s['cn']} | {s['cost']}/s | {p} | {r} | {area_cn(s['area'])} | {s['effect']} |")
+        rows.append(f"| {no} | {s['cn']} | {ROLE_CN[s['role']]} | {s['cost']}/s | {p} | {r} | {area_cn(s['area'])} | {s['effect']} |")
     out.append(f"**蓝魂 24 个（按每秒 MP 升序）**\n")
     table(rows,
-          "| # | 魂 | MP/秒 | 威力 | 稀有度 | 区域 | 效果 |",
-          "|---|---|---|---|---|---|---|")
+          "| # | 魂 | 角色 | MP/秒 | 威力 | 稀有度 | 区域 | 效果 |",
+          "|---|---|---|---|---|---|---|---|")
 
     yel = sorted((s for s in souls if s["type"] == "enchanted"),
                  key=lambda s: (999 if s["rarity"] is None else s["rarity"], s["en"]))
@@ -225,6 +295,7 @@ h3{font-size:13px;margin:18px 0 8px;color:var(--sub);font-weight:600}
 .card.r{border-top-color:var(--red)}.card.b{border-top-color:var(--blue)}
 .card.y{border-top-color:var(--yellow)}.card.g{border-top-color:var(--gray)}
 .card h4{margin:0 0 6px;font-size:13.5px}
+.card h4 .slot{font-size:10px;font-weight:400;color:#9a907e;margin-left:6px}
 .card .n{font-size:26px;font-weight:700;line-height:1}
 .card dl{margin:8px 0 0;font-size:11.5px;color:var(--sub)}
 .card dt{float:left;width:42px;color:#9a907e}
@@ -395,6 +466,30 @@ def build_html(d: dict) -> str:
             + bar("黄魂 被动", len(yel), 120, "var(--yellow)")
             + bar("银魂 能力门", len(ab), 120, "var(--gray)"))
 
+    # ── 第二把尺子：战斗角色 ──
+    role_n = {r: sum(1 for s in souls if s.get("role") == r) for r in ROLE_ORDER}
+    role_low = {r: sorted((s for s in souls if s.get("role") == r),
+                          key=lambda s: (999 if s["cost"] is None else s["cost"], s["en"]))[:3]
+                for r in ROLE_ORDER}
+
+    def rcard(r: str) -> str:
+        return (f'<div class="card {ROLE_TAG[r]}"><h4>{ROLE_CN[r]}'
+                f'<span class="slot">{ROLE_SLOT[r]}位</span></h4>'
+                f'<div class="n">{role_n[r]}</div>'
+                f'<dl><dt>判据</dt><dd>{m["roles"][r]["judge"]}</dd>'
+                f'<dt>最易得</dt><dd>{"、".join(s["cn"] for s in role_low[r])}</dd></dl></div>')
+
+    cross_rows = ""
+    for r in ROLE_ORDER:
+        n = [sum(1 for s in souls if s.get("role") == r and s["type"] == t)
+             for t in ("bullet", "guardian", "enchanted", "ability")]
+        cross_rows += (f'<tr><td><b>{ROLE_CN[r]}</b></td><td>{ROLE_SLOT[r]}</td>'
+                       + "".join(f'<td class="num">{"—" if v == 0 else v}</td>' for v in n)
+                       + f'<td class="num"><b>{sum(n)}</b></td>'
+                       + f'<td class="num">{sum(n) / 120 * 100:.0f}%</td></tr>')
+
+
+
     ybars = "".join(
         bar(k, buckets.get(k, 0), len(yel),
             {"纯数值": "#b8ab84", "续航/经济": "#8a7a3a", "规则改写": "#3f6b52",
@@ -427,8 +522,10 @@ def build_html(d: dict) -> str:
         r = "—" if s["rarity"] is None else s["rarity"]
         src = SRC_CN.get(s["source"], s["source"])
         rows.append(
-            f'<tr data-t="{s["type"]}"><td><span class="tag {tag[0]}">{tag[1]}</span></td>'
-            f'<td>{s["cn"]}</td><td class="num">{cost}</td><td class="num">{p}</td>'
+            f'<tr data-t="{s["type"]}" data-r="{s["role"]}">'
+            f'<td><span class="tag {tag[0]}">{tag[1]}</span></td>'
+            f'<td>{s["cn"]}</td><td>{ROLE_CN[s["role"]]}</td>'
+            f'<td class="num">{cost}</td><td class="num">{p}</td>'
             f'<td class="num">{r}</td><td>{src}</td><td>{area_cn(s["area"])}</td>'
             f'<td>{s["effect"]}</td></tr>')
 
@@ -439,7 +536,7 @@ def build_html(d: dict) -> str:
 <style>{CSS}</style></head><body><div class="wrap">
 
 <h1>《恶魔城：晓月圆舞曲》魂系统参照表</h1>
-<div class="sub">120 个魂 · 4 类 · 数据源：StrategyWiki / pixelguides / GameFAQs ·
+<div class="sub">120 个魂 · 4 个成本层 · 7 个战斗角色 · 数据源：StrategyWiki / pixelguides / GameFAQs ·
 生成于 <code>tools/ref/aos_ref.py</code>，勿手改本文件</div>
 
 <div class="stats">
@@ -473,7 +570,41 @@ def build_html(d: dict) -> str:
 这不是错，但它说明：我们的地图结构远比战斗花样丰富。
 想让地图密度兑现，缺的不是第 5 个技能，是<strong>投掷的弹药变体</strong>。</div>
 
-<h2>3. 贵 ≠ 强：MP 成本买的是爆发，不是效率</h2>
+<h2>3. 换一把尺子：按《重生细胞》的战斗角色重切</h2>
+<div class="note">上一节的四类是按<strong>怎么收费</strong>切的，回答「按哪个键、扣不扣蓝」。
+这一节按<strong>在战斗里顶哪个位置</strong>切，回答「我的配装缺哪个角」。
+两把尺子正交：同一个魂既有层，也有角色，谁也不能替代谁。</div>
+<div class="cards">{"".join(rcard(r) for r in ROLE_ORDER)}</div>
+<div class="grid2">
+<div class="scroll"><table>
+<thead><tr><th>角色</th><th>格</th><th>红</th><th>蓝</th><th>黄</th><th>银</th><th>合计</th><th>占120</th></tr></thead>
+<tbody>{cross_rows}</tbody></table></div>
+<div>
+<table>
+<thead><tr><th>类</th><th>重生细胞</th><th>晓月</th></tr></thead>
+<tbody>
+<tr><td><b>近战</b></td><td>59 件 · 武器 110 的 <b>54%</b></td><td>10 个 · 红魂 55 的 <b>18%</b></td></tr>
+<tr><td><b>远程</b></td><td>37 件 · 34%</td><td>37 个 · <b>67%</b></td></tr>
+<tr><td><b>防御</b></td><td>14 面盾 · 13%</td><td><b>红魂里 0 个</b>（3 个防御全在蓝魂）</td></tr>
+<tr><td><b>放置</b></td><td>13 座炮塔 / 陷阱</td><td>16 个（红魂 6 + 蓝魂 10）</td></tr>
+<tr><td><b>被动</b></td><td>52 条变异</td><td>35 个</td></tr>
+</tbody></table>
+<div class="legend">「重生细胞」一列的分母是武器 110 / 技能 54 / 变异 52。
+手雷 11 与力量技能 30 不列进来 —— 它们是「技能槽里的即时爆发」，
+硬塞进「放置」会让这张表变成自说自话。</div>
+</div>
+</div>
+<div class="note warn"><b>一句话：晓月是远程游戏，重生细胞是近战游戏。</b>
+它的红魂槽 55 个里 37 个是远程，近战只有 10 个，防御是 <b>0</b> ——
+盾全在蓝魂，而蓝魂是「按住扣蓝」的持续位，不是「举起来挡一下」的武器位。
+所以晓月打起来是「站桩扔 + 后退」，不是「读招、格挡、反击」。</div>
+<div class="note"><b>真正的差异不在数量，在槽位。</b>
+重生细胞是 <b>2 武器 + 2 技能 + 3 变异</b>，且武器格内三类<b>互斥</b> ——
+带盾就不能带弓，取舍才产生 build。<br>
+晓月是 <b>1 红 + 1 蓝 + 1 黄</b>，红魂槽里拳和箭同一个槽、不分类别，
+玩家只需要选「最强的那一个」。<b>55 个红魂，最优解只有一个。</b></div>
+
+<h2>4. 贵 ≠ 强：MP 成本买的是爆发，不是效率</h2>
 {scatter}
 <div class="legend">虚线 = 等效率线（威力 ÷ MP = 1.0 / 2.0 / 4.0）；点在线上方表示比该效率更划算。
 绿点效率 ≥2.2，金点 1.4–2.2，红点 &lt;1.4。双对数轴：等效率线在图上就是斜率为 1 的直线。</div>
@@ -485,14 +616,14 @@ def build_html(d: dict) -> str:
 所以早期技能永远不会被后期淘汰 —— 它们只是变成了「省蓝的那一手」。
 如果我们给弹药分档，轴必须是<strong>单发爆发 vs 每发效率</strong>，绝不能用「越后越强」。</div>
 
-<h2>4. 黄魂 35 个：一半是纯数值，这不是偷懒</h2>
+<h2>5. 黄魂 35 个：一半是纯数值，这不是偷懒</h2>
 <div class="bars">{ybars}</div>
 <div class="note">14 个纯数值 + 3 个免疫 = <strong>正好一半是「不需要理解」的填充</strong>。
 剩下 18 个才有机制（续航/经济 8、规则改写 8、通行 2）。<br>
 这是有意的配比：<strong>纯数值让收集有密度，机制型让收集有价值。</strong>
 反过来做（每个被动都给机制）会让 35 个被动变成 35 条规则要记，玩家会全部无视。</div>
 
-<h2>5. 稀有度：约每 N 次击杀掉 1 次</h2>
+<h2>6. 稀有度：约每 N 次击杀掉 1 次</h2>
 <div class="grid2">
 <div class="scroll"><table>
 <thead><tr><th>1/N</th><th>魂</th><th>类</th><th>效果</th></tr></thead>
@@ -510,7 +641,7 @@ def build_html(d: dict) -> str:
 </div>
 </div>
 
-<h2>6. 能力门：6 个里 5 个是确定获取</h2>
+<h2>7. 能力门：6 个里 5 个是确定获取</h2>
 <div class="scroll"><table>
 <thead><tr><th>魂</th><th>获取</th><th>区域</th><th>效果</th></tr></thead>
 <tbody>{"".join(
@@ -524,16 +655,25 @@ def build_html(d: dict) -> str:
 <strong>结论写死：能力门不能挂在随机掉落上。</strong> 我们「技能放死路末端、确定性给予」
 的设计在这条上有先例支撑，可以当依据用，不用再讨论。</div>
 
-<h2>7. 全 120 魂（可筛选）</h2>
+<h2>8. 全 120 魂（可筛选）</h2>
 <div class="ctl">
-  <button class="on" data-f="all">全部 120</button>
-  <button data-f="bullet">红 55</button>
-  <button data-f="guardian">蓝 24</button>
-  <button data-f="enchanted">黄 35</button>
-  <button data-f="ability">银 6</button>
+  <button class="on" data-m="t" data-v="all">全部 120</button>
+  <button data-m="t" data-v="bullet">红 55</button>
+  <button data-m="t" data-v="guardian">蓝 24</button>
+  <button data-m="t" data-v="enchanted">黄 35</button>
+  <button data-m="t" data-v="ability">银 6</button>
+</div>
+<div class="ctl">
+  <button data-m="r" data-v="melee">近战 {role_n["melee"]}</button>
+  <button data-m="r" data-v="ranged">远程 {role_n["ranged"]}</button>
+  <button data-m="r" data-v="defense">防御 {role_n["defense"]}</button>
+  <button data-m="r" data-v="deploy">放置 {role_n["deploy"]}</button>
+  <button data-m="r" data-v="power">强化 {role_n["power"]}</button>
+  <button data-m="r" data-v="passive">被动 {role_n["passive"]}</button>
+  <button data-m="r" data-v="mobility">位移 {role_n["mobility"]}</button>
 </div>
 <div class="scroll"><table id="all">
-<thead><tr><th>类</th><th>魂</th><th>消耗</th><th>威力</th><th>稀有度</th><th>来源</th><th>区域</th><th>效果</th></tr></thead>
+<thead><tr><th>类</th><th>魂</th><th>角色</th><th>消耗</th><th>威力</th><th>稀有度</th><th>来源</th><th>区域</th><th>效果</th></tr></thead>
 <tbody>{"".join(rows)}</tbody></table></div>
 
 <script>
@@ -541,9 +681,9 @@ document.querySelectorAll('.ctl button').forEach(function(b){{
   b.onclick = function(){{
     document.querySelectorAll('.ctl button').forEach(function(x){{x.classList.remove('on')}});
     b.classList.add('on');
-    var f = b.dataset.f;
+    var v = b.dataset.v, m = b.dataset.m;
     document.querySelectorAll('#all tbody tr').forEach(function(tr){{
-      tr.style.display = (f === 'all' || tr.dataset.t === f) ? '' : 'none';
+      tr.style.display = (v === 'all' || tr.dataset[m] === v) ? '' : 'none';
     }});
   }};
 }});
@@ -554,15 +694,18 @@ document.querySelectorAll('.ctl button').forEach(function(b){{
 
 def main() -> int:
     d = load()
-    bad = checks(d)
+    check_only = "--check" in sys.argv
+    bad = checks(d, verify_md=check_only)
     if bad:
         print("✗ 校验失败：")
         for b in bad:
             print("   ", b)
         return 1
 
-    if "--check" in sys.argv:
-        print(f"✓ 参照表一致：120 魂 / 55·24·35·6 / MD 表格与 JSON 同步")
+    if check_only:
+        print(f"✓ 参照表一致：120 魂 / 55·24·35·6 / "
+              f"角色 {'·'.join(str(sum(1 for s in d['souls'] if s['role'] == r)) for r in ROLE_ORDER)}"
+              f" / MD 表格与 JSON 同步")
         return 0
 
     # 重写 MD 表格块
