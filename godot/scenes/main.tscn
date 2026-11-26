@@ -1,9 +1,23 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=14 format=3]
 
-[ext_resource type="Texture2D" path="res://assets/bg/bg_hall.png" id="1_bg"]
 [ext_resource type="PackedScene" path="res://scenes/player.tscn" id="2_player"]
-[ext_resource type="Texture2D" path="res://assets/tiles/floor_0.png" id="3_wall"]
 [ext_resource type="Script" path="res://scripts/feel_hud.gd" id="4_hud"]
+[ext_resource type="Texture2D" path="res://assets/art/Terrain/terrain_grass_top.png" id="5_grass"]
+[ext_resource type="Texture2D" path="res://assets/art/Terrain/terrain_stone_block_200.png" id="6_rock"]
+[ext_resource type="Texture2D" path="res://assets/art/Terrain/terrain_stone_pillar_200.png" id="7_pillar"]
+[ext_resource type="Texture2D" path="res://assets/art/Terrain/terrain_stone_bench.png" id="8_bench"]
+[ext_resource type="Texture2D" path="res://assets/art/Terrain/terrain_grass_decor.png" id="9_decor"]
+
+[sub_resource type="Gradient" id="Gradient_sky"]
+offsets = PackedFloat32Array(0, 0.62, 1)
+colors = PackedColorArray(0.706, 0.808, 0.843, 1, 0.878, 0.878, 0.812, 1, 0.965, 0.914, 0.792, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_sky"]
+gradient = SubResource("Gradient_sky")
+width = 960
+height = 540
+fill_from = Vector2(0, 0)
+fill_to = Vector2(0, 1)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ground"]
 size = Vector2(960, 120)
@@ -20,8 +34,60 @@ size = Vector2(160, 24)
 [node name="Main" type="Node2D"]
 
 [node name="Background" type="Sprite2D" parent="."]
+z_index = -10
 position = Vector2(480, 270)
-texture = ExtResource("1_bg")
+texture = SubResource("GradientTexture2D_sky")
+
+[node name="GroundBand" type="ColorRect" parent="."]
+z_index = -5
+offset_right = 960.0
+offset_bottom = 540.0
+offset_top = 420.0
+color = Color(0.369, 0.271, 0.2, 1)
+
+[node name="Pillar" type="Sprite2D" parent="."]
+z_index = -4
+position = Vector2(70, 383)
+texture = ExtResource("7_pillar")
+
+[node name="GroundSlab" type="Sprite2D" parent="."]
+z_index = -3
+position = Vector2(480, 441)
+texture = ExtResource("5_grass")
+region_enabled = true
+region_rect = Rect2(91, 277, 846, 402)
+scale = Vector2(1.135, 0.44)
+
+[node name="Decor0" type="Sprite2D" parent="."]
+z_index = -2
+position = Vector2(636, 392)
+scale = Vector2(0.62, 0.62)
+texture = ExtResource("9_decor")
+
+[node name="Decor1" type="Sprite2D" parent="."]
+z_index = -2
+position = Vector2(250, 393)
+scale = Vector2(0.55, 0.55)
+texture = ExtResource("9_decor")
+flip_h = true
+
+[node name="Bench" type="Sprite2D" parent="."]
+z_index = -2
+position = Vector2(880, 395)
+scale = Vector2(1.4, 1.4)
+texture = ExtResource("8_bench")
+
+[node name="PlatA" type="Sprite2D" parent="."]
+z_index = -1
+position = Vector2(560, 372)
+scale = Vector2(1.15, 1.15)
+texture = ExtResource("6_rock")
+
+[node name="PlatB" type="Sprite2D" parent="."]
+z_index = -1
+position = Vector2(820, 248)
+scale = Vector2(0.8, 0.8)
+texture = ExtResource("6_rock")
 
 [node name="World" type="StaticBody2D" parent="."]
 collision_layer = 1
@@ -39,21 +105,13 @@ shape = SubResource("RectangleShape2D_wall")
 position = Vector2(940, 270)
 shape = SubResource("RectangleShape2D_wall")
 
-[node name="PlatA" type="CollisionShape2D" parent="World"]
-position = Vector2(560, 330)
+[node name="PlatACol" type="CollisionShape2D" parent="World"]
+position = Vector2(560, 318)
 shape = SubResource("RectangleShape2D_plat")
 
-[node name="PlatB" type="CollisionShape2D" parent="World"]
-position = Vector2(820, 220)
+[node name="PlatBCol" type="CollisionShape2D" parent="World"]
+position = Vector2(820, 208)
 shape = SubResource("RectangleShape2D_low")
-
-[node name="GroundSprite" type="Sprite2D" parent="."]
-position = Vector2(0, 420)
-centered = false
-texture_repeat = 2
-texture = ExtResource("3_wall")
-region_enabled = true
-region_rect = Rect2(0, 0, 960, 96)
 
 [node name="Player" parent="." instance=ExtResource("2_player")]
 position = Vector2(200, 420)

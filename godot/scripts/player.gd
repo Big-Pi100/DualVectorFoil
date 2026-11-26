@@ -103,7 +103,14 @@ var peak_h := 0.0
 var _base_y := 0.0
 var _peak_live := false
 
-const SPRITE_SCALE := 0.8
+# ── 精灵尺寸：照 `art/ART_GUIDE §12.2` 的唯一口径，不要另算 ──────────
+# 素材帧框 340×340，主体 bbox 高 251（idle），脚底基线 y=295。
+# web 原型 P_SPRITE_H = 128（碰撞盒 P_H 只有 100，视觉比盒高，这是原设定）。
+#   scale  = 128 / 251 = 0.5100
+#   offset = -(295 - 340/2) = -125   ← 把「脚底那一行像素」对齐到节点原点
+# offset 是纹理像素、随 scale 一起缩，所以写 -125 而不是 -63.75。
+const SPRITE_SCALE := 0.51
+const SPRITE_OFFSET := Vector2(0, -125)
 
 # ── 碰撞尺寸（照抄 P_W / P_H）──────────────────────────────
 const BODY_W := 28.0
@@ -111,18 +118,24 @@ const BODY_H := 100.0
 
 @onready var sprite: Sprite2D = $Sprite
 
-# 状态 → (贴图路径, 帧数)。换图时重设 hframes。
+# 状态 → 贴图。素材是「一态一图」的单帧标准化（art/approved/_sprite），
+# **不做多帧插值**，和 ART_GUIDE §12.1 的 SpriteFrames 单帧约定一致。
+#
+# ── 缺帧怎么处理：一律回退到语义最近的一态，绝不放旧素材 ────────────
+# 母版只有 8 态（idle/side/back/run/jump/climb/attack/hurt），
+# 蹲 / 后跃 / 施法 / 下落 这 4 态**没有对应资产**。回退表在 _fallback_note()，
+# 由 tests/asset_wiring.gd 断言「引用的每张图都存在且是单帧」。
 const ANIM := {
-	"stand":  ["res://assets/hero/hero_stand.png", 4],
-	"walk":   ["res://assets/hero/hero_walk.png", 2],
-	"jump":   ["res://assets/hero/hero_jump.png", 3],
-	"fall":   ["res://assets/hero/hero_fall.png", 3],
-	"crouch": ["res://assets/hero/hero_crouch.png", 2],
-	"dash":   ["res://assets/hero/hero_dash.png", 3],
-	"slide":  ["res://assets/hero/hero_slide.png", 3],
-	"attack": ["res://assets/hero/hero_attack.png", 4],
-	"hurt":   ["res://assets/hero/hero_hurt.png", 3],
-	"cast":   ["res://assets/hero/hero_cast.png", 4],
+	"stand":  "res://assets/art/Characters/player_side_00_sprite.png",    # 横版站立 → 侧面
+	"walk":   "res://assets/art/Characters/player_run_00_sprite.png",
+	"jump":   "res://assets/art/Characters/player_jump_00_sprite.png",
+	"fall":   "res://assets/art/Characters/player_jump_00_sprite.png",    # 缺下落帧
+	"crouch": "res://assets/art/Characters/player_side_00_sprite.png",    # 缺蹲帧，压扁代替
+	"dash":   "res://assets/art/Characters/player_back_00_sprite.png",    # 后跃=朝背后弹开 → 背面
+	"attack": "res://assets/art/Characters/player_attack_00_sprite.png",
+	"hurt":   "res://assets/art/Characters/player_hurt_00_sprite.png",
+	"cast":   "res://assets/art/Characters/player_attack_00_sprite.png",  # 缺施法帧
+	"climb":  "res://assets/art/Characters/player_climb_00_sprite.png",   # 逻辑未接，先挂表
 }
 var _cache: Dictionary = {}
 var _cur_anim := ""
@@ -130,7 +143,7 @@ var _cur_anim := ""
 
 func _ready() -> void:
 	for k in ANIM:
-		_cache[k] = load(ANIM[k][0])
+		_cache[k] = load(ANIM[k])
 	_play("stand")
 	apply_preset("aos")
 
@@ -297,13 +310,27 @@ func _start_roll() -> void:
 		velocity.y = 0.0
 	invuln = p.roll_inv
 	cut_ok = false
-	sprite.scale = Vector2(SPRITE_SCALE * 1.25, SPRITE_SCALE * 0.65)
+	_apply_shape()
 	sprite.modulate.a = 0.6
 
 
 func _end_roll() -> void:
-	sprite.scale = Vector2(SPRITE_SCALE, SPRITE_SCALE)
+	_apply_shape()
 	sprite.modulate.a = 1.0
+
+
+## 精灵形变的唯一入口。后跃压扁是原版手感的一部分（web 原型同样处理），
+## 蹲姿压扁则是**缺帧的临时交代** —— 母版没有 crouch 图，压到 0.72 让轮廓变化，
+## 好过蹲下看起来和站着一样。出图后删掉这条分支。
+func _apply_shape() -> void:
+	var sx := 1.0
+	var sy := 1.0
+	if roll_t > 0.0:
+		sx = 1.25
+		sy = 0.65
+	elif _cur_anim == "crouch":
+		sy = 0.72
+	sprite.scale = Vector2(SPRITE_SCALE * sx, SPRITE_SCALE * sy)
 
 
 func _track_peak() -> void:
@@ -325,6 +352,9 @@ func _update_anim() -> void:
 	elif absf(velocity.x) > 8.0:
 		a = "walk"
 	_play(a)
+	# 朝向每帧都刷。只在换态时刷会漏掉「同一状态下转身」（走着走着掉头），
+	# 旧版就是这个 bug —— 之前一直没显形是因为站立帧是正面图，翻不翻看不出来。
+	sprite.flip_h = facing < 0
 
 
 func _play(a: String) -> void:
@@ -332,9 +362,7 @@ func _play(a: String) -> void:
 		return
 	_cur_anim = a
 	sprite.texture = _cache[a]
-	sprite.hframes = ANIM[a][1]
-	sprite.frame = 0
-	sprite.flip_h = facing < 0
+	_apply_shape()
 
 
 ## HUD 用：英文，避免默认字体缺中文变豆腐块。

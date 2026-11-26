@@ -138,7 +138,7 @@ godot/
 ├─ world/shaders/
 │  └─ boiling_line.gdshader   手绘沸腾线（整帧微位移）
 ├─ scenes/
-│  ├─ main.tscn       单屏测试房：背景 + 地面 + 两个平台 + HUD
+│  ├─ main.tscn       单屏测试房：渐变天 + 草板地面 + 两块石台 + 摆件 + HUD
 │  └─ player.tscn     CharacterBody2D + Sprite2D + 碰撞盒 28×100
 ├─ scripts/
 │  ├─ player.gd       玩家控制器（两套预设：aos / crayon，F1/F2 切）
@@ -148,13 +148,27 @@ godot/
 │  ├─ feel_compare.gd 两套预设实测对照
 │  ├─ preset_key.gd   F1 / F2 切换链路
 │  ├─ combat_smoke.gd 战斗组件 + 存档：单次结算 / 击退方向 / 顿帧 / 坏档
-│  ├─ boil_shot.gd    沸腾线出两帧
+│  ├─ boil_shot.gd    沸腾线出两帧（挂在地面草板上）
 │  ├─ boil_check.py   两帧比对（平坦区不动 / 边缘在动 / 无黑边）
+│  ├─ asset_wiring.gd 资产接线守卫：旧路径清零 / ANIM 全可加载 / 镜像新鲜度
+│  ├─ env_check.gd    引擎与渲染配置守卫
 │  └─ shot.gd         渲染快照 → ../shots/godot_smoke.png
-└─ assets/            从 art/ 复制的 PNG（hero 10 状态 + 瓦片 + 背景）
+└─ assets/
+   └─ art/             art/approved/ 的**单向镜像**（42 个文件，19 MB）。不要手改
 ```
 
-坐标约定：**节点原点 = 脚底中心**。碰撞盒在原点上方 `(0,-50)`，精灵 `offset=(0,-64)`。
+坐标约定：**节点原点 = 脚底中心**。碰撞盒在原点上方 `(0,-50)`。
+
+精灵锚点按 `ART_GUIDE §12.2` 的唯一口径算，不要另推：素材帧框 340×340、
+主体高 251、脚底基线 `y=295`，显示高取 128（web 原型 `P_SPRITE_H`）→
+
+```
+scale  = 128 / 251 = 0.51
+offset = -(295 - 340/2) = -125     # 纹理像素，随 scale 一起缩
+```
+
+所以 `player.tscn` 里是 `scale=(0.51,0.51)` / `offset=(0,-125)`。**别用帧框中心对齐**：
+帧框上下留白不对称（上 45 px、下 45 px 里主体只占 251），中心对齐会让脚陷进地面 22 px。
 
 ## 渲染设置：为什么是 linear 不是 nearest
 
@@ -178,21 +192,30 @@ aos 上得去，crayon 上不去。
 
 ## 资产同步
 
-`assets/` 是从 `../art/` 复制的副本，不是软链。美术重出后要重新复制：
+`assets/art/` 是 `art/approved/` 的**逐字节副本**，不是软链（Godot 只能读 `res://`，
+软链在 Windows 要开发者模式、导出包里还会断）。方向永远单向：
 
 ```bash
-cp ../art/hero/hero_*.png assets/hero/ && rm -f assets/hero/*_proof.png
-cp ../art/tiles/{wall,floor}_*.png assets/tiles/
-cp ../art/bg/bg_hall.png assets/bg/
+python art/tools/sync_godot.py           # 同步（新增/更新，不删）
+python art/tools/sync_godot.py --check   # 只比对，有漂移 exit 1
+python art/tools/sync_godot.py --prune   # 连「镜像里多出的文件」一起删（默认不删）
 ```
+
+每次同步重写 `assets/art/SYNC_STAMP.txt`（源 commit / 时间 / 文件数 / 清单）。
+`tests/asset_wiring.gd` 会核对 stamp 与实际文件数 —— 美术重出但忘了 sync，这里会红。
+
+**旧产线（`art/hero/` `art/tiles/` `art/bg/`）不进 Godot。** 2026-11-26 起全部换到
+`art/approved/`，`assets/hero|tiles|bg` 三个目录已从工程里删除；旧 31 帧仍完整留在
+`art/hero/` 作历史证据，需要回滚时从那里取。
 
 ## 下一步（按顺序）
 
 1. 相机跟随 + 房间边界限制（单屏 → 滚动）
-2. 攻击（`hero_attack` 4 帧）+ 受击
-3. 蹲 / 滑铲 / 冲刺（贴图和状态机都已就位，只差逻辑）
-4. 房间数据化（把 web 版 `room.g` 字符地图搬过来，用 TileMapLayer）
-5. 敌人 / 存档 / UI
+2. 攻击（`player_attack_00_sprite`）+ 受击（`player_hurt_00_sprite`）—— **图已有，只差状态机**
+3. 补 4 个缺帧：蹲 / 下落 / 后跃 / 施法。现在靠回退（见 `player.gd` ANIM 注释）
+4. 可平铺地形瓦片 —— `Terrain/` 全是立体摆件，铺 tilemap 会露缝（`ART_GUIDE §12.2.2`）
+5. 房间数据化（把 web 版 `room.g` 字符地图搬过来，用 TileMapLayer）
+6. 敌人（3 张 sprite 直接可用）+ 存档 + UI
 
 移植顺序的理由：**先把手感钉死，再铺内容**。手感一旦在 Godot 里对不上，
 后面所有关卡设计都会建立在错的跳跃距离上。

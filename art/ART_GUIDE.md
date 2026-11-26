@@ -627,13 +627,13 @@ E01–E04 与 G5 已全部通过（G1–G5 PASS，生产准入已开放），当
 
 | 类别 | 资产 | 可用性 | 说明 |
 | --- | --- | --- | --- |
-| 角色 | `Characters/player_*_00_sprite.png`（8 态） | ⚠️ 可用但换人 | 见 §12.4 |
+| 角色 | `Characters/player_*_00_sprite.png`（8 态） | ✅ 已接入 | 见 §12.4（缺 4 态，走回退） |
 | 敌人 | `Enemies/enemy_{slime,spike,bat}_idle_00_sprite.png` | ✅ 直接可用 | 128×128，主体 68×48 |
 | 道具 | `Items/item_star_sprite.png` | ✅ 直接可用 | 48×48，与 TILE=48 天然对齐 |
 | 特效 | `Effects/fx_*.png` | ✅ 直接可用 | 已按 F12 裁紧 bbox |
 | UI | `UI/ui_*.png` | ✅ 直接可用 | — |
 | 地形 | `Terrain/terrain_stone_block_200.png` 等 | 🔴 形态不匹配 | 是**整块摆件**（200×165 石头、200×323 石柱、61×52 长凳、200×103 草丛），不是可平铺瓦片。本项目是 TILE=48 tilemap，直接铺会露缝。**要用于 tilemap 必须先另做可平铺瓦片（走 §9.2 分隔线规则 + 洋红底）** |
-| 背景 | 无（来源项目背景为 `ColorRect`） | 🔴 缺 | 本项目 `art/bg/bg_hall.png` 仍为旧产线产物，待按 §9.5 重做 |
+| 背景 | 无（来源项目背景为 `ColorRect`） | 🔴 缺 | 旧 `art/bg/bg_hall.png` 已下线（从未被绘制）。Godot 测试房暂用程序化渐变顶替，真背景仍待出图 |
 
 ### 12.4 主角形象变更（需知悉，可回滚）
 
@@ -641,7 +641,23 @@ E01–E04 与 G5 已全部通过（G1–G5 PASS，生产准入已开放），当
 
 本项目原有主角（31 帧 `art/hero/hero_*.png`）：深棕卷发大胡子 / 白 T / 3.3 头身。
 
-本次按「完全复用」以 §1.3 母版为准。原 31 帧**未删除**，整体保留在 `art/hero/` 与 `art/_legacy` 说明中；代码层若仍读旧帧，可随时回滚。**同一游戏不应存在两个主角**，建议下一轮统一到 §1.3。
+本次按「完全复用」以 §1.3 母版为准。原 31 帧**未删除**，整体保留在 `art/hero/` 与 `art/_legacy` 说明中；代码层若仍读旧帧，可随时回滚。
+
+**2026-11-26 裁定：统一到 §1.3，已执行。** Godot 侧不再引用任何旧帧
+（`godot/assets/hero|tiles|bg` 已删除，只读 `godot/assets/art/`）。
+落地锚点：`scale = 128/251 = 0.51`、`offset = (0,-125)`、脚底对齐节点原点。
+
+**8 态只够 6 个状态**——下表是实际接线，缺的 4 态走回退（不是资产错误，是资产缺口）：
+
+| 状态 | 用的图 | 性质 |
+| --- | --- | --- |
+| stand / walk / jump / attack / hurt / climb | side / run / jump / attack / hurt / climb | ✅ 原名对应 |
+| fall | `player_jump_00_sprite` | ⚠️ 回退（缺下落帧） |
+| crouch | `player_side_00_sprite` + 压扁 0.72 | ⚠️ 回退（缺蹲帧） |
+| dash（后跃） | `player_back_00_sprite` | ⚠️ 回退（缺后跃帧） |
+| cast | `player_attack_00_sprite` | ⚠️ 回退（缺施法帧） |
+
+要补的是 **crouch / fall / backstep / cast 四张**，补齐后删掉 `player.gd` 里的回退分支。
 
 ### 12.5 验收动作
 

@@ -97,7 +97,7 @@
 
 ### 4.2 · Godot（主线）
 
-**改 `godot/` 下任何东西都跑。** 现有 4 套共 44 项判定，覆盖远少于基线（424 项），
+**改 `godot/` 下任何东西都跑。** 现有 6 个脚本，覆盖远少于基线（424 项），
 所以**手感类改动必须同时看实机截图**，不能只信无头测试：
 
 ```bash
@@ -105,7 +105,13 @@ G="/e/godot/Godot_v4.7.2-stable_win64_console.exe"     # 版本定版，别换�
 "$G" --headless --path godot --script res://tests/env_check.gd     # 引擎版本/物理步/过滤
 "$G" --headless --path godot --script res://tests/feel_smoke.gd    # 手感
 "$G" --headless --path godot --script res://tests/combat_smoke.gd  # 战斗组件 + 存档
+"$G" --headless --path godot --script res://tests/asset_wiring.gd   # 资产接线：旧路径清零 / ANIM / 镜像
 ```
+
+**换素材、加资产、改场景贴图都跑 `asset_wiring`。** 它查五件事：`res://` 下有没有旧产线路径、
+`player.gd` 的 ANIM 表每项能不能加载且是 340×340 单帧、场景里每个 Sprite2D 是不是指向
+`assets/art/`、镜像 `SYNC_STAMP` 与实际文件数对不对、以及本期接入了 41 张里的几张。
+它红了别改测试——先跑 `python art/tools/sync_godot.py`。
 
 `env_check` 红了先修环境，别继续测——满跳数值本身依赖 120Hz 物理步与 4.7 的积分行为。
 
