@@ -19,8 +19,11 @@ script = ExtResource("1_player")
 
 [node name="Visuals" type="Node2D" parent="."]
 
+; 340×340 精灵帧主体高 251px，游戏内目标 72px → scale = 72/251 ≈ 0.287
+; centered=true 时脚底（纹理 y=295）相对中心 +125px，缩放后 +35.9px → position.y=-36 对齐碰撞体脚底 y=0
 [node name="Sprite" type="AnimatedSprite2D" parent="Visuals"]
-position = Vector2(0, -296)
+position = Vector2(0, -36)
+scale = Vector2(0.287, 0.287)
 sprite_frames = ExtResource("3_frames")
 animation = &"idle"
 

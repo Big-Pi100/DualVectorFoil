@@ -51,8 +51,12 @@ func _initialize() -> void:
 					_check(frames.get_frame_count(anim_name) == 1, "动画帧数=1: " + anim_name)
 					var tex: Texture2D = frames.get_frame_texture(anim_name, 0)
 					_check(tex != null and tex.get_width() > 0, "纹理有效: " + anim_name)
-		# 脚底锚点：position.y = -296，标准帧脚底在局部 y=296 → 脚底落节点原点
-		_check(is_equal_approx(sprite.position.y, -296.0), "脚底锚点对齐 (position.y=-296)")
+		# 比例门禁：340×340 标准帧主体高 251px，游戏内目标 72px → scale=72/251≈0.287。
+		# centered=true 时脚底（纹理 y=295）相对中心 +125px，缩放后 +35.875px → position.y≈-36 才对齐碰撞体脚底 y=0。
+		_check(is_equal_approx(sprite.scale.x, 0.287) and is_equal_approx(sprite.scale.y, 0.287),
+			"主角视觉缩放=0.287（主体 251px→72px）")
+		var foot_y: float = sprite.position.y + (295.0 - 170.0) * sprite.scale.y
+		_check(absf(foot_y) <= 1.0, "脚底对齐碰撞体底部 y≈0（实测 %.2f）" % foot_y)
 
 	# 状态切换：驱动状态字段后调纯动画函数 _refresh_animation（只选贴图、不碰物理）。
 	# 不走 _physics_process —— headless 无物理空间时 RayCast2D/move_and_slide 会报 null，

@@ -10,7 +10,7 @@
 [ext_resource type="Script" path="res://world/interactables/RoomDoor.gd" id="5_door"]
 [ext_resource type="Shader" path="res://world/shaders/desaturate_wipe.gdshader" id="6_shader"]
 [ext_resource type="Texture2D" path="res://art/approved/Terrain/terrain_grass_decor.png" id="99_grass"]
-[ext_resource type="Texture2D" path="res://art/approved/Terrain/terrain_stone_block.png" id="98_block"]
+[ext_resource type="Texture2D" path="res://art/approved/Terrain/terrain_stone_block_200.png" id="98_block"]
 [ext_resource type="Texture2D" path="res://art/approved/Items/item_star_sprite.png" id="97_star"]
 [ext_resource type="Shader" path="res://world/shaders/paper_grain.gdshader" id="96_paper"]
 [ext_resource type="Script" path="res://world/interactables/VistaZone.gd" id="95_vista"]
@@ -73,26 +73,27 @@ scale = Vector2(0.85, 0.85)
 [node name="PaperBooks" type="Node2D" parent="."]
 position = Vector2(880, 480)
 
+; 200px 标准版石块（主体 200×165）；书堆每本约 200px，不再用 1024 原图放大
 [node name="Book0" type="Sprite2D" parent="PaperBooks"]
 texture = ExtResource("98_block")
-position = Vector2(-30, 80)
-scale = Vector2(1.3, 0.9)
+position = Vector2(-30, 60)
+scale = Vector2(1.2, 0.9)
 
 [node name="Book1" type="Sprite2D" parent="PaperBooks"]
 texture = ExtResource("98_block")
-position = Vector2(20, 40)
+position = Vector2(20, 10)
 scale = Vector2(1.1, 0.85)
 rotation = -0.08
 
 [node name="Book2" type="Sprite2D" parent="PaperBooks"]
 texture = ExtResource("98_block")
-position = Vector2(-10, 0)
+position = Vector2(-10, -40)
 scale = Vector2(1.0, 0.8)
 rotation = 0.06
 
 [node name="Bookmark" type="Sprite2D" parent="PaperBooks"]
 texture = ExtResource("97_star")
-position = Vector2(40, -20)
+position = Vector2(40, -80)
 scale = Vector2(0.7, 0.7)
 
 [node name="LibraryLabel" type="Label" parent="PaperBooks"]

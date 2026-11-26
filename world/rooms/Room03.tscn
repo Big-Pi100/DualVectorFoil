@@ -10,7 +10,7 @@
 [ext_resource type="Script" path="res://world/interactables/RoomDoor.gd" id="5_door"]
 [ext_resource type="Shader" path="res://world/shaders/desaturate_wipe.gdshader" id="6_shader"]
 [ext_resource type="Texture2D" path="res://art/approved/Terrain/terrain_grass_decor.png" id="99_grass"]
-[ext_resource type="Texture2D" path="res://art/approved/Terrain/terrain_stone_pillar.png" id="98_pillar"]
+[ext_resource type="Texture2D" path="res://art/approved/Terrain/terrain_stone_pillar_200.png" id="98_pillar"]
 [ext_resource type="Texture2D" path="res://art/approved/Items/item_star_sprite.png" id="97_star"]
 [ext_resource type="Shader" path="res://world/shaders/paper_grain.gdshader" id="96_paper"]
 [ext_resource type="Script" path="res://world/interactables/VistaZone.gd" id="95_vista"]
@@ -83,24 +83,25 @@ scale = Vector2(0.85, 0.85)
 [node name="Windmill" type="Node2D" parent="."]
 position = Vector2(880, 380)
 
+; 200px 标准版石柱（主体 200×323）；scale 1.2 → 240×388，塔底贴地 y=600
 [node name="Tower" type="Sprite2D" parent="Windmill"]
 texture = ExtResource("98_pillar")
-scale = Vector2(1.6, 1.6)
-position = Vector2(0, 120)
+scale = Vector2(1.2, 1.2)
+position = Vector2(0, 26)
 
 [node name="Blade0" type="Sprite2D" parent="Windmill"]
 texture = ExtResource("97_star")
-position = Vector2(0, -30)
+position = Vector2(0, -168)
 scale = Vector2(1.4, 1.4)
 
 [node name="Blade1" type="Sprite2D" parent="Windmill"]
 texture = ExtResource("97_star")
-position = Vector2(58, 10)
+position = Vector2(58, -128)
 scale = Vector2(1.1, 1.1)
 
 [node name="Blade2" type="Sprite2D" parent="Windmill"]
 texture = ExtResource("97_star")
-position = Vector2(-58, 10)
+position = Vector2(-58, -128)
 scale = Vector2(1.1, 1.1)
 
 [node name="WindmillLabel" type="Label" parent="Windmill"]

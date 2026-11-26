@@ -75,10 +75,10 @@ text = "跳"
 
 [node name="BtnRoll" type="Button" parent="RootControl/RightButtonsGroup"]
 layout_mode = 1
-offset_left = 175.0
-offset_top = 160.0
-offset_right = 271.0
-offset_bottom = 256.0
+offset_left = 160.0
+offset_top = 150.0
+offset_right = 256.0
+offset_bottom = 246.0
 text = "滚"
 
 [node name="BtnSkill1" type="Button" parent="RootControl/RightButtonsGroup"]
@@ -109,15 +109,16 @@ offset_right = -24.0
 offset_bottom = 112.0
 text = "瓶"
 
+; 交互键移到右上角血瓶下方，不再压画面中央、不跨摇杆分界线
 [node name="BtnInteract" type="Button" parent="RootControl"]
 visible = false
 layout_mode = 1
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -64.0
-offset_top = -144.0
-offset_right = 64.0
-offset_bottom = -48.0
+anchor_left = 1.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_left = -120.0
+offset_top = 130.0
+offset_right = -24.0
+offset_bottom = 226.0
 text = "交互"

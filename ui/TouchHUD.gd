@@ -7,7 +7,8 @@ extends CanvasLayer
 
 @export var joystick_max_radius: float = 64.0
 @export var joystick_deadzone: float = 12.0
-@export var joystick_half_screen_ratio: float = 0.5
+# 摇杆左半屏判定延伸到 x=704（0.55×1280），与右侧按钮组起点对齐，消除 640~704 死区
+@export var joystick_half_screen_ratio: float = 0.55
 ## 真机调优：按下反馈色（拇指需即时确认；松手恢复白色）
 @export var press_feedback_modulate: Color = Color(0.72, 0.72, 0.72, 1.0)
 
