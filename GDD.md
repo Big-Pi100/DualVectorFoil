@@ -214,6 +214,6 @@ var total_room_transitions: int = 0        # 累计切换房间步数，驱动�
 * **目标**：按章节扩充大地图房间、设计新魔法植物与武器附魔、打磨全流程剧本。
 * **交付物**：
 1. 扩充至 3～4 个风格迥异的童话生态区（风车蜡笔草地、折纸图书馆、糖果星光灯塔）。**✅ 全部交付（2026-11-26）**：地图扩展为 SafeHouse↔Room01↔Room02↔Room03(风车草地)↔Room04(折纸图书馆)↔Room05(糖果星光灯塔) 六房间连通；接入第二作物弹弹棉花糖(+20生命)；终区 Room05 差异化=双花坛 + 星光石碑一次性剧情（lighthouse.dialogue）；20 套测试/446 项断言全绿。
-2. 真机（iOS / Android）触屏按键布局与帧率性能测试。**进度：代码层适配 ✅（2026-11-26）**：新增 `MobileTuner` 三档帧率（桌面不限 / 移动 60 / 低端 30，由 `mobile`/`low_end` feature 自动选档）、8 个动作键统一 ≥96×96 视口单位、按下变暗反馈、多指摇杆半屏隔离。`test_mobile_tuning.gd` 25 项 PASS，全量 21 套/471 项。**真机实测待设备**：本机无 Android SDK / Xcode，未生成导出预设与 APK/IPA；需在有 SDK 的机器上导出后真机验证帧率与拇指手感。
+2. 真机（iOS / Android）触屏按键布局与帧率性能测试。**进度：代码层适配 ✅ + GitHub 出包链路 ✅（2026-11-26）**：新增 `MobileTuner` 三档帧率（桌面不限 / 移动 60 / 低端 30，由 `mobile`/`low_end` feature 自动选档）、8 个动作键统一 ≥96×96 视口单位、按下变暗反馈、多指摇杆半屏隔离。`test_mobile_tuning.gd` 25 项 PASS，全量 21 套/473 项。**出包**：`export_presets.cfg` 三平台预设 + `.github/workflows/` 三条流水线（照 CoEvo 纪律：手动触发 / 钉死 Godot 4.7.2 / 产物体检拒绝假绿），仓库 `github.com/Big-Pi100/DualVectorFoil`；Web（dvf-web 28MB）与 Android debug APK（dvf-android-apk 46MB）已在 GitHub Actions 实测出包并下载核验，iOS 流水线就绪但需 Apple 凭据与 macOS runner 额度。**真机帧率/手感实测仍待设备**。
 3. 完整主线结局与二周目自由旅行收集体验。
 
