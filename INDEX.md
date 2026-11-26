@@ -86,6 +86,8 @@
 | `docs/ref/NIGHTFALL_REVIEW.md` | 外部评审 | 技术与产品意见 |
 | `docs/ref/CRAYON_ODYSSEY_GDD.md` | 《色彩旅人》GDD/TDD **原文归档** | 数值出处（480 / 1320 / 460 / 0.14…）。已抄成 `F2` 预设，只作对照 |
 | `docs/ref/REF_ARIA_OF_SORROW.md` | 《晓月圆舞曲》魂/道具系统拆解 | **技能分层（4 层成本模型）、55:24:35:6 配比、贵≠强的效率表、能力门 5/6 确定获取**。数据在 `aos_souls.json`（120 条），可视化 `aos_souls.html` |
+| ⭐ `docs/ref/aos/` | **《晓月》完整资料库**（11-26 建）：**入口是 `REF_AOS_COMPLETE.md`**（§0 按开发工序索引），数据四份 `aos_enemies.json`（109 敌）/ `aos_areas.json`（13 区 + 能力门）/ `aos_bosses.json`（11 BOSS）/ `aos_systems.json`（公式·掉落·结局），一页总览 `aos_atlas.html`。**109 敌 / 13 区 / 11 BOSS / 1–99 级公式 / 3 结局** | 🟡 参考 |
+| `tools/ref/aos_build.py` | 资料库构建器 + 校验器：`--check` 跑公式端点回代、五点比对、区域聚合、魂名交叉引用。**原始抓取证据在 `tools/ref/_src/aos_enemies_raw.txt`，永不改** | 🟡 参考 |
 
 ## ⚪ 历史报告（`docs/history/`，只读，不再更新）
 

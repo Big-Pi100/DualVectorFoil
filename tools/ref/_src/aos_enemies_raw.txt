@@ -1,0 +1,120 @@
+# 《晓月》敌人表原始抓取记录
+# 来源：https://pixelguides.org/castlevania-aria-of-sorrow/enemies （2026-11-26 抓取）
+# 格式：seg|name|hp|exp|soul_type|soul_name|soul_rarity|weakness|drops|location
+# 说明：
+#   1. seg 是抓取批次（1=编号 1-40，2=41-80，3=81 至表尾），用于追溯编号错位。
+#   2. location 末尾的 "…" 是源页面本身的截断标记，不是我们省略的 —— 解析器必须保留这个事实，
+#      否则按 location 聚合区域时会凭空补出不存在的区域。
+#   3. 源页面自报 113 条，实际只列出 110 行且 80/81 重复同一敌人（Kicker Skeleton）。
+#      本表按名字去重，因此条数 < 110 是预期行为，不是漏抓。
+#   4. 编号（列 1 之后的序号）不可信：源页面在 29 号之后与游戏内图鉴编号错开，
+#      所以本表不以编号为主键，主键是 name。
+1|Bat|10|1|red|Bat|7|Slash|-|Castle Corridor, Chapel…
+1|Zombie|18|1|yellow|Zombie|180|Slash, Holy|Cloth Tunic, Baselard|Castle Corridor
+1|Skeleton|20|3|red|Skeleton|8|Holy|-|Castle Corridor, Chapel…
+1|Merman|20|2|red|Merman|7|Slash, Flame, Curse|-|Castle Corridor, Underground Reservoir
+1|Axe Armor|60|10|red|Axe Armor|30|Thunder, Stone|Leather Plate|Castle Corridor, Chapel
+1|Skull Archer|42|5|red|Skull Archer|12|Holy|-|Castle Corridor, Study
+1|Peeping Eye|38|8|yellow|Peeping Eye|120|-|-|Castle Corridor
+1|Killer Fish|25|10|red|Killer Fish|15|Flame|Tasty Meat|Castle Corridor, Forbidden Area…
+1|Bone Pillar|75|9|blue|Bone Pillar|180|Holy|Mind Up|Chapel, Dance Hall…
+1|Blue Crow|25|2|red|Blue Crow|30|Slash, Stone|-|Castle Corridor
+1|Buer|20|6|blue|Buer|10|Poison|-|Castle Corridor
+1|White Dragon|95|20|yellow|White Dragon|10|Holy|-|Castle Corridor, Chapel…
+1|Zombie Soldier|46|9|red|Zombie Soldier|12|Slash, Holy, Stone|Rotten Meat, Combat Knife|Castle Corridor
+1|Skeleton Knight|48|12|yellow|Skeleton Knight|10|Holy|Rapier|Castle Corridor, Chapel…
+1|Ghost|10|1|red|Ghost|20|Holy|-|Castle Corridor, Chapel
+1|Siren|50|20|red|Siren|10|Slash, Poison, Curse|-|Castle Corridor, Clock Tower
+1|Tiny Devil|20|8|red|Tiny Devil|20|Holy, Killer Mantle|Mind Up|Castle Corridor, Chapel…
+1|Durga|34|15|red|Durga|40|Slash, Poison, Stone|Gym Clothes, Coffee|Chapel, Dance Hall…
+1|Rock Armor|72|24|red|Rock Armor|69|Thunder, Stone|Hammer, Copper Plate|Castle Corridor, Chapel…
+1|Giant Ghost|75|22|blue|Giant Ghost|8|Holy|-|Chapel, Study
+1|Winged Skeleton|20|3|red|Winged Skeleton|12|Holy|Spear|Castle Corridor, Chapel…
+1|Minotaur|200|60|yellow|Minotaur|15|Slash, Poison, Curse, Killer Mantle|Battle Axe, Meat Strip|Dance Hall, Study
+1|Student Witch|80|28|red|Student Witch|20|Slash, Poison, Stone, Killer Mantle|Mind Up, Cream Soda|Inner Quarters, Study
+1|Arachne|100|32|red|Arachne|10|Slash|Potion|Study
+1|Fleaman|10|15|red|Fleaman|25|Slash, Poison, Curse|Cloth Tunic|Chapel, Dance Hall…
+1|Evil Butcher|112|30|red|Evil Butcher|9|Slash, Poison, Curse|Baselard, Spoiled Milk|Dance Hall, Study
+1|Quezlcoatl|60|42|yellow|Quezlcoatl|15|Holy|Ancient Belt|Dance Hall
+1|Ectoplasm|30|15|yellow|Ectoplasm|150|Holy|Uncurse Potion|Study
+1|Catoblepas|200|40|blue|Catoblepas|50|Slash, Poison, Curse, Killer Mantle|Milk|Castle Corridor, Dance Hall…
+1|Ghost Dancer|25|22|yellow|Ghost Dancer|10|-|Tea|Chapel, Dance Hall
+1|Waiter Skeleton|120|38|red|Waiter Skeleton|12|Holy|Beef Curry|Dance Hall
+1|Killer Doll|110|40|red|Killer Doll|50|Flame, Stone|-|Castle Corridor, Dance Hall…
+1|Zombie Officer|150|40|yellow|Zombie Officer|30|Slash, Holy, Stone|Combat Knife, Army Jacket|Castle Corridor, Chapel…
+1|Creaking Skull|240|110|blue|Creaking Skull|40|Holy|-|Castle Corridor, Dance Hall
+1|Wooden Golem|250|200|yellow|Wooden Golem|12|Flame, Killer Mantle|Grapes|Dance Hall
+1|Tsuchinoko|300|80|yellow|Tsuchinoko|6|Curse|-|Dance Hall
+1|Persephone|150|55|blue|Persephone|50|Slash, Poison|Scarf, Strawberry|Inner Quarters
+1|Lilith|220|60|yellow|Lilith|15|Slash, Killer Mantle|Pendant|Inner Quarters, The Arena
+1|Nemesis|170|75|red|Nemesis|40|-|-|Dance Hall, Inner Quarters
+1|Kyoma Demon|220|60|red|Kyoma Demon|30|Holy|-|Inner Quarters
+2|Altair|30|10|red|Altair|18|Slash|-|Floating Garden
+2|Red Crow|70|44|yellow|Red Crow|10|Slash, Stone|-|Floating Garden
+2|Cockatrice|380|120|red|Cockatrice|15|Slash, Curse|Potion|Floating Garden
+2|Dead Warrior|110|100|yellow|Dead Warrior|8|Holy|Samurai Armor|Floating Garden
+2|Devil|300|200|blue|Devil|32|Holy, Killer Mantle|Skull Necklace, High Mind Up|Clock Tower, Floating Garden
+2|Imp|52|60|blue|Imp|15|Holy, Stone, Killer Mantle|Mind Up|Floating Garden, Inner Quarters…
+2|Werewolf|290|100|red|Werewolf|20|Slash, Curse|Black Belt, Milk|Floating Garden
+2|Gorgon|320|95|yellow|Gorgon|20|Slash, Poison, Curse, Killer Mantle|Meat Strip, Milk|Floating Garden, Underground Reservoir
+2|Disc Armor|240|150|red|Disc Armor|25|Thunder, Stone|Iron Plate|Floating Garden, Inner Quarters…
+2|Golem|200|180|yellow|Golem|20|Killer Mantle|High Potion|Clock Tower, Floating Garden
+2|Manticore|440|250|blue|Manticore|32|Slash, Curse, Stone|Gladius|Chapel, Floating Garden
+2|Gremlin|70|90|yellow|Gremlin|15|Slash|-|Clock Tower
+2|Harpy|150|100|red|Harpy|12|Slash, Curse|-|Clock Tower, Forbidden Area
+2|Medusa Head|30|10|blue|Medusa Head|120|Holy|-|Chaotic Realm, Clock Tower…
+2|Bomber Armor|200|200|red|Bomber Armor|60|Thunder, Stone|Steel Plate|Clock Tower, Underground Reservoir
+2|Lightning Doll|170|130|red|Lightning Doll|56|Flame, Stone|-|Clock Tower, Inner Quarters
+2|Great Armor|650|300|blue|Great Armor|30|Thunder|Iron Plate, Great Sword|Clock Tower, Study
+2|Une|10|10|red|Une|12|Flame|-|Chapel, Underground Reservoir
+2|Giant Worm|100|80|yellow|Giant Worm|20|Flame|Cream Puff|Underground Reservoir
+2|Needles|1|10|red|Needles|15|-|Tasty Meat|Clock Tower, Underground Reservoir
+2|Man-Eater|666|444|red|Man-Eater|15|Slash|Rahab's Sword|Underground Reservoir
+2|Fish Head|280|100|red|Fish Head|12|Holy|-|Chaotic Realm, Forbidden Area…
+2|Nightmare|260|280|red|Nightmare|20|Holy|Lance|Underground Reservoir
+2|Triton|400|300|yellow|Triton|25|Flame, Curse|Trident, Potato Pancake|Chaotic Realm, Underground Reservoir
+2|Slime|200|200|red|Slime|12|Flame, Killer Mantle|-|Chaotic Realm, Underground Reservoir
+2|Big Golem|1200|1000|blue|Big Golem|15|-|Milican's Sword|Dance Hall, Underground Reservoir
+2|Dryad|350|200|red|Dryad|50|Flame|Mystletain, Persimmon|Forbidden Area, Underground Reservoir
+2|Poison Worm|100|120|yellow|Poison Worm|100|Flame|Anti-Venom|Forbidden Area, Underground Reservoir
+2|Arc Demon|500|400|yellow|Arc Demon|60|Holy, Killer Mantle|High Mind Up|Inner Quarters, The Arena…
+2|Cagnazzo|180|220|blue|Cagnazzo|20|Slash|Uncurse Potion, Onikiri|Forbidden Area, Underground Reservoir
+2|Ripper|80|80|red|Ripper|30|Slash, Poison|Crimson Cloak|Underground Reservoir
+2|Werejaguar|380|260|red|Werejaguar|20|Slash, Poison, Curse|Mach Punch|Forbidden Area, Underground Reservoir
+2|Ukoback|80|180|red|Ukoback|15|Water, Holy, Stone|-|Underground Reservoir
+2|Alura Une|800|400|blue|Alura Une|60|Flame, Killer Mantle|Melon|Forbidden Area
+2|Biphron|380|280|red|Biphron|20|Slash, Poison, Curse|-|Underground Reservoir
+2|Mandragora|200|100|red|Mandragora|20|-|-|Floating Garden, Underground Reservoir
+2|Flesh Golem|2000|400|yellow|Flesh Golem|20|Slash, Killer Mantle|Rotten Meat, Spoiled Milk|Underground Reservoir
+2|Sky Fish|100|3000|blue|Sky Fish|1|-|-|Underground Reservoir
+2|Dead Crusader|180|380|yellow|Dead Crusader|25|Holy|Estoc, Blocking Mail|Chaotic Realm, The Arena…
+2|Kicker Skeleton|200|80|ability|Kicker Skeleton|2|Holy|Red Scarf, Ancient Belt|Floating Garden
+3|Weretiger|400|320|red|Weretiger|20|Slash, Poison, Curse|Whip Knuckle|The Arena
+3|Killer Mantle|200|345|red|Killer Mantle|13|Flame|Ramen|The Arena
+3|Mudman|200|400|red|Mudman|11|-|-|Forbidden Area
+3|Gargoyle|70|240|yellow|Gargoyle|180|Holy|-|Forbidden Area, The Arena…
+3|Red Minotaur|929|1000|red|Red Minotaur|80|Slash, Poison, Curse, Killer Mantle|Battle Axe, Tasty Meat|The Arena, Top Floor
+3|Beam Skeleton|400|320|red|Beam Skeleton|15|Holy|-|Chaotic Realm, The Arena
+3|Alastor|1200|1500|blue|Alastor|25|-|-|Chaotic Realm
+3|Skull Millione|250|300|red|Skull Millione|10|Slash, Curse|Kunitsuna, Poison Fist|The Arena
+3|Giant Skeleton|2000|1200|red|Giant Skeleton|12|Holy|Durandal|Chaotic Realm, The Arena
+3|Gladiator|600|1000|red|Gladiator|10|Holy|-|Chaotic Realm, The Arena
+3|Bael|300|380|yellow|Bael|20|Poison|-|The Arena, Top Floor
+3|Succubus|550|360|yellow|Succubus|5|Slash, Killer Mantle|Heart Pendant, Pudding|Chaotic Realm, The Arena…
+3|Mimic|100|200|yellow|Mimic|30|Holy|-|Chaotic Realm, Dance Hall…
+3|Stolas|1500|1500|yellow|Stolas|25|Holy, Killer Mantle|High Potion|Chaotic Realm, Top Floor
+3|Erinys|200|500|yellow|Erinys|120|Slash, Darkness, Poison, Curse|Ronginus' Spear|Chaotic Realm, The Arena…
+3|Lubicant|500|550|yellow|Lubicant|80|Slash, Curse|Muramasa|Chaotic Realm, The Arena…
+3|Basilisk|700|600|yellow|Basilisk|30|Slash, Curse|Milican's Sword|Chaotic Realm, Top Floor
+3|Iron Golem|9999|500|yellow|Iron Golem|20|Killer Mantle|-|Chaotic Realm, Top Floor
+3|Demon Lord|1800|3000|red|Demon Lord|30|Holy, Killer Mantle|Mana Prism, Demon's Mail|Chaotic Realm
+3|Final Guard|1200|2000|blue|Final Guard|30|-|Gold Plate, Final Sword|Chaotic Realm, Top Floor
+3|Flame Demon|500|400|red|Flame Demon|3|Water, Holy, Killer Mantle|Laevatain|Forbidden Area, Underground Reservoir
+3|Shadow Knight|3000|3000|blue|Shadow Knight|20|Holy|Super Potion|Chaotic Realm
+3|Headhunter|700|3000|-|-|-|Slash|-|Inner Quarters
+3|Death|4444|4444|-|-|-|-|-|Clock Tower
+3|Legion|5000|12000|-|-|-|Holy|-|Underground Reservoir
+3|Balore|4000|16000|-|-|-|-|-|The Arena
+3|Belmont|600|0|-|-|-|-|-|Floating Garden
+3|Graham|500|0|-|-|-|-|-|Top Floor
+3|Chaos|999|0|-|-|-|-|-|Chaotic Realm

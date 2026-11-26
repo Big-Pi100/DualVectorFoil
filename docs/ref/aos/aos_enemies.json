@@ -1,0 +1,2337 @@
+{
+  "meta": {
+    "game": "Castlevania: Aria of Sorrow",
+    "purpose": "敌人表的参照物。用于回答：一个区域的敌人强度分布、经验效率、魂与装备怎么分布。",
+    "count": 109,
+    "source": "pixelguides.org/castlevania-aria-of-sorrow/enemies（2026-11-26 抓取，原始行见 tools/ref/_src/aos_enemies_raw.txt）",
+    "id_note": "本表主键是 name，不是编号。源页面的编号在 29 号之后与游戏内图鉴编号错开，且 80/81 号重复，不可用作主键。",
+    "truncated_note": "areas_en 末尾的 … 是源页面自身的截断标记，用 areas_truncated 单独记录 —— 按区域聚合时不能把它当成「完整列表」。",
+    "soul_type_note": "red/blue/yellow/ability 已映射为 bullet/guardian/enchanted/ability，与 aos_souls.json 一致。"
+  },
+  "enemies": [
+    {
+      "seg": 1,
+      "name": "Bat",
+      "hp": 10,
+      "exp": 1,
+      "soul_type": "bullet",
+      "soul_name": "Bat",
+      "soul_rarity": 7,
+      "weak": [
+        "Slash"
+      ],
+      "drops": [],
+      "areas_en": [
+        "Castle Corridor",
+        "Chapel"
+      ],
+      "areas_truncated": true
+    },
+    {
+      "seg": 1,
+      "name": "Zombie",
+      "hp": 18,
+      "exp": 1,
+      "soul_type": "enchanted",
+      "soul_name": "Zombie",
+      "soul_rarity": 180,
+      "weak": [
+        "Slash",
+        "Holy"
+      ],
+      "drops": [
+        "Cloth Tunic",
+        "Baselard"
+      ],
+      "areas_en": [
+        "Castle Corridor"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 1,
+      "name": "Skeleton",
+      "hp": 20,
+      "exp": 3,
+      "soul_type": "bullet",
+      "soul_name": "Skeleton",
+      "soul_rarity": 8,
+      "weak": [
+        "Holy"
+      ],
+      "drops": [],
+      "areas_en": [
+        "Castle Corridor",
+        "Chapel"
+      ],
+      "areas_truncated": true
+    },
+    {
+      "seg": 1,
+      "name": "Merman",
+      "hp": 20,
+      "exp": 2,
+      "soul_type": "bullet",
+      "soul_name": "Merman",
+      "soul_rarity": 7,
+      "weak": [
+        "Slash",
+        "Flame",
+        "Curse"
+      ],
+      "drops": [],
+      "areas_en": [
+        "Castle Corridor",
+        "Underground Reservoir"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 1,
+      "name": "Axe Armor",
+      "hp": 60,
+      "exp": 10,
+      "soul_type": "bullet",
+      "soul_name": "Axe Armor",
+      "soul_rarity": 30,
+      "weak": [
+        "Thunder",
+        "Stone"
+      ],
+      "drops": [
+        "Leather Plate"
+      ],
+      "areas_en": [
+        "Castle Corridor",
+        "Chapel"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 1,
+      "name": "Skull Archer",
+      "hp": 42,
+      "exp": 5,
+      "soul_type": "bullet",
+      "soul_name": "Skull Archer",
+      "soul_rarity": 12,
+      "weak": [
+        "Holy"
+      ],
+      "drops": [],
+      "areas_en": [
+        "Castle Corridor",
+        "Study"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 1,
+      "name": "Peeping Eye",
+      "hp": 38,
+      "exp": 8,
+      "soul_type": "enchanted",
+      "soul_name": "Peeping Eye",
+      "soul_rarity": 120,
+      "weak": [],
+      "drops": [],
+      "areas_en": [
+        "Castle Corridor"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 1,
+      "name": "Killer Fish",
+      "hp": 25,
+      "exp": 10,
+      "soul_type": "bullet",
+      "soul_name": "Killer Fish",
+      "soul_rarity": 15,
+      "weak": [
+        "Flame"
+      ],
+      "drops": [
+        "Tasty Meat"
+      ],
+      "areas_en": [
+        "Castle Corridor",
+        "Forbidden Area"
+      ],
+      "areas_truncated": true
+    },
+    {
+      "seg": 1,
+      "name": "Bone Pillar",
+      "hp": 75,
+      "exp": 9,
+      "soul_type": "guardian",
+      "soul_name": "Bone Pillar",
+      "soul_rarity": 180,
+      "weak": [
+        "Holy"
+      ],
+      "drops": [
+        "Mind Up"
+      ],
+      "areas_en": [
+        "Chapel",
+        "Dance Hall"
+      ],
+      "areas_truncated": true
+    },
+    {
+      "seg": 1,
+      "name": "Blue Crow",
+      "hp": 25,
+      "exp": 2,
+      "soul_type": "bullet",
+      "soul_name": "Blue Crow",
+      "soul_rarity": 30,
+      "weak": [
+        "Slash",
+        "Stone"
+      ],
+      "drops": [],
+      "areas_en": [
+        "Castle Corridor"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 1,
+      "name": "Buer",
+      "hp": 20,
+      "exp": 6,
+      "soul_type": "guardian",
+      "soul_name": "Buer",
+      "soul_rarity": 10,
+      "weak": [
+        "Poison"
+      ],
+      "drops": [],
+      "areas_en": [
+        "Castle Corridor"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 1,
+      "name": "White Dragon",
+      "hp": 95,
+      "exp": 20,
+      "soul_type": "enchanted",
+      "soul_name": "White Dragon",
+      "soul_rarity": 10,
+      "weak": [
+        "Holy"
+      ],
+      "drops": [],
+      "areas_en": [
+        "Castle Corridor",
+        "Chapel"
+      ],
+      "areas_truncated": true
+    },
+    {
+      "seg": 1,
+      "name": "Zombie Soldier",
+      "hp": 46,
+      "exp": 9,
+      "soul_type": "bullet",
+      "soul_name": "Zombie Soldier",
+      "soul_rarity": 12,
+      "weak": [
+        "Slash",
+        "Holy",
+        "Stone"
+      ],
+      "drops": [
+        "Rotten Meat",
+        "Combat Knife"
+      ],
+      "areas_en": [
+        "Castle Corridor"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 1,
+      "name": "Skeleton Knight",
+      "hp": 48,
+      "exp": 12,
+      "soul_type": "enchanted",
+      "soul_name": "Skeleton Knight",
+      "soul_rarity": 10,
+      "weak": [
+        "Holy"
+      ],
+      "drops": [
+        "Rapier"
+      ],
+      "areas_en": [
+        "Castle Corridor",
+        "Chapel"
+      ],
+      "areas_truncated": true
+    },
+    {
+      "seg": 1,
+      "name": "Ghost",
+      "hp": 10,
+      "exp": 1,
+      "soul_type": "bullet",
+      "soul_name": "Ghost",
+      "soul_rarity": 20,
+      "weak": [
+        "Holy"
+      ],
+      "drops": [],
+      "areas_en": [
+        "Castle Corridor",
+        "Chapel"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 1,
+      "name": "Siren",
+      "hp": 50,
+      "exp": 20,
+      "soul_type": "bullet",
+      "soul_name": "Siren",
+      "soul_rarity": 10,
+      "weak": [
+        "Slash",
+        "Poison",
+        "Curse"
+      ],
+      "drops": [],
+      "areas_en": [
+        "Castle Corridor",
+        "Clock Tower"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 1,
+      "name": "Tiny Devil",
+      "hp": 20,
+      "exp": 8,
+      "soul_type": "bullet",
+      "soul_name": "Tiny Devil",
+      "soul_rarity": 20,
+      "weak": [
+        "Holy",
+        "Killer Mantle"
+      ],
+      "drops": [
+        "Mind Up"
+      ],
+      "areas_en": [
+        "Castle Corridor",
+        "Chapel"
+      ],
+      "areas_truncated": true
+    },
+    {
+      "seg": 1,
+      "name": "Durga",
+      "hp": 34,
+      "exp": 15,
+      "soul_type": "bullet",
+      "soul_name": "Durga",
+      "soul_rarity": 40,
+      "weak": [
+        "Slash",
+        "Poison",
+        "Stone"
+      ],
+      "drops": [
+        "Gym Clothes",
+        "Coffee"
+      ],
+      "areas_en": [
+        "Chapel",
+        "Dance Hall"
+      ],
+      "areas_truncated": true
+    },
+    {
+      "seg": 1,
+      "name": "Rock Armor",
+      "hp": 72,
+      "exp": 24,
+      "soul_type": "bullet",
+      "soul_name": "Rock Armor",
+      "soul_rarity": 69,
+      "weak": [
+        "Thunder",
+        "Stone"
+      ],
+      "drops": [
+        "Hammer",
+        "Copper Plate"
+      ],
+      "areas_en": [
+        "Castle Corridor",
+        "Chapel"
+      ],
+      "areas_truncated": true
+    },
+    {
+      "seg": 1,
+      "name": "Giant Ghost",
+      "hp": 75,
+      "exp": 22,
+      "soul_type": "guardian",
+      "soul_name": "Giant Ghost",
+      "soul_rarity": 8,
+      "weak": [
+        "Holy"
+      ],
+      "drops": [],
+      "areas_en": [
+        "Chapel",
+        "Study"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 1,
+      "name": "Winged Skeleton",
+      "hp": 20,
+      "exp": 3,
+      "soul_type": "bullet",
+      "soul_name": "Winged Skeleton",
+      "soul_rarity": 12,
+      "weak": [
+        "Holy"
+      ],
+      "drops": [
+        "Spear"
+      ],
+      "areas_en": [
+        "Castle Corridor",
+        "Chapel"
+      ],
+      "areas_truncated": true
+    },
+    {
+      "seg": 1,
+      "name": "Minotaur",
+      "hp": 200,
+      "exp": 60,
+      "soul_type": "enchanted",
+      "soul_name": "Minotaur",
+      "soul_rarity": 15,
+      "weak": [
+        "Slash",
+        "Poison",
+        "Curse",
+        "Killer Mantle"
+      ],
+      "drops": [
+        "Battle Axe",
+        "Meat Strip"
+      ],
+      "areas_en": [
+        "Dance Hall",
+        "Study"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 1,
+      "name": "Student Witch",
+      "hp": 80,
+      "exp": 28,
+      "soul_type": "bullet",
+      "soul_name": "Student Witch",
+      "soul_rarity": 20,
+      "weak": [
+        "Slash",
+        "Poison",
+        "Stone",
+        "Killer Mantle"
+      ],
+      "drops": [
+        "Mind Up",
+        "Cream Soda"
+      ],
+      "areas_en": [
+        "Inner Quarters",
+        "Study"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 1,
+      "name": "Arachne",
+      "hp": 100,
+      "exp": 32,
+      "soul_type": "bullet",
+      "soul_name": "Arachne",
+      "soul_rarity": 10,
+      "weak": [
+        "Slash"
+      ],
+      "drops": [
+        "Potion"
+      ],
+      "areas_en": [
+        "Study"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 1,
+      "name": "Fleaman",
+      "hp": 10,
+      "exp": 15,
+      "soul_type": "bullet",
+      "soul_name": "Fleaman",
+      "soul_rarity": 25,
+      "weak": [
+        "Slash",
+        "Poison",
+        "Curse"
+      ],
+      "drops": [
+        "Cloth Tunic"
+      ],
+      "areas_en": [
+        "Chapel",
+        "Dance Hall"
+      ],
+      "areas_truncated": true
+    },
+    {
+      "seg": 1,
+      "name": "Evil Butcher",
+      "hp": 112,
+      "exp": 30,
+      "soul_type": "bullet",
+      "soul_name": "Evil Butcher",
+      "soul_rarity": 9,
+      "weak": [
+        "Slash",
+        "Poison",
+        "Curse"
+      ],
+      "drops": [
+        "Baselard",
+        "Spoiled Milk"
+      ],
+      "areas_en": [
+        "Dance Hall",
+        "Study"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 1,
+      "name": "Quezlcoatl",
+      "hp": 60,
+      "exp": 42,
+      "soul_type": "enchanted",
+      "soul_name": "Quezlcoatl",
+      "soul_rarity": 15,
+      "weak": [
+        "Holy"
+      ],
+      "drops": [
+        "Ancient Belt"
+      ],
+      "areas_en": [
+        "Dance Hall"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 1,
+      "name": "Ectoplasm",
+      "hp": 30,
+      "exp": 15,
+      "soul_type": "enchanted",
+      "soul_name": "Ectoplasm",
+      "soul_rarity": 150,
+      "weak": [
+        "Holy"
+      ],
+      "drops": [
+        "Uncurse Potion"
+      ],
+      "areas_en": [
+        "Study"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 1,
+      "name": "Catoblepas",
+      "hp": 200,
+      "exp": 40,
+      "soul_type": "guardian",
+      "soul_name": "Catoblepas",
+      "soul_rarity": 50,
+      "weak": [
+        "Slash",
+        "Poison",
+        "Curse",
+        "Killer Mantle"
+      ],
+      "drops": [
+        "Milk"
+      ],
+      "areas_en": [
+        "Castle Corridor",
+        "Dance Hall"
+      ],
+      "areas_truncated": true
+    },
+    {
+      "seg": 1,
+      "name": "Ghost Dancer",
+      "hp": 25,
+      "exp": 22,
+      "soul_type": "enchanted",
+      "soul_name": "Ghost Dancer",
+      "soul_rarity": 10,
+      "weak": [],
+      "drops": [
+        "Tea"
+      ],
+      "areas_en": [
+        "Chapel",
+        "Dance Hall"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 1,
+      "name": "Waiter Skeleton",
+      "hp": 120,
+      "exp": 38,
+      "soul_type": "bullet",
+      "soul_name": "Waiter Skeleton",
+      "soul_rarity": 12,
+      "weak": [
+        "Holy"
+      ],
+      "drops": [
+        "Beef Curry"
+      ],
+      "areas_en": [
+        "Dance Hall"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 1,
+      "name": "Killer Doll",
+      "hp": 110,
+      "exp": 40,
+      "soul_type": "bullet",
+      "soul_name": "Killer Doll",
+      "soul_rarity": 50,
+      "weak": [
+        "Flame",
+        "Stone"
+      ],
+      "drops": [],
+      "areas_en": [
+        "Castle Corridor",
+        "Dance Hall"
+      ],
+      "areas_truncated": true
+    },
+    {
+      "seg": 1,
+      "name": "Zombie Officer",
+      "hp": 150,
+      "exp": 40,
+      "soul_type": "enchanted",
+      "soul_name": "Zombie Officer",
+      "soul_rarity": 30,
+      "weak": [
+        "Slash",
+        "Holy",
+        "Stone"
+      ],
+      "drops": [
+        "Combat Knife",
+        "Army Jacket"
+      ],
+      "areas_en": [
+        "Castle Corridor",
+        "Chapel"
+      ],
+      "areas_truncated": true
+    },
+    {
+      "seg": 1,
+      "name": "Creaking Skull",
+      "hp": 240,
+      "exp": 110,
+      "soul_type": "guardian",
+      "soul_name": "Creaking Skull",
+      "soul_rarity": 40,
+      "weak": [
+        "Holy"
+      ],
+      "drops": [],
+      "areas_en": [
+        "Castle Corridor",
+        "Dance Hall"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 1,
+      "name": "Wooden Golem",
+      "hp": 250,
+      "exp": 200,
+      "soul_type": "enchanted",
+      "soul_name": "Wooden Golem",
+      "soul_rarity": 12,
+      "weak": [
+        "Flame",
+        "Killer Mantle"
+      ],
+      "drops": [
+        "Grapes"
+      ],
+      "areas_en": [
+        "Dance Hall"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 1,
+      "name": "Tsuchinoko",
+      "hp": 300,
+      "exp": 80,
+      "soul_type": "enchanted",
+      "soul_name": "Tsuchinoko",
+      "soul_rarity": 6,
+      "weak": [
+        "Curse"
+      ],
+      "drops": [],
+      "areas_en": [
+        "Dance Hall"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 1,
+      "name": "Persephone",
+      "hp": 150,
+      "exp": 55,
+      "soul_type": "guardian",
+      "soul_name": "Persephone",
+      "soul_rarity": 50,
+      "weak": [
+        "Slash",
+        "Poison"
+      ],
+      "drops": [
+        "Scarf",
+        "Strawberry"
+      ],
+      "areas_en": [
+        "Inner Quarters"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 1,
+      "name": "Lilith",
+      "hp": 220,
+      "exp": 60,
+      "soul_type": "enchanted",
+      "soul_name": "Lilith",
+      "soul_rarity": 15,
+      "weak": [
+        "Slash",
+        "Killer Mantle"
+      ],
+      "drops": [
+        "Pendant"
+      ],
+      "areas_en": [
+        "Inner Quarters",
+        "The Arena"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 1,
+      "name": "Nemesis",
+      "hp": 170,
+      "exp": 75,
+      "soul_type": "bullet",
+      "soul_name": "Nemesis",
+      "soul_rarity": 40,
+      "weak": [],
+      "drops": [],
+      "areas_en": [
+        "Dance Hall",
+        "Inner Quarters"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 1,
+      "name": "Kyoma Demon",
+      "hp": 220,
+      "exp": 60,
+      "soul_type": "bullet",
+      "soul_name": "Kyoma Demon",
+      "soul_rarity": 30,
+      "weak": [
+        "Holy"
+      ],
+      "drops": [],
+      "areas_en": [
+        "Inner Quarters"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 2,
+      "name": "Altair",
+      "hp": 30,
+      "exp": 10,
+      "soul_type": "bullet",
+      "soul_name": "Altair",
+      "soul_rarity": 18,
+      "weak": [
+        "Slash"
+      ],
+      "drops": [],
+      "areas_en": [
+        "Floating Garden"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 2,
+      "name": "Red Crow",
+      "hp": 70,
+      "exp": 44,
+      "soul_type": "enchanted",
+      "soul_name": "Red Crow",
+      "soul_rarity": 10,
+      "weak": [
+        "Slash",
+        "Stone"
+      ],
+      "drops": [],
+      "areas_en": [
+        "Floating Garden"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 2,
+      "name": "Cockatrice",
+      "hp": 380,
+      "exp": 120,
+      "soul_type": "bullet",
+      "soul_name": "Cockatrice",
+      "soul_rarity": 15,
+      "weak": [
+        "Slash",
+        "Curse"
+      ],
+      "drops": [
+        "Potion"
+      ],
+      "areas_en": [
+        "Floating Garden"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 2,
+      "name": "Dead Warrior",
+      "hp": 110,
+      "exp": 100,
+      "soul_type": "enchanted",
+      "soul_name": "Dead Warrior",
+      "soul_rarity": 8,
+      "weak": [
+        "Holy"
+      ],
+      "drops": [
+        "Samurai Armor"
+      ],
+      "areas_en": [
+        "Floating Garden"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 2,
+      "name": "Devil",
+      "hp": 300,
+      "exp": 200,
+      "soul_type": "guardian",
+      "soul_name": "Devil",
+      "soul_rarity": 32,
+      "weak": [
+        "Holy",
+        "Killer Mantle"
+      ],
+      "drops": [
+        "Skull Necklace",
+        "High Mind Up"
+      ],
+      "areas_en": [
+        "Clock Tower",
+        "Floating Garden"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 2,
+      "name": "Imp",
+      "hp": 52,
+      "exp": 60,
+      "soul_type": "guardian",
+      "soul_name": "Imp",
+      "soul_rarity": 15,
+      "weak": [
+        "Holy",
+        "Stone",
+        "Killer Mantle"
+      ],
+      "drops": [
+        "Mind Up"
+      ],
+      "areas_en": [
+        "Floating Garden",
+        "Inner Quarters"
+      ],
+      "areas_truncated": true
+    },
+    {
+      "seg": 2,
+      "name": "Werewolf",
+      "hp": 290,
+      "exp": 100,
+      "soul_type": "bullet",
+      "soul_name": "Werewolf",
+      "soul_rarity": 20,
+      "weak": [
+        "Slash",
+        "Curse"
+      ],
+      "drops": [
+        "Black Belt",
+        "Milk"
+      ],
+      "areas_en": [
+        "Floating Garden"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 2,
+      "name": "Gorgon",
+      "hp": 320,
+      "exp": 95,
+      "soul_type": "enchanted",
+      "soul_name": "Gorgon",
+      "soul_rarity": 20,
+      "weak": [
+        "Slash",
+        "Poison",
+        "Curse",
+        "Killer Mantle"
+      ],
+      "drops": [
+        "Meat Strip",
+        "Milk"
+      ],
+      "areas_en": [
+        "Floating Garden",
+        "Underground Reservoir"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 2,
+      "name": "Disc Armor",
+      "hp": 240,
+      "exp": 150,
+      "soul_type": "bullet",
+      "soul_name": "Disc Armor",
+      "soul_rarity": 25,
+      "weak": [
+        "Thunder",
+        "Stone"
+      ],
+      "drops": [
+        "Iron Plate"
+      ],
+      "areas_en": [
+        "Floating Garden",
+        "Inner Quarters"
+      ],
+      "areas_truncated": true
+    },
+    {
+      "seg": 2,
+      "name": "Golem",
+      "hp": 200,
+      "exp": 180,
+      "soul_type": "enchanted",
+      "soul_name": "Golem",
+      "soul_rarity": 20,
+      "weak": [
+        "Killer Mantle"
+      ],
+      "drops": [
+        "High Potion"
+      ],
+      "areas_en": [
+        "Clock Tower",
+        "Floating Garden"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 2,
+      "name": "Manticore",
+      "hp": 440,
+      "exp": 250,
+      "soul_type": "guardian",
+      "soul_name": "Manticore",
+      "soul_rarity": 32,
+      "weak": [
+        "Slash",
+        "Curse",
+        "Stone"
+      ],
+      "drops": [
+        "Gladius"
+      ],
+      "areas_en": [
+        "Chapel",
+        "Floating Garden"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 2,
+      "name": "Gremlin",
+      "hp": 70,
+      "exp": 90,
+      "soul_type": "enchanted",
+      "soul_name": "Gremlin",
+      "soul_rarity": 15,
+      "weak": [
+        "Slash"
+      ],
+      "drops": [],
+      "areas_en": [
+        "Clock Tower"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 2,
+      "name": "Harpy",
+      "hp": 150,
+      "exp": 100,
+      "soul_type": "bullet",
+      "soul_name": "Harpy",
+      "soul_rarity": 12,
+      "weak": [
+        "Slash",
+        "Curse"
+      ],
+      "drops": [],
+      "areas_en": [
+        "Clock Tower",
+        "Forbidden Area"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 2,
+      "name": "Medusa Head",
+      "hp": 30,
+      "exp": 10,
+      "soul_type": "guardian",
+      "soul_name": "Medusa Head",
+      "soul_rarity": 120,
+      "weak": [
+        "Holy"
+      ],
+      "drops": [],
+      "areas_en": [
+        "Chaotic Realm",
+        "Clock Tower"
+      ],
+      "areas_truncated": true
+    },
+    {
+      "seg": 2,
+      "name": "Bomber Armor",
+      "hp": 200,
+      "exp": 200,
+      "soul_type": "bullet",
+      "soul_name": "Bomber Armor",
+      "soul_rarity": 60,
+      "weak": [
+        "Thunder",
+        "Stone"
+      ],
+      "drops": [
+        "Steel Plate"
+      ],
+      "areas_en": [
+        "Clock Tower",
+        "Underground Reservoir"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 2,
+      "name": "Lightning Doll",
+      "hp": 170,
+      "exp": 130,
+      "soul_type": "bullet",
+      "soul_name": "Lightning Doll",
+      "soul_rarity": 56,
+      "weak": [
+        "Flame",
+        "Stone"
+      ],
+      "drops": [],
+      "areas_en": [
+        "Clock Tower",
+        "Inner Quarters"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 2,
+      "name": "Great Armor",
+      "hp": 650,
+      "exp": 300,
+      "soul_type": "guardian",
+      "soul_name": "Great Armor",
+      "soul_rarity": 30,
+      "weak": [
+        "Thunder"
+      ],
+      "drops": [
+        "Iron Plate",
+        "Great Sword"
+      ],
+      "areas_en": [
+        "Clock Tower",
+        "Study"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 2,
+      "name": "Une",
+      "hp": 10,
+      "exp": 10,
+      "soul_type": "bullet",
+      "soul_name": "Une",
+      "soul_rarity": 12,
+      "weak": [
+        "Flame"
+      ],
+      "drops": [],
+      "areas_en": [
+        "Chapel",
+        "Underground Reservoir"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 2,
+      "name": "Giant Worm",
+      "hp": 100,
+      "exp": 80,
+      "soul_type": "enchanted",
+      "soul_name": "Giant Worm",
+      "soul_rarity": 20,
+      "weak": [
+        "Flame"
+      ],
+      "drops": [
+        "Cream Puff"
+      ],
+      "areas_en": [
+        "Underground Reservoir"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 2,
+      "name": "Needles",
+      "hp": 1,
+      "exp": 10,
+      "soul_type": "bullet",
+      "soul_name": "Needles",
+      "soul_rarity": 15,
+      "weak": [],
+      "drops": [
+        "Tasty Meat"
+      ],
+      "areas_en": [
+        "Clock Tower",
+        "Underground Reservoir"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 2,
+      "name": "Man-Eater",
+      "hp": 666,
+      "exp": 444,
+      "soul_type": "bullet",
+      "soul_name": "Man-Eater",
+      "soul_rarity": 15,
+      "weak": [
+        "Slash"
+      ],
+      "drops": [
+        "Rahab's Sword"
+      ],
+      "areas_en": [
+        "Underground Reservoir"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 2,
+      "name": "Fish Head",
+      "hp": 280,
+      "exp": 100,
+      "soul_type": "bullet",
+      "soul_name": "Fish Head",
+      "soul_rarity": 12,
+      "weak": [
+        "Holy"
+      ],
+      "drops": [],
+      "areas_en": [
+        "Chaotic Realm",
+        "Forbidden Area"
+      ],
+      "areas_truncated": true
+    },
+    {
+      "seg": 2,
+      "name": "Nightmare",
+      "hp": 260,
+      "exp": 280,
+      "soul_type": "bullet",
+      "soul_name": "Nightmare",
+      "soul_rarity": 20,
+      "weak": [
+        "Holy"
+      ],
+      "drops": [
+        "Lance"
+      ],
+      "areas_en": [
+        "Underground Reservoir"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 2,
+      "name": "Triton",
+      "hp": 400,
+      "exp": 300,
+      "soul_type": "enchanted",
+      "soul_name": "Triton",
+      "soul_rarity": 25,
+      "weak": [
+        "Flame",
+        "Curse"
+      ],
+      "drops": [
+        "Trident",
+        "Potato Pancake"
+      ],
+      "areas_en": [
+        "Chaotic Realm",
+        "Underground Reservoir"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 2,
+      "name": "Slime",
+      "hp": 200,
+      "exp": 200,
+      "soul_type": "bullet",
+      "soul_name": "Slime",
+      "soul_rarity": 12,
+      "weak": [
+        "Flame",
+        "Killer Mantle"
+      ],
+      "drops": [],
+      "areas_en": [
+        "Chaotic Realm",
+        "Underground Reservoir"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 2,
+      "name": "Big Golem",
+      "hp": 1200,
+      "exp": 1000,
+      "soul_type": "guardian",
+      "soul_name": "Big Golem",
+      "soul_rarity": 15,
+      "weak": [],
+      "drops": [
+        "Milican's Sword"
+      ],
+      "areas_en": [
+        "Dance Hall",
+        "Underground Reservoir"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 2,
+      "name": "Dryad",
+      "hp": 350,
+      "exp": 200,
+      "soul_type": "bullet",
+      "soul_name": "Dryad",
+      "soul_rarity": 50,
+      "weak": [
+        "Flame"
+      ],
+      "drops": [
+        "Mystletain",
+        "Persimmon"
+      ],
+      "areas_en": [
+        "Forbidden Area",
+        "Underground Reservoir"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 2,
+      "name": "Poison Worm",
+      "hp": 100,
+      "exp": 120,
+      "soul_type": "enchanted",
+      "soul_name": "Poison Worm",
+      "soul_rarity": 100,
+      "weak": [
+        "Flame"
+      ],
+      "drops": [
+        "Anti-Venom"
+      ],
+      "areas_en": [
+        "Forbidden Area",
+        "Underground Reservoir"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 2,
+      "name": "Arc Demon",
+      "hp": 500,
+      "exp": 400,
+      "soul_type": "enchanted",
+      "soul_name": "Arc Demon",
+      "soul_rarity": 60,
+      "weak": [
+        "Holy",
+        "Killer Mantle"
+      ],
+      "drops": [
+        "High Mind Up"
+      ],
+      "areas_en": [
+        "Inner Quarters",
+        "The Arena"
+      ],
+      "areas_truncated": true
+    },
+    {
+      "seg": 2,
+      "name": "Cagnazzo",
+      "hp": 180,
+      "exp": 220,
+      "soul_type": "guardian",
+      "soul_name": "Cagnazzo",
+      "soul_rarity": 20,
+      "weak": [
+        "Slash"
+      ],
+      "drops": [
+        "Uncurse Potion",
+        "Onikiri"
+      ],
+      "areas_en": [
+        "Forbidden Area",
+        "Underground Reservoir"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 2,
+      "name": "Ripper",
+      "hp": 80,
+      "exp": 80,
+      "soul_type": "bullet",
+      "soul_name": "Ripper",
+      "soul_rarity": 30,
+      "weak": [
+        "Slash",
+        "Poison"
+      ],
+      "drops": [
+        "Crimson Cloak"
+      ],
+      "areas_en": [
+        "Underground Reservoir"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 2,
+      "name": "Werejaguar",
+      "hp": 380,
+      "exp": 260,
+      "soul_type": "bullet",
+      "soul_name": "Werejaguar",
+      "soul_rarity": 20,
+      "weak": [
+        "Slash",
+        "Poison",
+        "Curse"
+      ],
+      "drops": [
+        "Mach Punch"
+      ],
+      "areas_en": [
+        "Forbidden Area",
+        "Underground Reservoir"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 2,
+      "name": "Ukoback",
+      "hp": 80,
+      "exp": 180,
+      "soul_type": "bullet",
+      "soul_name": "Ukoback",
+      "soul_rarity": 15,
+      "weak": [
+        "Water",
+        "Holy",
+        "Stone"
+      ],
+      "drops": [],
+      "areas_en": [
+        "Underground Reservoir"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 2,
+      "name": "Alura Une",
+      "hp": 800,
+      "exp": 400,
+      "soul_type": "guardian",
+      "soul_name": "Alura Une",
+      "soul_rarity": 60,
+      "weak": [
+        "Flame",
+        "Killer Mantle"
+      ],
+      "drops": [
+        "Melon"
+      ],
+      "areas_en": [
+        "Forbidden Area"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 2,
+      "name": "Biphron",
+      "hp": 380,
+      "exp": 280,
+      "soul_type": "bullet",
+      "soul_name": "Biphron",
+      "soul_rarity": 20,
+      "weak": [
+        "Slash",
+        "Poison",
+        "Curse"
+      ],
+      "drops": [],
+      "areas_en": [
+        "Underground Reservoir"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 2,
+      "name": "Mandragora",
+      "hp": 200,
+      "exp": 100,
+      "soul_type": "bullet",
+      "soul_name": "Mandragora",
+      "soul_rarity": 20,
+      "weak": [],
+      "drops": [],
+      "areas_en": [
+        "Floating Garden",
+        "Underground Reservoir"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 2,
+      "name": "Flesh Golem",
+      "hp": 2000,
+      "exp": 400,
+      "soul_type": "enchanted",
+      "soul_name": "Flesh Golem",
+      "soul_rarity": 20,
+      "weak": [
+        "Slash",
+        "Killer Mantle"
+      ],
+      "drops": [
+        "Rotten Meat",
+        "Spoiled Milk"
+      ],
+      "areas_en": [
+        "Underground Reservoir"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 2,
+      "name": "Sky Fish",
+      "hp": 100,
+      "exp": 3000,
+      "soul_type": "guardian",
+      "soul_name": "Sky Fish",
+      "soul_rarity": 1,
+      "weak": [],
+      "drops": [],
+      "areas_en": [
+        "Underground Reservoir"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 2,
+      "name": "Dead Crusader",
+      "hp": 180,
+      "exp": 380,
+      "soul_type": "enchanted",
+      "soul_name": "Dead Crusader",
+      "soul_rarity": 25,
+      "weak": [
+        "Holy"
+      ],
+      "drops": [
+        "Estoc",
+        "Blocking Mail"
+      ],
+      "areas_en": [
+        "Chaotic Realm",
+        "The Arena"
+      ],
+      "areas_truncated": true
+    },
+    {
+      "seg": 2,
+      "name": "Kicker Skeleton",
+      "hp": 200,
+      "exp": 80,
+      "soul_type": "ability",
+      "soul_name": "Kicker Skeleton",
+      "soul_rarity": 2,
+      "weak": [
+        "Holy"
+      ],
+      "drops": [
+        "Red Scarf",
+        "Ancient Belt"
+      ],
+      "areas_en": [
+        "Floating Garden"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 3,
+      "name": "Weretiger",
+      "hp": 400,
+      "exp": 320,
+      "soul_type": "bullet",
+      "soul_name": "Weretiger",
+      "soul_rarity": 20,
+      "weak": [
+        "Slash",
+        "Poison",
+        "Curse"
+      ],
+      "drops": [
+        "Whip Knuckle"
+      ],
+      "areas_en": [
+        "The Arena"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 3,
+      "name": "Killer Mantle",
+      "hp": 200,
+      "exp": 345,
+      "soul_type": "bullet",
+      "soul_name": "Killer Mantle",
+      "soul_rarity": 13,
+      "weak": [
+        "Flame"
+      ],
+      "drops": [
+        "Ramen"
+      ],
+      "areas_en": [
+        "The Arena"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 3,
+      "name": "Mudman",
+      "hp": 200,
+      "exp": 400,
+      "soul_type": "bullet",
+      "soul_name": "Mudman",
+      "soul_rarity": 11,
+      "weak": [],
+      "drops": [],
+      "areas_en": [
+        "Forbidden Area"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 3,
+      "name": "Gargoyle",
+      "hp": 70,
+      "exp": 240,
+      "soul_type": "enchanted",
+      "soul_name": "Gargoyle",
+      "soul_rarity": 180,
+      "weak": [
+        "Holy"
+      ],
+      "drops": [],
+      "areas_en": [
+        "Forbidden Area",
+        "The Arena"
+      ],
+      "areas_truncated": true
+    },
+    {
+      "seg": 3,
+      "name": "Red Minotaur",
+      "hp": 929,
+      "exp": 1000,
+      "soul_type": "bullet",
+      "soul_name": "Red Minotaur",
+      "soul_rarity": 80,
+      "weak": [
+        "Slash",
+        "Poison",
+        "Curse",
+        "Killer Mantle"
+      ],
+      "drops": [
+        "Battle Axe",
+        "Tasty Meat"
+      ],
+      "areas_en": [
+        "The Arena",
+        "Top Floor"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 3,
+      "name": "Beam Skeleton",
+      "hp": 400,
+      "exp": 320,
+      "soul_type": "bullet",
+      "soul_name": "Beam Skeleton",
+      "soul_rarity": 15,
+      "weak": [
+        "Holy"
+      ],
+      "drops": [],
+      "areas_en": [
+        "Chaotic Realm",
+        "The Arena"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 3,
+      "name": "Alastor",
+      "hp": 1200,
+      "exp": 1500,
+      "soul_type": "guardian",
+      "soul_name": "Alastor",
+      "soul_rarity": 25,
+      "weak": [],
+      "drops": [],
+      "areas_en": [
+        "Chaotic Realm"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 3,
+      "name": "Skull Millione",
+      "hp": 250,
+      "exp": 300,
+      "soul_type": "bullet",
+      "soul_name": "Skull Millione",
+      "soul_rarity": 10,
+      "weak": [
+        "Slash",
+        "Curse"
+      ],
+      "drops": [
+        "Kunitsuna",
+        "Poison Fist"
+      ],
+      "areas_en": [
+        "The Arena"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 3,
+      "name": "Giant Skeleton",
+      "hp": 2000,
+      "exp": 1200,
+      "soul_type": "bullet",
+      "soul_name": "Giant Skeleton",
+      "soul_rarity": 12,
+      "weak": [
+        "Holy"
+      ],
+      "drops": [
+        "Durandal"
+      ],
+      "areas_en": [
+        "Chaotic Realm",
+        "The Arena"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 3,
+      "name": "Gladiator",
+      "hp": 600,
+      "exp": 1000,
+      "soul_type": "bullet",
+      "soul_name": "Gladiator",
+      "soul_rarity": 10,
+      "weak": [
+        "Holy"
+      ],
+      "drops": [],
+      "areas_en": [
+        "Chaotic Realm",
+        "The Arena"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 3,
+      "name": "Bael",
+      "hp": 300,
+      "exp": 380,
+      "soul_type": "enchanted",
+      "soul_name": "Bael",
+      "soul_rarity": 20,
+      "weak": [
+        "Poison"
+      ],
+      "drops": [],
+      "areas_en": [
+        "The Arena",
+        "Top Floor"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 3,
+      "name": "Succubus",
+      "hp": 550,
+      "exp": 360,
+      "soul_type": "enchanted",
+      "soul_name": "Succubus",
+      "soul_rarity": 5,
+      "weak": [
+        "Slash",
+        "Killer Mantle"
+      ],
+      "drops": [
+        "Heart Pendant",
+        "Pudding"
+      ],
+      "areas_en": [
+        "Chaotic Realm",
+        "The Arena"
+      ],
+      "areas_truncated": true
+    },
+    {
+      "seg": 3,
+      "name": "Mimic",
+      "hp": 100,
+      "exp": 200,
+      "soul_type": "enchanted",
+      "soul_name": "Mimic",
+      "soul_rarity": 30,
+      "weak": [
+        "Holy"
+      ],
+      "drops": [],
+      "areas_en": [
+        "Chaotic Realm",
+        "Dance Hall"
+      ],
+      "areas_truncated": true
+    },
+    {
+      "seg": 3,
+      "name": "Stolas",
+      "hp": 1500,
+      "exp": 1500,
+      "soul_type": "enchanted",
+      "soul_name": "Stolas",
+      "soul_rarity": 25,
+      "weak": [
+        "Holy",
+        "Killer Mantle"
+      ],
+      "drops": [
+        "High Potion"
+      ],
+      "areas_en": [
+        "Chaotic Realm",
+        "Top Floor"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 3,
+      "name": "Erinys",
+      "hp": 200,
+      "exp": 500,
+      "soul_type": "enchanted",
+      "soul_name": "Erinys",
+      "soul_rarity": 120,
+      "weak": [
+        "Slash",
+        "Darkness",
+        "Poison",
+        "Curse"
+      ],
+      "drops": [
+        "Ronginus' Spear"
+      ],
+      "areas_en": [
+        "Chaotic Realm",
+        "The Arena"
+      ],
+      "areas_truncated": true
+    },
+    {
+      "seg": 3,
+      "name": "Lubicant",
+      "hp": 500,
+      "exp": 550,
+      "soul_type": "enchanted",
+      "soul_name": "Lubicant",
+      "soul_rarity": 80,
+      "weak": [
+        "Slash",
+        "Curse"
+      ],
+      "drops": [
+        "Muramasa"
+      ],
+      "areas_en": [
+        "Chaotic Realm",
+        "The Arena"
+      ],
+      "areas_truncated": true
+    },
+    {
+      "seg": 3,
+      "name": "Basilisk",
+      "hp": 700,
+      "exp": 600,
+      "soul_type": "enchanted",
+      "soul_name": "Basilisk",
+      "soul_rarity": 30,
+      "weak": [
+        "Slash",
+        "Curse"
+      ],
+      "drops": [
+        "Milican's Sword"
+      ],
+      "areas_en": [
+        "Chaotic Realm",
+        "Top Floor"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 3,
+      "name": "Iron Golem",
+      "hp": 9999,
+      "exp": 500,
+      "soul_type": "enchanted",
+      "soul_name": "Iron Golem",
+      "soul_rarity": 20,
+      "weak": [
+        "Killer Mantle"
+      ],
+      "drops": [],
+      "areas_en": [
+        "Chaotic Realm",
+        "Top Floor"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 3,
+      "name": "Demon Lord",
+      "hp": 1800,
+      "exp": 3000,
+      "soul_type": "bullet",
+      "soul_name": "Demon Lord",
+      "soul_rarity": 30,
+      "weak": [
+        "Holy",
+        "Killer Mantle"
+      ],
+      "drops": [
+        "Mana Prism",
+        "Demon's Mail"
+      ],
+      "areas_en": [
+        "Chaotic Realm"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 3,
+      "name": "Final Guard",
+      "hp": 1200,
+      "exp": 2000,
+      "soul_type": "guardian",
+      "soul_name": "Final Guard",
+      "soul_rarity": 30,
+      "weak": [],
+      "drops": [
+        "Gold Plate",
+        "Final Sword"
+      ],
+      "areas_en": [
+        "Chaotic Realm",
+        "Top Floor"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 3,
+      "name": "Flame Demon",
+      "hp": 500,
+      "exp": 400,
+      "soul_type": "bullet",
+      "soul_name": "Flame Demon",
+      "soul_rarity": 3,
+      "weak": [
+        "Water",
+        "Holy",
+        "Killer Mantle"
+      ],
+      "drops": [
+        "Laevatain"
+      ],
+      "areas_en": [
+        "Forbidden Area",
+        "Underground Reservoir"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 3,
+      "name": "Shadow Knight",
+      "hp": 3000,
+      "exp": 3000,
+      "soul_type": "guardian",
+      "soul_name": "Shadow Knight",
+      "soul_rarity": 20,
+      "weak": [
+        "Holy"
+      ],
+      "drops": [
+        "Super Potion"
+      ],
+      "areas_en": [
+        "Chaotic Realm"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 3,
+      "name": "Headhunter",
+      "hp": 700,
+      "exp": 3000,
+      "soul_type": "enchanted",
+      "soul_name": "Headhunter",
+      "soul_rarity": null,
+      "weak": [
+        "Slash"
+      ],
+      "drops": [],
+      "areas_en": [
+        "Inner Quarters"
+      ],
+      "areas_truncated": false,
+      "soul_note": "源页面 BOSS 段未填魂字段，按魂表回填"
+    },
+    {
+      "seg": 3,
+      "name": "Death",
+      "hp": 4444,
+      "exp": 4444,
+      "soul_type": "guardian",
+      "soul_name": "Death",
+      "soul_rarity": null,
+      "weak": [],
+      "drops": [],
+      "areas_en": [
+        "Clock Tower"
+      ],
+      "areas_truncated": false,
+      "soul_note": "源页面 BOSS 段未填魂字段，按魂表回填"
+    },
+    {
+      "seg": 3,
+      "name": "Legion",
+      "hp": 5000,
+      "exp": 12000,
+      "soul_type": "bullet",
+      "soul_name": "Legion",
+      "soul_rarity": null,
+      "weak": [
+        "Holy"
+      ],
+      "drops": [],
+      "areas_en": [
+        "Underground Reservoir"
+      ],
+      "areas_truncated": false,
+      "soul_note": "源页面 BOSS 段未填魂字段，按魂表回填"
+    },
+    {
+      "seg": 3,
+      "name": "Balore",
+      "hp": 4000,
+      "exp": 16000,
+      "soul_type": "bullet",
+      "soul_name": "Balore",
+      "soul_rarity": null,
+      "weak": [],
+      "drops": [],
+      "areas_en": [
+        "The Arena"
+      ],
+      "areas_truncated": false,
+      "soul_note": "源页面 BOSS 段未填魂字段，按魂表回填"
+    },
+    {
+      "seg": 3,
+      "name": "Belmont",
+      "hp": 600,
+      "exp": 0,
+      "soul_type": null,
+      "soul_name": null,
+      "soul_rarity": null,
+      "weak": [],
+      "drops": [],
+      "areas_en": [
+        "Floating Garden"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 3,
+      "name": "Graham",
+      "hp": 500,
+      "exp": 0,
+      "soul_type": null,
+      "soul_name": null,
+      "soul_rarity": null,
+      "weak": [],
+      "drops": [],
+      "areas_en": [
+        "Top Floor"
+      ],
+      "areas_truncated": false
+    },
+    {
+      "seg": 3,
+      "name": "Chaos",
+      "hp": 999,
+      "exp": 0,
+      "soul_type": null,
+      "soul_name": null,
+      "soul_rarity": null,
+      "weak": [],
+      "drops": [],
+      "areas_en": [
+        "Chaotic Realm"
+      ],
+      "areas_truncated": false
+    }
+  ],
+  "area_pool": {
+    "castle_corridor": [
+      "Axe Armor",
+      "Bat",
+      "Blue Crow",
+      "Buer",
+      "Catoblepas",
+      "Creaking Skull",
+      "Ghost",
+      "Killer Doll",
+      "Killer Fish",
+      "Merman",
+      "Peeping Eye",
+      "Rock Armor",
+      "Siren",
+      "Skeleton",
+      "Skeleton Knight",
+      "Skull Archer",
+      "Tiny Devil",
+      "White Dragon",
+      "Winged Skeleton",
+      "Zombie",
+      "Zombie Officer",
+      "Zombie Soldier"
+    ],
+    "chapel": [
+      "Axe Armor",
+      "Bat",
+      "Bone Pillar",
+      "Durga",
+      "Fleaman",
+      "Ghost",
+      "Ghost Dancer",
+      "Giant Ghost",
+      "Manticore",
+      "Rock Armor",
+      "Skeleton",
+      "Skeleton Knight",
+      "Tiny Devil",
+      "Une",
+      "White Dragon",
+      "Winged Skeleton",
+      "Zombie Officer"
+    ],
+    "study": [
+      "Arachne",
+      "Ectoplasm",
+      "Evil Butcher",
+      "Giant Ghost",
+      "Great Armor",
+      "Minotaur",
+      "Skull Archer",
+      "Student Witch"
+    ],
+    "dance_hall": [
+      "Big Golem",
+      "Bone Pillar",
+      "Catoblepas",
+      "Creaking Skull",
+      "Durga",
+      "Evil Butcher",
+      "Fleaman",
+      "Ghost Dancer",
+      "Killer Doll",
+      "Mimic",
+      "Minotaur",
+      "Nemesis",
+      "Quezlcoatl",
+      "Tsuchinoko",
+      "Waiter Skeleton",
+      "Wooden Golem"
+    ],
+    "inner_quarters": [
+      "Arc Demon",
+      "Disc Armor",
+      "Headhunter",
+      "Imp",
+      "Kyoma Demon",
+      "Lightning Doll",
+      "Lilith",
+      "Nemesis",
+      "Persephone",
+      "Student Witch"
+    ],
+    "floating_garden": [
+      "Altair",
+      "Belmont",
+      "Cockatrice",
+      "Dead Warrior",
+      "Devil",
+      "Disc Armor",
+      "Golem",
+      "Gorgon",
+      "Imp",
+      "Kicker Skeleton",
+      "Mandragora",
+      "Manticore",
+      "Red Crow",
+      "Werewolf"
+    ],
+    "clock_tower": [
+      "Bomber Armor",
+      "Death",
+      "Devil",
+      "Golem",
+      "Great Armor",
+      "Gremlin",
+      "Harpy",
+      "Lightning Doll",
+      "Medusa Head",
+      "Needles",
+      "Siren"
+    ],
+    "underground_reservoir": [
+      "Big Golem",
+      "Biphron",
+      "Bomber Armor",
+      "Cagnazzo",
+      "Dryad",
+      "Flame Demon",
+      "Flesh Golem",
+      "Giant Worm",
+      "Gorgon",
+      "Legion",
+      "Man-Eater",
+      "Mandragora",
+      "Merman",
+      "Needles",
+      "Nightmare",
+      "Poison Worm",
+      "Ripper",
+      "Sky Fish",
+      "Slime",
+      "Triton",
+      "Ukoback",
+      "Une",
+      "Werejaguar"
+    ],
+    "underground_cemetery": [],
+    "the_arena": [
+      "Arc Demon",
+      "Bael",
+      "Balore",
+      "Beam Skeleton",
+      "Dead Crusader",
+      "Erinys",
+      "Gargoyle",
+      "Giant Skeleton",
+      "Gladiator",
+      "Killer Mantle",
+      "Lilith",
+      "Lubicant",
+      "Red Minotaur",
+      "Skull Millione",
+      "Succubus",
+      "Weretiger"
+    ],
+    "forbidden_area": [
+      "Alura Une",
+      "Cagnazzo",
+      "Dryad",
+      "Fish Head",
+      "Flame Demon",
+      "Gargoyle",
+      "Harpy",
+      "Killer Fish",
+      "Mudman",
+      "Poison Worm",
+      "Werejaguar"
+    ],
+    "top_floor": [
+      "Bael",
+      "Basilisk",
+      "Final Guard",
+      "Graham",
+      "Iron Golem",
+      "Red Minotaur",
+      "Stolas"
+    ],
+    "chaotic_realm": [
+      "Alastor",
+      "Basilisk",
+      "Beam Skeleton",
+      "Chaos",
+      "Dead Crusader",
+      "Demon Lord",
+      "Erinys",
+      "Final Guard",
+      "Fish Head",
+      "Giant Skeleton",
+      "Gladiator",
+      "Iron Golem",
+      "Lubicant",
+      "Medusa Head",
+      "Mimic",
+      "Shadow Knight",
+      "Slime",
+      "Stolas",
+      "Succubus",
+      "Triton"
+    ]
+  }
+}

@@ -1,0 +1,217 @@
+{
+  "meta": {
+    "game": "Castlevania: Aria of Sorrow",
+    "purpose": "BOSS 节奏的参照物。用于回答：11 个强制 BOSS 怎么排、每场之前玩家该有多强、每个 BOSS 顺带给了什么。",
+    "count": 11,
+    "definition": "强制 BOSS = 不打就推不动主线的。地下墓地的加拉莫斯、Boss Rush 里的食人魔不算，单列在 elites。",
+    "sources": [
+      "pixelguides.org/castlevania-aria-of-sorrow/bosses（HP/ATK/DEF/EXP/弱点/打法，均取自游戏内敌人表）",
+      "vgmuseum.com Boss Rush 名单（用于确认 BOSS 全集）",
+      "wiki.nesbbs.com 中文流程（用于确认进度顺序与等级门槛）"
+    ]
+  },
+  "bosses": [
+    {
+      "order": 1,
+      "name": "Creaking Skull",
+      "cn": "吱嘎骷髅",
+      "area": "castle_corridor",
+      "hp": 240,
+      "atk": 35,
+      "def": 10,
+      "exp": 110,
+      "weak": ["Holy"],
+      "resist": ["Darkness"],
+      "soul": "Creaking Skull（蓝，稀有度 40）",
+      "level_note": "LV1 可打，代价约 220 HP",
+      "role": "教学 BOSS：两种攻击都有明显前摇，教玩家「看动作再闪」"
+    },
+    {
+      "order": 2,
+      "name": "Manticore",
+      "cn": "蝎尾狮",
+      "area": "chapel",
+      "hp": 440,
+      "atk": 40,
+      "def": 24,
+      "exp": 250,
+      "weak": ["Slash", "Curse", "Stone"],
+      "resist": [],
+      "soul": "Manticore（蓝，稀有度 32）",
+      "level_note": "攻略在 LV9 打；LV3 会被八步打死",
+      "role": "第一个数值墙：不练级打不过，逼玩家去刷大理石回廊的杀手人偶（40 EXP/只）"
+    },
+    {
+      "order": 3,
+      "name": "Great Armor",
+      "cn": "大装甲",
+      "area": "study",
+      "hp": 650,
+      "atk": null,
+      "def": null,
+      "exp": null,
+      "weak": ["Thunder"],
+      "resist": [],
+      "soul": "Great Armor（蓝，稀有度 30）",
+      "level_note": "攻略在 LV11 打",
+      "role": "考验「换属性」：雷弱点，逼玩家第一次为一场战斗换魂"
+    },
+    {
+      "order": 4,
+      "name": "Big Golem",
+      "cn": "大巨人",
+      "area": "dance_hall",
+      "hp": 1200,
+      "atk": null,
+      "def": null,
+      "exp": 1000,
+      "weak": [],
+      "resist": [],
+      "soul": "Big Golem（蓝，稀有度 15）",
+      "level_note": "攻略在 LV13 打",
+      "role": "纯血量 BOSS（1200，是上一个的 1.85 倍）——第一次打「长时间消耗战」"
+    },
+    {
+      "order": 5,
+      "name": "Headhunter",
+      "cn": "猎头者",
+      "area": "inner_quarters",
+      "hp": 700,
+      "atk": null,
+      "def": null,
+      "exp": 3000,
+      "weak": ["Slash"],
+      "resist": [],
+      "soul": "Headhunter（黄，规则型：魂收集越多属性越高）",
+      "level_note": "攻略在 LV16–17 打",
+      "role": "第一个「会分身的 BOSS」，也掉全游戏最特殊的黄魂（收集度换战力）"
+    },
+    {
+      "order": 6,
+      "name": "Death",
+      "cn": "死神",
+      "area": "clock_tower",
+      "hp": 4444,
+      "atk": null,
+      "def": null,
+      "exp": 4444,
+      "weak": [],
+      "resist": ["Darkness"],
+      "soul": "Death（蓝，稀有度 —）",
+      "level_note": "攻略要求 LV40 —— 从 LV17 到 LV40 是全游戏最大的一次等级跳",
+      "role": "全游戏的难度分水岭。它之前是「探索为主」，它之后是「战斗为主」"
+    },
+    {
+      "order": 7,
+      "name": "Legion",
+      "cn": "死人军团",
+      "area": "underground_reservoir",
+      "hp": 5000,
+      "atk": null,
+      "def": null,
+      "exp": 12000,
+      "weak": ["Holy"],
+      "resist": [],
+      "soul": "Legion（红，半屏激光）",
+      "level_note": "攻略在 LV41 打",
+      "role": "场景型 BOSS：本体是一团尸体球，考验「打弱点部位」而不是「躲弹幕」"
+    },
+    {
+      "order": 8,
+      "name": "Balore",
+      "cn": "巴洛尔",
+      "area": "the_arena",
+      "hp": 4000,
+      "atk": null,
+      "def": null,
+      "exp": 16000,
+      "weak": [],
+      "resist": [],
+      "soul": "Balore（红，直拳）",
+      "level_note": "攻略在 LV42 打",
+      "role": "纯力量型：EXP 16000 是全游戏最高，等于官方给的「斗技场补偿」"
+    },
+    {
+      "order": 9,
+      "name": "Graham Jones",
+      "cn": "格拉罕·琼斯",
+      "area": "top_floor",
+      "hp": 500,
+      "atk": null,
+      "def": null,
+      "exp": 0,
+      "weak": [],
+      "resist": [],
+      "soul": null,
+      "level_note": "攻略在 LV47 打；三形态，后两形态 HP 各约 1250，第三形态约 2500",
+      "role": "叙事 BOSS：打他时身上带哪三个魂决定结局，是唯一「用装备栏做选择」的关卡设计"
+    },
+    {
+      "order": 10,
+      "name": "Julius Belmont",
+      "cn": "尤里乌斯·贝尔蒙特",
+      "area": "floating_garden",
+      "hp": 600,
+      "atk": null,
+      "def": null,
+      "exp": 0,
+      "weak": [],
+      "resist": [],
+      "soul": null,
+      "level_note": "可选，不打也能通关；打了他才开混沌领域之门（需先达成条件）",
+      "role": "可选 BOSS：把「要不要打」本身做成选择"
+    },
+    {
+      "order": 11,
+      "name": "Chaos",
+      "cn": "混沌",
+      "area": "chaotic_realm",
+      "hp": null,
+      "hp_shown": 999,
+      "atk": null,
+      "def": null,
+      "exp": 0,
+      "weak": [],
+      "resist": [],
+      "soul": null,
+      "level_note": "两阶段；敌人表显示 999，实际二阶段另有血量，公开资料未给准确数，故 hp 留空",
+      "role": "真·最终 BOSS，只在 Best Ending 路线出现"
+    }
+  ],
+  "elites": [
+    {
+      "name": "Galamoth",
+      "cn": "加拉莫斯",
+      "area": "underground_cemetery",
+      "note": "非强制。掉时停能力魂（银），是 6 个能力门里唯一「打赢才给」的一个"
+    },
+    {
+      "name": "Man-Eater",
+      "cn": "食人魔",
+      "area": "underground_reservoir",
+      "hp": 666,
+      "note": "普通敌人，但被塞进 Boss Rush 名单充长度 —— 说明「BOSS」和「强敌」的界线是编排出来的，不是数值决定的"
+    }
+  ],
+  "pacing": {
+    "observation": "EXP 从 110 涨到 16000（145 倍），但玩家等级只从 1 涨到 47。BOSS 的强度增长主要靠「要求等级」，不是靠机制复杂度。",
+    "numbers": [
+      "前 5 个 BOSS 的 HP：240 / 440 / 650 / 1200 / 700 —— 第 4 个（Big Golem）是峰值，第 5 个反而回落",
+      "后 6 个 BOSS 的 HP：4444 / 5000 / 4000 / 500(三形态共 ~5000) / 600 / 999",
+      "BOSS 给的魂：4 个蓝（持续型）、2 个红（输出）、1 个黄（规则型）、0 个银 —— BOSS 不给能力门"
+    ],
+    "takeaway": "BOSS 不给能力门，能力门全在普通精英和固定拾取里。这条很关键：如果 BOSS 掉门，玩家会卡在「打不过又过不去」的死循环。"
+  },
+  "conflicts": [
+    {
+      "field": "Graham.hp",
+      "values": ["500（pixelguides 敌人表）", "5000（rpgdl 论坛实测，含三形态）"],
+      "resolution": "不裁决。表里填 500 并注明三形态合计约 5000 —— 两个数说的不是一件事（单体形态 vs 总血量）。"
+    },
+    {
+      "field": "Chaos.hp",
+      "values": ["999（敌人表）"],
+      "resolution": "999 很可能是显示值或占位。公开资料没有二阶段准确血量，标 null 更诚实。"
+    }
+  ]
+}

@@ -1,0 +1,216 @@
+{
+  "meta": {
+    "game": "Castlevania: Aria of Sorrow",
+    "purpose": "关卡与流程的参照物。用于回答：13 个区域各自承担什么角色、能力门插在哪、BOSS 怎么分布。",
+    "area_count": 13,
+    "key": "区域顺序 = 游戏内地图分区顺序，不是玩家实际到访顺序（玩家会来回传送）",
+    "gate_field_meaning": "gate.entry = 第一次进这个区域需要什么；gate.full = 想 100% 走完还需要什么。两者经常不同，混成一个字段会误导排期。",
+    "sources": [
+      "StrategyWiki: Castlevania: Aria of Sorrow 区域页（Layout / Items / Tasks）",
+      "pixelguides.org walkthrough 14 章（含每章等级与能力门）",
+      "GameWiki wiki.nesbbs.com 中文全流程（能力魂获取顺序）"
+    ],
+    "notes": [
+      "房间数没有可靠公开数据，本表不填。空着比编一个数字强。",
+      "enemy_pool 由 aos_enemies_raw.txt 的 location 字段聚合生成，不是手抄 —— 见 tools/ref/aos_build.py。"
+    ]
+  },
+  "areas": [
+    {
+      "id": "castle_corridor",
+      "en": "Castle Corridor",
+      "cn": "荒城回廊",
+      "role": "教学区 + 全图枢纽",
+      "role_note": "唯一同时连通礼拜堂/舞踏馆/浮游庭园/地下水域四个方向的区域。传送点在此，所以它同时是存档中枢。",
+      "boss": ["Creaking Skull"],
+      "gate": {
+        "entry": "无（起点）",
+        "full": "二段跳（马法斯）+ 巨蝙蝠，才能拿角落里的幸运护符 / 安纲 / 火之铠"
+      },
+      "key_items": ["守墓者之魂（固定拾取）", "飞装甲（蓝魂）", "城堡地图", "短剑", "披风"],
+      "save_rooms": "至少 3 个（克雷金骷髅右侧、初始区右侧、格拉罕会面点上方）",
+      "unlocks": ["后撤步（守墓者）"]
+    },
+    {
+      "id": "chapel",
+      "en": "Chapel",
+      "cn": "礼拜堂",
+      "role": "第一个分叉 + 剧情节点",
+      "role_note": "格拉罕第一次出场在这里。BOSS 曼提科亚守在管风琴大厅，是第一次真正逼玩家练级的坎。",
+      "boss": ["Manticore"],
+      "gate": {
+        "entry": "无（从荒城回廊东侧直接进）",
+        "full": "二段跳 + 后续蓝魂，才能回头拿高位道具"
+      },
+      "key_items": ["马法斯之魂（二段跳，在藏书库，但路径经此）"],
+      "save_rooms": "有（管风琴大厅前）",
+      "unlocks": []
+    },
+    {
+      "id": "study",
+      "en": "Study",
+      "cn": "藏书库",
+      "role": "能力门 2：二段跳",
+      "role_note": "整个游戏最关键的一道门。拿到马法斯之后，之前所有「跳不上去」的地方一次性解锁，玩家第一次感受到地图被打开。",
+      "boss": ["Great Armor"],
+      "gate": {
+        "entry": "无（从礼拜堂进）",
+        "full": "二段跳（本区产出）"
+      },
+      "key_items": ["马法斯之魂（二段跳，固定拾取）", "洋子·贝尔纳德斯（NPC）"],
+      "save_rooms": "有",
+      "unlocks": ["二段跳（马法斯）"]
+    },
+    {
+      "id": "dance_hall",
+      "en": "Dance Hall",
+      "cn": "舞踏馆",
+      "role": "能力门 3：滑铲",
+      "role_note": "把「低矮通道」这种最原始的门型交给滑铲。玩家在这里学会「同一个房间，蹲下去就能过」。",
+      "boss": ["Big Golem"],
+      "gate": {
+        "entry": "二段跳 + 飞装甲（跳荒城回廊那个大坑）",
+        "full": "滑铲（本区产出）"
+      },
+      "key_items": ["骷髅烈焰之魂（滑铲，固定拾取）", "米诺陶斯大厅"],
+      "save_rooms": "有",
+      "unlocks": ["滑铲（骷髅烈焰）"]
+    },
+    {
+      "id": "inner_quarters",
+      "en": "Inner Quarters",
+      "cn": "居所",
+      "role": "能力门 4：水面行走",
+      "role_note": "唯一「全是女性敌人」的区域，也是独占敌人最多的区。滑铲进来、拿温蒂妮出去，是一段完整的「门→钥匙→门」闭环。",
+      "boss": ["Headhunter"],
+      "gate": {
+        "entry": "滑铲",
+        "full": "温蒂妮（水面行走）+ 二段跳，才能过六格宽的坑"
+      },
+      "key_items": ["温蒂妮之魂（水面行走）", "赫伦汀", "传送点"],
+      "save_rooms": "有",
+      "unlocks": ["水面行走（温蒂妮）"]
+    },
+    {
+      "id": "floating_garden",
+      "en": "Floating Garden",
+      "cn": "浮游庭园",
+      "role": "垂直挑战 + 通往计时塔",
+      "role_note": "用升降台把「纵向」做成玩法。左边那扇门直通计时塔，是后期回访枢纽。",
+      "boss": ["Belmont（尤里乌斯，可选）"],
+      "gate": {
+        "entry": "温蒂妮 + 二段跳",
+        "full": "巨蝙蝠才能到部分高台"
+      },
+      "key_items": ["踢腿骷髅之魂（飞踢，敌人掉落）", "德古拉之服（后期）"],
+      "save_rooms": "有（两个）",
+      "unlocks": ["飞踢（踢腿骷髅，非门）"]
+    },
+    {
+      "id": "clock_tower",
+      "en": "Clock Tower",
+      "cn": "计时塔",
+      "role": "等级墙 + 死神",
+      "role_note": "流程上第一次真正的难度跳变：攻略建议到 LV40 再来。大装甲在这里可反复刷，成了官方默认的练级点。",
+      "boss": ["Death"],
+      "gate": {
+        "entry": "浮游庭园左门",
+        "full": "无额外能力门，纯数值门槛"
+      },
+      "key_items": ["斯库拉之魂（水下行走，本区产出）"],
+      "save_rooms": "有",
+      "unlocks": ["水下行走（斯库拉）"]
+    },
+    {
+      "id": "underground_reservoir",
+      "en": "Underground Reservoir",
+      "cn": "地下水域",
+      "role": "全图十字路口",
+      "role_note": "第二个枢纽，仅次于荒城回廊。连通计时塔、地下墓地、斗技场、禁忌区域，且水下/水面两套移动规则在这里全部用上。",
+      "boss": ["Legion"],
+      "gate": {
+        "entry": "温蒂妮 + 斯库拉",
+        "full": "无（但水下部分要斯库拉全程）"
+      },
+      "key_items": ["天空鱼（稀有度 1，必掉）", "传送点", "斗技场之门"],
+      "save_rooms": "有",
+      "unlocks": []
+    },
+    {
+      "id": "underground_cemetery",
+      "en": "Underground Cemetery",
+      "cn": "地下墓地",
+      "role": "能力门 6：时停",
+      "role_note": "最特殊的门 —— 加拉莫斯不是「过去」的能力，是「让静止的世界动起来」。它把「时间」本身做成了一道门。",
+      "boss": ["Galamoth"],
+      "gate": {
+        "entry": "从地下水域进",
+        "full": "加拉莫斯（时停，本区产出）"
+      },
+      "key_items": ["加拉莫斯之魂（时停）"],
+      "save_rooms": "有",
+      "unlocks": ["时停（加拉莫斯）"],
+      "enemy_data_gap": "源敌人表把本区的敌人并进了 Underground Reservoir（Legion / Flame Demon / Biphron 在 Fandom 都记在本区）。所以本区敌人池为空是口径问题，不是漏抓。"
+    },
+    {
+      "id": "the_arena",
+      "en": "The Arena",
+      "cn": "炼狱斗技场",
+      "role": "纯战斗区（奖励向）",
+      "role_note": "没有门，只有硬仗。产出游戏最强一档武器与蓝魂巨蝙蝠。它证明「能力门不是唯一的地图目标」——「打赢就给你好东西」也是。",
+      "boss": ["Balore"],
+      "gate": {
+        "entry": "地下水域的门",
+        "full": "无能力门"
+      },
+      "key_items": ["巨蝙蝠之魂（飞行，真结局必需）", "巴洛尔之魂（红，直拳）"],
+      "save_rooms": "有",
+      "unlocks": ["飞行（巨蝙蝠，非门但真结局必需）"]
+    },
+    {
+      "id": "forbidden_area",
+      "en": "Forbidden Area",
+      "cn": "禁忌区域",
+      "role": "可选高价值区",
+      "role_note": "瀑布后藏若伊斯（Joyeuse）与克拉姆·索拉斯（Claimh Solais）。可以不去，但去了战力翻倍 —— 典型的「风险换强度」可选分支。",
+      "boss": [],
+      "gate": {
+        "entry": "地下水域瀑布后（无能力门，靠找）",
+        "full": "无"
+      },
+      "key_items": ["若伊斯", "克拉姆·索拉斯（+106 ATT）"],
+      "save_rooms": "有",
+      "unlocks": []
+    },
+    {
+      "id": "top_floor",
+      "en": "Top Floor",
+      "cn": "恶魔城最上阶",
+      "role": "终局门 + 三结局判定点",
+      "role_note": "格拉罕在这里。打他时身上带哪三个魂，直接决定走哪个结局 —— 这是全游戏唯一「用装备栏做叙事选择」的地方。",
+      "boss": ["Graham"],
+      "gate": {
+        "entry": "巨蝙蝠（飞上最上阶）",
+        "full": "无"
+      },
+      "key_items": ["三本古文书（提示三魂）", "波格里夫之魂（超高跳）"],
+      "save_rooms": "有",
+      "unlocks": ["超高跳（骏鹰/波格里夫）"]
+    },
+    {
+      "id": "chaotic_realm",
+      "en": "Chaotic Realm",
+      "cn": "混沌领域",
+      "role": "真·最终区（Best Ending 专属）",
+      "role_note": "只有带对三魂打赢格拉罕才会开启。敌人是全游戏最强一档，等于一个「通关后才能进的隐藏关」。",
+      "boss": ["Chaos"],
+      "gate": {
+        "entry": "带火焰恶魔 + 巨蝙蝠 + 魅魔三魂击败格拉罕",
+        "full": "无"
+      },
+      "key_items": ["混沌（最终 BOSS）"],
+      "save_rooms": "有",
+      "unlocks": []
+    }
+  ]
+}
