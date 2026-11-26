@@ -40,7 +40,8 @@
 | `art/prompts/style_anchor.py` | **七层提示词锚点，唯一真源**（11-26 建）：L1 媒介 / L2 笔触 / L3 可读 / L3.5 朝向 / L3.6 投影 / L4 色板 / L5 禁区 + 底色（工序参数）+ 5 个 profile。`--check` 与定版模板对账，`--budget` 卡 2200 字符。理由与六条实测在 `STYLE_LOCK §L0.5` | 🔴 LEGACY |
 | `art/prompts/sprite_prompt.py` | **出图唯一入口**：骨架锁死在 `sprite_template.txt`，只允许改四处背景句；10 状态配置 + 帧数 + fps | 🔴 LEGACY |
 | `art/tools/crayon.py` | 受约束的蜡笔笔刷原语（stroke/fill/outline/hatch/speck），只收 12 色板名 + 有限笔宽。**当前零调用者**，仅作机制存档，见 `STYLE_LOCK §L11.5` | 🟠 存档 |
-| `godot/` | **Godot 4.4 工程（正式发行形态）**：与 web 原型并存。玩家移动/跳跃/5 状态动画 + 战斗组件（Hitbox/Hurtbox/局部顿帧）+ WorldState 存档 + 沸腾线 shader + 单屏测试房。用 Godot 打开这个子目录，不是仓库根 | 🟠 移植中 |
+| ⭐ `godot/` | **唯一开发主线（2026-11-26 定）**：所有新功能只写这里。玩家移动/跳跃/5 状态动画 + 战斗组件 + WorldState 存档 + 沸腾线 shader + 单屏测试房。**缺相机/多房间/攻击接线/敌人**（`docs/gdd/07 §10.3` 第 0 步）。用 Godot 打开这个子目录，不是仓库根 | 🟠 主线 |
+| 🔴 `src/` | **冻结的 web 基线**：唯一完整可玩版本（13 套回归 + 424 项断言），不再加功能。归档条件见 `docs/gdd/07 §10.4` | 🔴 冻结 |
 | `godot/README.md` | Godot 工程说明：打开方式、手感标定记录、资产同步、渲染设置、移植顺序 | 🟢 现行 |
 | `docs/ref/OTHERS_GDD_REVIEW.md` | 别人那份 GDD/TDD 的逐条核对：可吸收 / 照抄会炸（9 处）/ 不适用；**§6 说明它的数值已抄成 `F2` 对照预设的用途**。再收到同类文档先看这份 | 🟢 现行 |
 | `art/tools/tile_from_gen.py` | **瓦片切片**（11-26 起）：洋红底素材板 → 洋红键 → 连通域分行 → 每块归一化到 54×48（保持比例、贴底、居中）→ 平铺预览。用法见 `ART_SKILLS §6`，配方见 `ART_PIPELINE §4.5` | 🔴 LEGACY |
@@ -138,10 +139,11 @@ game-soulkeep/
 ├─ DOC_CONTROLS.md  FEEL_TABLE.md  UI_SKIN.md  ASSET_MANIFEST.md
 ├─ ART_PIPELINE.md  ART_SKILLS.md  ART_INVENTORY.md  STORY.md   ← 🔴 LEGACY = 旧产线记录，别再照做
 ├─ docs/
-│  ├─ gdd/       ⭐ 玩的唯一真源（00~07，先读 README）
+│  ├─ gdd/       ⭐ 玩的唯一真源（00~08，先读 README）
 │  ├─ ref/       参考分析（别人的东西，需要时读）
 │  └─ history/   历史报告（只读，追根因时读）
-├─ src/          游戏代码
+├─ src/          🔴 冻结的 web 基线（不再加功能）
+├─ godot/        ⭐ 唯一开发主线
 ├─ art/          ← ⭐ 美术唯一入口，先开 art/README.md
 │  ├─ ART_GUIDE.md      唯一规范 v1.3（含 §12 本项目适配）
 │  ├─ README.md         总索引 + 新资产九步

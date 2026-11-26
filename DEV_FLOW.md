@@ -66,6 +66,12 @@
 
 ## 4. 回归矩阵：改什么，跑哪几套
 
+> **2026-11-26 起 Godot 是唯一开发主线**（`docs/gdd/07 §10`）。`src/` 冻结为行为基线。
+> 本节分两块：**§4.1 web 基线（冻结，只在对照时跑）** / **§4.2 Godot（主线，所有新开发）**。
+> 迁移期两边都要绿——基线红了说明"对照物坏了"，主线红了说明"新代码坏了"。
+
+### 4.1 · web 基线（冻结，只在对照时跑）
+
 全部 13 套 + 4 个探针，一次全跑约 6 分钟。**按改动范围选，不全跑也要跑对**。
 
 | 改动范围 | 必跑 | 项数 |
@@ -89,34 +95,37 @@
 
 ---
 
-> **Godot 工程（`godot/`）另有独立回归。** 改 `godot/` 下任何东西都跑：
->
-> ```bash
-> G="/e/godot/Godot_v4.4.1-stable_win64_console.exe"
-> "$G" --headless --path godot --script res://tests/feel_smoke.gd    # 手感
-> "$G" --headless --path godot --script res://tests/combat_smoke.gd  # 战斗组件 + 存档
-> ```
->
-> 要求：满跳 `203.9 ± 8 px`、水平 `270 ± 20 px/s`、松手后 `vx` 归零、轻点跳 `≤ 80 px`。
-> **改跳跃/重力数值必须重跑**，并把新标定值同步到 `godot/README.md` 的参数表。
-> 换了积分器就要重新标定——web 的 971.3 在 Godot 里只跳到 195.8px，补到 991 才对齐。
->
-> 改**预设 / 翻滚 / 水平加速模型**加跑这两套（一条测数据、一条测切换链路）：
->
-> ```bash
-> "$G" --headless --path godot --script res://tests/feel_compare.gd  # aos vs crayon 实测对照
-> "$G" --headless --path godot --script res://tests/preset_key.gd    # F1/F2 是否真能切
-> ```
->
-> `F2` 是《色彩旅人》的参考数值（满跳 85.2 px），**不是候选方案**。
-> 看到 `player.gd` 里有 480 / 1320 不要以为要换 —— 那是给人按键对比用的，
-> 理由见 `docs/ref/OTHERS_GDD_REVIEW.md` 第六节。
->
-> 改 shader / 渲染设置（过滤、拉伸）加跑 `godot/tests/boil_shot.gd` + `godot/tests/boil_check.py`：
-> 判据是**平坦区差异 < 1.0、边缘区差异 > 1.5**。只看"有没有变化"会把白噪声判成通过。
->
-> **改 `project.godot` 的 `default_texture_filter` 要特别小心**：nearest 适合像素画，
-> 蜡笔是连续色调必须 linear；换回去笔触会出锯齿，而且沸腾线的亚像素位移会被切碎。
+### 4.2 · Godot（主线）
+
+**改 `godot/` 下任何东西都跑。** 现有 3 套共 36 项判定，覆盖远少于基线（424 项），
+所以**手感类改动必须同时看实机截图**，不能只信无头测试：
+
+```bash
+G="/e/godot/Godot_v4.4.1-stable_win64_console.exe"
+"$G" --headless --path godot --script res://tests/feel_smoke.gd    # 手感
+"$G" --headless --path godot --script res://tests/combat_smoke.gd  # 战斗组件 + 存档
+```
+
+要求：满跳 `203.9 ± 8 px`、水平 `270 ± 20 px/s`、松手后 `vx` 归零、轻点跳 `≤ 80 px`。
+**改跳跃/重力数值必须重跑**，并把新标定值同步到 `godot/README.md` 的参数表。
+换了积分器就要重新标定——web 的 971.3 在 Godot 里只跳到 195.8px，补到 991 才对齐。
+
+改**预设 / 翻滚 / 水平加速模型**加跑这两套（一条测数据、一条测切换链路）：
+
+```bash
+"$G" --headless --path godot --script res://tests/feel_compare.gd  # aos vs crayon 实测对照
+"$G" --headless --path godot --script res://tests/preset_key.gd    # F1/F2 是否真能切
+```
+
+`F2` 是《色彩旅人》的参考数值（满跳 85.2 px），**不是候选方案**。
+看到 `player.gd` 里有 480 / 1320 不要以为要换 —— 那是给人按键对比用的，
+理由见 `docs/ref/OTHERS_GDD_REVIEW.md` 第六节。
+
+改 shader / 渲染设置（过滤、拉伸）加跑 `godot/tests/boil_shot.gd` + `godot/tests/boil_check.py`：
+判据是**平坦区差异 < 1.0、边缘区差异 > 1.5**。只看"有没有变化"会把白噪声判成通过。
+
+**改 `project.godot` 的 `default_texture_filter` 要特别小心**：nearest 适合像素画，
+蜡笔是连续色调必须 linear；换回去笔触会出锯齿，而且沸腾线的亚像素位移会被切碎。
 
 ## 5. 文档同步矩阵：改什么，必须同步哪份
 
