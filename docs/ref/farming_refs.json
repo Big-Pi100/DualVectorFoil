@@ -1,0 +1,309 @@
+{
+  "meta": {
+    "built": "2026-11-26",
+    "why": "给「经营与种植」找参考。选样判据：必须有动作/战斗层，且经营不是纯卖货。纯种田游戏只作时间预算基准，不作结构参考。",
+    "confidence_rule": "标 verified=true 的是官方 wiki / 战略 wiki 明确写出的公式或数值；标 false 的是玩家实测或攻略转述，需二次确认。冲突一律留双源，不擅自择一。",
+    "sources_note": "全部为外部资料，本项目无法实测。凡引用即标来源，不写「据说」。"
+  },
+  "games": [
+    {
+      "id": "sakuna",
+      "name_cn": "天穗之咲稻姬",
+      "name_en": "Sakuna: Of Rice and Ruin",
+      "year": 2020,
+      "genre": "侧视动作 + 水稻种植",
+      "why_included": "唯一一款「种田产物一一映射到战斗属性、且品质由操作决定」的侧视动作游戏。与本项目的结构最接近。",
+      "time_axis": {
+        "model": "游戏内一天 = 一季，睡觉推进",
+        "real_time_growth": false,
+        "note": "作物不按现实时间生长，按游戏日推进。玩家必须每天回村做农活。"
+      },
+      "rice_to_stat": {
+        "map": {
+          "Yield": "HP",
+          "Taste": "Strength",
+          "Hardness": "Vitality",
+          "Aroma": "Magic",
+          "Aesthetic": "Luck",
+          "Stickiness": "Gusto"
+        },
+        "formulas_strategywiki": {
+          "HP": "(Yield - 150) / 11 + 100",
+          "Strength": "Taste / 10",
+          "Vitality": "Hardness / 10",
+          "Magic": "Aroma / 10",
+          "Luck": "Aesthetic / 10",
+          "Gusto": "Stickiness / 100 + 100"
+        },
+        "formulas_fandom": {
+          "HP": "(Yield - 150) / 11 + 10",
+          "Strength": "Taste / 10",
+          "Vitality": "Hardness / 10",
+          "Magic": "Aroma / 10",
+          "Luck": "Aesthetic / 10",
+          "Gusto": "Stickiness / 100 + 10"
+        },
+        "conflict_ruling": {
+          "issue": "两处来源的 HP 与 Gusto 常数项相差 90（+100 vs +10），其余四项完全一致。",
+          "ruling": "采用 strategywiki 的 +100 版本。",
+          "evidence": "起始属性 HP=100、Gusto=100（两源一致）。若常数项为 +10，则 Yield 必须约 1140 才能得到起始 100 点 HP，与起始值矛盾。",
+          "extra": "同一页面上 HP 与 Gusto 两个公式同向少 90，属系统性笔误（复制时丢一位），不是两个独立错误，因此不足以推翻起始值这条硬证据。"
+        },
+        "settlement_timing": "只在收获完成后结算。稻米生长期间玩家属性不变，即使稻米等级已超过玩家等级。",
+        "verified": true,
+        "sources": [
+          "https://strategywiki.com/wiki/Sakuna:_Of_Rice_and_Ruin/Status",
+          "https://sakuna-of-rice-and-ruin.fandom.com/wiki/Stats"
+        ]
+      },
+      "starting_stats": {
+        "HP": 100,
+        "SP": 50,
+        "Strength": 15,
+        "Vitality": 15,
+        "Gusto": 100,
+        "Luck": 15,
+        "Magic": 15,
+        "verified": true
+      },
+      "quality_drivers": {
+        "note": "品质不是随机的，是一串可观测状态 + 可操作调整的结果。这是「种田有深度」的全部来源。",
+        "items": [
+          "水温：浅水随气温变化，深水/活水保温。极热极寒伤稻 —— 水位要按天气调",
+          "分蘖期：第三分蘖期必须排水晒田，否则无效分蘖过多反而变弱",
+          "施肥时机：插秧前施肥（早期施肥）提升品质；夜里稻子不长，养分变化小",
+          "肥料配方：氮/叶肥/穗肥按阶段给，过量产生「徒长/细长」病",
+          "生物防治：蜘蛛/蜗牛/青蛙吃虫；鸭子吃草和虫，但稻子长大后改吃稻",
+          "盐：可防病，过量造成盐害",
+          "天气：连续晴或连续雨都伤稻，可祈祷改天气"
+        ],
+        "operation_budget": "每天农活约 10–20 分钟（玩家社群普遍口径，未实测）",
+        "operation_budget_verified": false
+      },
+      "lessons": [
+        "六项品质对六项属性，一一对应，玩家看一眼收获面板就知道「我这次种得好在哪」",
+        "品质由操作决定、由收获结算 —— 延迟结算让「这一季白种了」的痛感和成就感同时成立",
+        "种田与战斗共用一条时间轴（一天一季），所以两者是竞争关系，不是并行关系"
+      ]
+    },
+    {
+      "id": "atomicrops",
+      "name_cn": "原子庄稼",
+      "name_en": "Atomicrops",
+      "year": 2020,
+      "genre": "双摇杆射击 + 农场经营 + roguelite",
+      "why_included": "唯一一款把「种出来的东西直接当战争资源」做成核心循环的游戏，与本项目「弹药只能种」的支点同构。",
+      "loop": {
+        "day": "种田 + 外出探索找种子/武器/道具",
+        "night": "变异害虫与强盗入侵农场，射击防守",
+        "cycle": "三天一季 → 季末 BOSS → 下一季更难",
+        "advance": "游戏内昼夜自动推进，不按现实时间"
+      },
+      "coupling": [
+        "作物 = 钱 = 枪与能力升级（农→战）",
+        "杀敌 → 尸体变肥料 → 提升作物品质（战→农）",
+        "夜间敌人会直接破坏田地（战→农，负向）",
+        "部分升级用「收获作物」来延长白天时长（农→时间→战）"
+      ],
+      "quality_lever": "肥料（由敌人尸体转化）提升作物品质",
+      "critique": {
+        "metacritic_switch": 67,
+        "verdict": "Mixed or Average",
+        "player_complaint": "时间管理压力巨大，后期手忙脚乱；重复感偏强",
+        "verified": true,
+        "source": "https://benmx.com/%e5%8e%9f%e5%ad%90%e5%ba%84%e7%a8%bc%ef%bc%88%e4%b8%ad%e6%96%87%ef%bc%89.html"
+      },
+      "lessons": [
+        "「农作物 = 战争资源」这条路走得通，但它把种田和战斗压进同一个屏幕，代价是操作过载",
+        "把敌人的尸体变成肥料，是「战→农」最短的一条回路，不需要额外系统"
+      ],
+      "antipattern": "同屏种田 + 战斗。玩家要么在打枪，要么在种地，两者同时存在时只能顾一头，最终两头都不爽。"
+    },
+    {
+      "id": "moonlighter",
+      "name_cn": "夜勤人",
+      "name_en": "Moonlighter",
+      "year": 2018,
+      "genre": "动作 RPG + 店铺经营 + roguelite",
+      "why_included": "最经典的「白天经营 / 晚上战斗」双循环，用来检验「经营环节到底能撑多久」。",
+      "loop": {
+        "day": "开店卖货：定价、顾客情绪、防小偷、店铺升级",
+        "night": "地牢探索：随机房间、Boss、背包有限要取舍带什么",
+        "advance": "睡觉或进出地牢即换天 —— 时间由玩家主动触发，不按现实时间"
+      },
+      "coupling": [
+        "地牢掉落 → 上架卖钱（战→农，单向）",
+        "卖货赚钱 → 打造装备 / 升级店铺 → 更强战斗（农→战，单向）"
+      ],
+      "critique": {
+        "steam_positive_rate": "81.58%（22,674 篇）",
+        "player_complaint": "经营与动作两个系统都只做到「尚可」，重复感重；有玩家因经营繁琐给差评",
+        "verified": true,
+        "source": "https://steam-free-games-tw.com/zh-tw/game/moonlighter-606150"
+      },
+      "lessons": [
+        "「卖货」作为经营核心，深度不足以支撑长期回访 —— 定价是个一次性谜题，解开就没味了",
+        "背包有限迫使玩家做取舍，这是低成本高收益的设计（不需要新系统）"
+      ],
+      "antipattern": "经营的唯一出口是「换钱」。一旦钱不再是瓶颈，经营环节就变成纯流程。"
+    },
+    {
+      "id": "cult_of_the_lamb",
+      "name_cn": "咩咩启示录",
+      "name_en": "Cult of the Lamb",
+      "year": 2022,
+      "genre": "roguelite + 教团经营",
+      "why_included": "把「经营基地」与「出门战斗」的空间分离做得最干净，且明确设计了「离开的代价」。",
+      "loop": {
+        "base": "教徒：食物、信仰、卫生、工作分配、建造、教义",
+        "crusade": "随机地图战斗：资源、金币、战斗升级",
+        "advance": "游戏内日推进"
+      },
+      "coupling": [
+        "十字军带回材料 → 建基地建筑 → 基地产出加成 → 更强十字军",
+        "教徒可被指派去采集/建造/做饭 → 间接支撑战斗",
+        "献祭教徒可增强羔羊本身（经营实体直接转战力）"
+      ],
+      "key_mechanic": {
+        "name": "离开的机会成本",
+        "detail": "玩家离开基地去十字军时，教徒仍在消耗食物、可能生病、信仰会掉。所以每次出门前要先做一遍稳定检查，出门要带着明确目的回来。",
+        "verified": true,
+        "sources": [
+          "https://vgsources.com/cult-of-the-lamb-beginner-guide-build-a-thriving-cult-and-survive-crusades",
+          "https://macmyths.com/cult-of-the-lamb-beginner-guide-build-a-thriving-cult-and-survive-every-crusade"
+        ]
+      },
+      "lessons": [
+        "两半共用一套资源，且「离开」本身有代价 —— 这是双循环不散架的关键",
+        "基地是「巡检式」微操（每天查食物/病/信仰/建造），压力大但操作量可控，因为检查项固定为四条"
+      ],
+      "antipattern": "把基地做成需要持续盯梢的模拟经营。玩家一旦觉得「不盯着就出事」，就会放弃出门战斗。"
+    },
+    {
+      "id": "stardew",
+      "name_cn": "星露谷物语",
+      "name_en": "Stardew Valley",
+      "year": 2016,
+      "genre": "纯农场模拟（无战斗层）",
+      "why_included": "只作「时间预算」基准，不作结构参考。它是纯种田品类里时间压迫感被讨论最多的样本。",
+      "time_budget": {
+        "one_game_hour_seconds": 42.85,
+        "full_day": "6:00–2:00 = 20 游戏小时 = 约 14 分钟现实时间",
+        "skull_cavern_day": "约 18 分钟（洞内每 10 分钟 = 9 秒）",
+        "derivation": "14 分钟 = 840 秒；840 / 20 = 42 秒/游戏小时。",
+        "verified": true,
+        "sources": [
+          "https://forums.stardewvalley.net/threads/how-many-in-game-hours-does-a-full-farm-day-actually-take-in-real-life.43583/",
+          "https://www.metrodailyreporter.com/faq/how-long-is-1-hour-in-sdv"
+        ]
+      },
+      "critique": {
+        "player_complaint": "大量玩家反馈「时间过得太快、有压迫感」，社区里有玩家明确说因为这个退游；核心设计者视角则认为时间限制正是「做有意义决策」的来源。",
+        "verified": true,
+        "source": "https://steamcommunity.com/app/413150/discussions/0/4035853814700708013"
+      },
+      "lessons": [
+        "14 分钟/天已经是 cozy 品类被投诉「太赶」的强度 —— 任何超过这个量级的经营操作都会挤出战斗",
+        "时间作为稀缺资源确实能制造决策，但代价是玩家不敢「浪费」在探索和审美上"
+      ]
+    },
+    {
+      "id": "rune_factory",
+      "name_cn": "符文工房",
+      "name_en": "Rune Factory",
+      "year": 2006,
+      "genre": "动作 RPG + 农场 + 社交（系列）",
+      "why_included": "「动作 + 种田」最老的范式，用来检验这条组合在长周期里靠什么不腻。",
+      "loop": {
+        "farm": "种田、照顾作物、收获",
+        "combat": "迷宫探索、打怪、Boss",
+        "social": "村民好感、结婚",
+        "advance": "游戏内日推进"
+      },
+      "coupling": [
+        "作物 → 料理 → 战斗中回 HP/RP + 属性 buff（农→战，直接）",
+        "作物 → 锻造/炼金材料（农→战，装备）",
+        "作物 → 送礼提升好感（农→社交）",
+        "迷宫掉落种子与素材（战→农）"
+      ],
+      "quality_system": {
+        "levels": "作物有等级（Lv1–10），同种作物等级越高属性越高",
+        "giant_variants": "存在巨大化变种（Noble Radish / Legendary Leek / Boss Bok Choy 等），属性显著高于普通版",
+        "example": {
+          "Leek": "HP +120，MAG ATK +6，售价 1600G",
+          "Legendary Leek": "HP +280，Cold Res +50%，售价 8000G",
+          "verified": true,
+          "source": "http://ranchstory.miraheze.org/wiki/Crops_(Rune_Factory_4)"
+        }
+      },
+      "planting": {
+        "one_action_tiles": 9,
+        "detail": "站在 3×3 中心播种，一次覆盖 9 格",
+        "verified": true,
+        "source": "https://therunefactory.fandom.com/wiki/Crops_(RF)"
+      },
+      "lessons": [
+        "作物必须有「非卖钱」的出口（料理 buff / 锻造材料），否则经营退化成刷钱",
+        "一次操作覆盖 3×3 = 9 格，是把手柄/触屏操作量压下来的标准做法",
+        "品质分级（普通/巨大/传说）比「数量堆叠」更容易让玩家感知成长"
+      ]
+    }
+  ],
+  "criteria": [
+    {
+      "id": "C1",
+      "name": "品质必须由操作产生，不能由时间产生",
+      "evidence": "Sakuna 的六项米质全部由水温/排水/施肥/生物防治决定；本项目现设计是「种下即定，只等时间」。",
+      "test": "同一作物、同样的时间，两种不同做法能否产出不同品质？答不出，就是「等待」不是「经营」。",
+      "apply": "引入基质（投料）作为品质杠杆，投料来自战斗掉落。"
+    },
+    {
+      "id": "C2",
+      "name": "经营操作时间必须远低于战斗时间，且两者不同屏",
+      "evidence": "Stardew 14 分钟/天被投诉太赶；Atomicrops 同屏种田+战斗被评为「手忙脚乱」。",
+      "test": "一次完整回访的操作时长 ÷ 一局战斗时长。本项目预算 5 分钟 ÷ 25 分钟 = 1:5。",
+      "apply": "回访 5 分钟硬指标不变；把种田做成「配置」而不是「耕作」，不新增逐格操作。"
+    },
+    {
+      "id": "C3",
+      "name": "两半共用一套资源，且离开有代价",
+      "evidence": "Cult of the Lamb 的教徒在玩家出门时继续消耗/生病/掉信仰。",
+      "test": "如果玩家只打图不经营，会不会在某处卡住？如果只经营不打图，会不会卡住？两边都要能卡。",
+      "apply": "基质只在战斗掉落 → 不打架种不出好东西；弹药只能种 → 不打田打不动。双向依赖。"
+    },
+    {
+      "id": "C4",
+      "name": "一次操作覆盖多格",
+      "evidence": "Rune Factory 3×3 九格一次播种。",
+      "test": "手机上一块 4–6 格的地，播种是否是 1–2 次点击？",
+      "apply": "播种 = 选作物 + 选基质，全地一次生效；收 = 一键全收。"
+    },
+    {
+      "id": "C5",
+      "name": "经营产物必须有「非卖钱」的出口",
+      "evidence": "Moonlighter 经营只剩卖钱，玩家评价「两个系统都一般、重复感重」；Rune Factory 作物 → 料理 buff / 锻造材料。",
+      "test": "把「卖钱」这一项抹掉，经营还剩几个出口？",
+      "apply": "弹（战斗）/ 强化（移动）/ 成长（属性）/ 兵营（防守）四个出口都不经过钱。"
+    }
+  ],
+  "antipatterns": [
+    {
+      "id": "A1",
+      "name": "同屏种田 + 战斗",
+      "source": "Atomicrops",
+      "why_bad": "注意力只能给一头，结果是种地时被打断、打枪时田荒了。"
+    },
+    {
+      "id": "A2",
+      "name": "经营唯一出口是钱",
+      "source": "Moonlighter",
+      "why_bad": "钱一旦不紧张，经营就变成无意义流程。"
+    },
+    {
+      "id": "A3",
+      "name": "按现实时间计的游戏日 + 强时间压迫",
+      "source": "Stardew",
+      "why_bad": "玩家会算 KPI，不敢探索。本项目一局 20–40 分钟，若再叠时间压迫，动作层直接被挤掉。"
+    }
+  ]
+}
