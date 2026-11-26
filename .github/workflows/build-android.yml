@@ -89,3 +89,5 @@ jobs:
             build/android/*.aab
           if-no-files-found: error
           retention-days: 14
+
+# touched: retrigger workflow registration
