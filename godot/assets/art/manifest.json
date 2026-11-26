@@ -244,5 +244,23 @@
     "source": "art/approved/Terrain/terrain_stone_pillar.png",
     "approved": "art/approved/Terrain/terrain_stone_pillar_200.png",
     "note": "Phase3 gameplay-size stone pillar (200x323) derived from G2/G4-approved 1024 source; used by Room03 windmill. Fixed 1024-original-in-scene proportion bug (2026-11-26)."
+  },
+  "ground_left": {
+    "category": "Terrain",
+    "source": "art/approved/Terrain/terrain_grass_top.png",
+    "approved": "art/approved/Terrain/ground_left.png",
+    "note": "derived: 底板左端 96x120，右缘与 ground_mid 左缘逐像素相等"
+  },
+  "ground_mid": {
+    "category": "Terrain",
+    "source": "art/approved/Terrain/terrain_grass_top.png",
+    "approved": "art/approved/Terrain/ground_mid.png",
+    "note": "derived: 底板中间 192x120 = M96 + mirror(M)96，自身首尾同边可无限重复"
+  },
+  "ground_right": {
+    "category": "Terrain",
+    "source": "art/approved/Terrain/terrain_grass_top.png",
+    "approved": "art/approved/Terrain/ground_right.png",
+    "note": "derived: 底板右端 96x120 = mirror(ground_left)，左缘与 mid 右缘逐像素相等"
   }
 }

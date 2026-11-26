@@ -632,7 +632,8 @@ E01–E04 与 G5 已全部通过（G1–G5 PASS，生产准入已开放），当
 | 道具 | `Items/item_star_sprite.png` | ✅ 直接可用 | 48×48，与 TILE=48 天然对齐 |
 | 特效 | `Effects/fx_*.png` | ✅ 直接可用 | 已按 F12 裁紧 bbox |
 | UI | `UI/ui_*.png` | ✅ 直接可用 | — |
-| 地形 | `Terrain/terrain_stone_block_200.png` 等 | 🔴 形态不匹配 | 是**整块摆件**（200×165 石头、200×323 石柱、61×52 长凳、200×103 草丛），不是可平铺瓦片。本项目是 TILE=48 tilemap，直接铺会露缝。**要用于 tilemap 必须先另做可平铺瓦片（走 §9.2 分隔线规则 + 洋红底）** |
+| 地形 · 摆件 | `Terrain/terrain_stone_block_200.png` 等 7 张 | ⛔ 本作不接入 | 带顶面的 2.5D 摆件（200×165 石头 / 200×323 石柱 / 61×52 长凳 / 200×103 草丛），会破坏横版平视。规则见 `ASSET_RULES §4` |
+| 地形 · 底板 | `Terrain/ground_left|mid|right.png` | ✅ 已接入 | 由 `terrain_grass_top` 裁切 + 镜像构造，96/384/96 × 144。拼接语法与判据见 `ASSET_RULES §2` |
 | 背景 | 无（来源项目背景为 `ColorRect`） | 🔴 缺 | 旧 `art/bg/bg_hall.png` 已下线（从未被绘制）。Godot 测试房暂用程序化渐变顶替，真背景仍待出图 |
 
 ### 12.4 主角形象变更（需知悉，可回滚）

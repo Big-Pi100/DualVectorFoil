@@ -138,10 +138,12 @@ godot/
 ├─ world/shaders/
 │  └─ boiling_line.gdshader   手绘沸腾线（整帧微位移）
 ├─ scenes/
-│  ├─ main.tscn       单屏测试房：渐变天 + 草板地面 + 两块石台 + 摆件 + HUD
+│  ├─ main.tscn       单屏测试房：渐变天 + 三段底板地面 + 两层平台 + HUD
+│  ├─ ground_strip.tscn  底板条（左端 + 中间×N + 右端），长度可配
 │  └─ player.tscn     CharacterBody2D + Sprite2D + 碰撞盒 28×100
 ├─ scripts/
 │  ├─ player.gd       玩家控制器（两套预设：aos / crayon，F1/F2 切）
+│  ├─ ground_strip.gd 底板拼接器：按「96×2 + 384×N」摆段，非法长度只警告不缩放
 │  └─ feel_hud.gd     左上角调试面板（英文，默认字体没有中文字形）
 ├─ tests/
 │  ├─ feel_smoke.gd   手感对账：跳高 / 水平速度 / 摩擦 / 轻点跳
@@ -169,6 +171,24 @@ offset = -(295 - 340/2) = -125     # 纹理像素，随 scale 一起缩
 
 所以 `player.tscn` 里是 `scale=(0.51,0.51)` / `offset=(0,-125)`。**别用帧框中心对齐**：
 帧框上下留白不对称（上 45 px、下 45 px 里主体只占 251），中心对齐会让脚陷进地面 22 px。
+
+## 地面：为什么是「三段拼」而不是一整块
+
+底板是整个工程里唯一会反复出现的图形（地面、平台、台阶、桥都是同一条横带）。
+`Terrain/ground_{left,mid,right}.png` 是**同一块手绘板切出来的三段**，
+右端 = 左端镜像，中段 = M + mirror(M)，于是三条接缝**逐像素相等**（不是"看着差不多"）：
+
+```
+宽 = cap 96 × 2 + mid 384 × N        合法长度只有 192 / 576 / 960
+```
+
+`ground_strip.gd` 只做一件事：按这个公式摆段，并且**拒绝缩放**（拉过的缝就不再相等）。
+长度不合法时 `push_warning` 并留空 —— 宁可露一截，也不要悄悄把规则废掉。
+`tests/asset_wiring.gd` 会核对每条的实测像素宽和段数。规则全文见
+[`../art/ASSET_RULES.md`](../art/ASSET_RULES.md)。
+
+立体摆件（石块 / 石柱 / 长凳 / 草丛）**一张都没进场景**：带顶面的 2.5D 物件在横版平视下
+会把透视带进来，而且不能铺。这是规则，不是还没做。
 
 ## 渲染设置：为什么是 linear 不是 nearest
 
@@ -213,8 +233,9 @@ python art/tools/sync_godot.py --prune   # 连「镜像里多出的文件」一�
 1. 相机跟随 + 房间边界限制（单屏 → 滚动）
 2. 攻击（`player_attack_00_sprite`）+ 受击（`player_hurt_00_sprite`）—— **图已有，只差状态机**
 3. 补 4 个缺帧：蹲 / 下落 / 后跃 / 施法。现在靠回退（见 `player.gd` ANIM 注释）
-4. 可平铺地形瓦片 —— `Terrain/` 全是立体摆件，铺 tilemap 会露缝（`ART_GUIDE §12.2.2`）
-5. 房间数据化（把 web 版 `room.g` 字符地图搬过来，用 TileMapLayer）
+4. 一张**不对称的可平铺中段**（384×144）—— 现在的中段是镜像构造，回文导致每 384px
+   一次对折，是已知代价（`ASSET_RULES §5`）
+5. 房间数据化（把 web 版 `room.g` 字符地图搬过来；底板条已可参数化，先不急着上 TileMapLayer）
 6. 敌人（3 张 sprite 直接可用）+ 存档 + UI
 
 移植顺序的理由：**先把手感钉死，再铺内容**。手感一旦在 Godot 里对不上，

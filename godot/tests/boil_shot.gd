@@ -20,15 +20,22 @@ var took_first := false
 func _initialize() -> void:
 	var scene: Node = load("res://scenes/main.tscn").instantiate()
 	root.add_child(scene)
-	# 挂在地面草板上，不是背景。背景 2026-11-26 换成了程序化渐变
+	await process_frame          # GroundStrip 在 _ready 里才生成子精灵，不等一帧拿到的是空
+	# 挂在底板上，不是背景。背景 2026-11-26 换成了程序化渐变
 	# （旧背景板从未被绘制，见 ART_INVENTORY P0-1），渐变没有笔触边缘，
 	# 位移 1 个 texel 在纯渐变上肉眼为 0，测不出"抖"。
-	# 草板是边缘最密、面积最大的一张手绘资产，才是这个 shader 的真实承载物。
-	var bg: Sprite2D = scene.get_node("GroundSlab")
+	# 底板是边缘最密、面积最大的一批手绘资产，才是这个 shader 的真实承载物。
+	# 底板现在是 GroundStrip（若干 Sprite2D 子节点），material 得挂到子节点上 ——
+	# Node2D 自己没有画布项，挂父节点等于没挂。
+	var strip: Node2D = scene.get_node("Ground")
 	var mat := ShaderMaterial.new()
 	mat.shader = load("res://world/shaders/boiling_line.gdshader")
-	bg.material = mat
-	print("[boil] 地面草板已挂 boiling_line.gdshader")
+	var n := 0
+	for c in strip.get_children():
+		if c is Sprite2D:
+			c.material = mat
+			n += 1
+	print("[boil] 底板 %d 段已挂 boiling_line.gdshader" % n)
 
 
 func _process(_delta: float) -> bool:

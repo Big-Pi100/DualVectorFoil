@@ -13,8 +13,10 @@ extends SceneTree
 ##   2. player.gd 的 ANIM 表里每个状态都能加载，且是 340×340 的**单帧**标准化图
 ##   3. 场景树里每个 Sprite2D 的贴图要么来自 `assets/art/`，要么是程序化生成
 ##      （目前只有背景的 GradientTexture2D 属于后者，白名单显式列出）
-##   4. 镜像 `assets/art/` 与真源 `art/approved/` 的 SYNC_STAMP 对得上
-##   5. 打印资产接入覆盖率 —— 41 张里真正被游戏用到的有几张
+##   4. **底板条摆得对不对**：实测像素宽 == 声明长度，中间段数 == 公式算出的 N
+##      —— 图对了但摆错位置（差一格、缩放 1.2 倍）在这里红
+##   5. 镜像 `assets/art/` 与真源 `art/approved/` 的 SYNC_STAMP 对得上
+##   6. 打印资产接入覆盖率 —— 库里真正被游戏用到的有几张
 ##
 ## 加新资产后这里会红，是好事：那说明「入库」和「接进游戏」被分开了，
 ## 而 ART_GUIDE 的资产三态里第三态（游戏内验收）本来就不该自动成立。
@@ -47,6 +49,7 @@ func _initialize() -> void:
 	_check_no_legacy_reference()
 	_check_player_anim()
 	var used := _check_scene_textures(scene)
+	_check_strips(scene)
 	_check_stamp(used)
 
 	print("\n[assets] 结果：%s" % ("PASS" if fail == 0 else "FAIL %d 项" % fail))
@@ -131,9 +134,37 @@ func _check_scene_textures(scene: Node) -> Dictionary:
 	return used
 
 
-# ── 4. 镜像新鲜度 ────────────────────────────────────────────
+# ── 4. 底板条摆位 ────────────────────────────────────────────
+func _check_strips(scene: Node) -> void:
+	print("\n[4] 底板条（左端 + 中间×N + 右端）")
+	for node_name in ["Ground", "PlatA", "PlatB"]:
+		var strip: Node2D = scene.get_node_or_null(node_name)
+		if strip == null:
+			_bad("场景里没有 %s" % node_name)
+			continue
+		var cap_w: int = strip.left_tex.get_width()
+		var mid_w: int = strip.mid_tex.get_width()
+		var span := int(round(strip.length_px)) - cap_w * 2
+		var want_n := int(round(float(span) / float(mid_w)))
+		if strip.sections != want_n:
+			_bad("%s 中间段 %d，公式算 %d（长度 %.0f / 端点 %d / 中段 %d）"
+				% [node_name, strip.sections, want_n, strip.length_px, cap_w, mid_w])
+			continue
+		if want_n * mid_w != span:
+			_bad("%s 长度 %.0f 不是 %d + %d×N —— 规则外的长度，别在场景里硬塞"
+				% [node_name, strip.length_px, cap_w * 2, mid_w])
+			continue
+		var w: float = strip.measured_width()
+		if absf(w - strip.length_px) > 0.5:
+			_bad("%s 实测宽 %.1f ≠ 声明 %.0f（差 %.1f，摆位漏了一段或缩放过了）"
+				% [node_name, w, strip.length_px, strip.length_px - w])
+			continue
+		_ok("%-6s 长 %4.0f = %d + %d×%d，实测 %.0f" % [node_name, strip.length_px, cap_w * 2, mid_w, want_n, w])
+
+
+# ── 5. 镜像新鲜度 ────────────────────────────────────────────
 func _check_stamp(used: Dictionary) -> void:
-	print("\n[4] 镜像 SYNC_STAMP")
+	print("\n[5] 镜像 SYNC_STAMP")
 	if not FileAccess.file_exists(STAMP):
 		_bad("缺 SYNC_STAMP.txt —— 跑 python art/tools/sync_godot.py")
 		return

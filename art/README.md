@@ -1,6 +1,7 @@
 # art/ · 美术总索引
 
 > **唯一规范**：[`ART_GUIDE.md`](ART_GUIDE.md)（《二向箔》美术风格规范 v1.3，2026-11-26 门禁 G1–G5 全过）
+> **唯一使用规则**：[`ASSET_RULES.md`](ASSET_RULES.md)（资产按 role 分类 + 拼接语法 + 复用手法 + 可执行判据）
 > **唯一视觉基准**：[`reference/character_style_sheet.jpg`](reference/character_style_sheet.jpg)
 > **唯一提示词前缀**：[`prompts/Master_v1.3.md`](prompts/Master_v1.3.md)
 > **唯一抠图工具**：[`tools/extract_magenta.py`](tools/extract_magenta.py)（P1–P11 全实现）
@@ -14,6 +15,7 @@
 | 路径 | 状态 | 是什么 |
 | --- | --- | --- |
 | `ART_GUIDE.md` | **ACTIVE** | 美术规范唯一真源。风格定义 / 门禁流水线 / 洋红与分隔线规则 / 抠图 P1–P11 / 本项目适配（§12） |
+| `ASSET_RULES.md` | **ACTIVE** | **使用/复用规则**：role 分类、底板三切片语法、无缝判据、四种复用手法、已知限制。风格之外的第二道门 |
 | `reference/character_style_sheet.jpg` | **ACTIVE** | 视觉母版（主角三视图 + 动作 + 三敌 + 场景道具） |
 | `reference/derived/` | **ACTIVE** | 母版派生裁剪，生成时按类引用，**每次只引相关一张**；多格图禁用于单帧动作（§1.1.1） |
 | `prompts/Master_v1.3.md` | **ACTIVE** | 固定提示词前缀，全文置于资产描述之前，不得逐图改写 |
@@ -21,6 +23,9 @@
 | `reports/Gate_Review.md` | **ACTIVE** | G1–G5 门禁评审记录（判定依据，改规范前先看） |
 | `reports/Experiment_Log.md` | **ACTIVE** | E01–E04 实验记录（每张样本的 prompt / 参数 / 评分） |
 | `tools/extract_magenta.py` | **ACTIVE** | 洋红底抠图，含 P9 实测底色 / P1 连通域 / P4 despill / P8 水印 / P10 采样避水印 / P11 最近邻扩散 |
+| `tools/slice_ground.py` | **ACTIVE** | 把 `terrain_grass_top` 切成「左端+中间+右端」三段，镜像构造保证三条接缝逐像素相等；自带接缝/回文/收口/无洞断言 |
+| `tools/asset_rules_check.py` | **ACTIVE** | 按 role 复检全库：manifest 覆盖、role 合法、tile 三段全套判据、摆件不进关卡 |
+| `tools/sync_godot.py` | **ACTIVE** | `approved/` → `godot/assets/art/` 单向镜像（sha256 + SYNC_STAMP） |
 | `tools/asset_audit.py` | ACTIVE | 资产体检（尺寸 / 真 alpha / 死引用 / 有无消费点） |
 | `tools/build_sheet_magenta.py` | LEGACY | 旧精灵表构建（洋红底 + 纯绿分割线 → 160 网格）。新资产走 `approved/` 标准化帧，不再需要 |
 | `tools/tile_from_gen.py` · `pick_tiles.py` | LEGACY | 旧瓦片产线（生图散石 → 连通域分行 → 54×48） |
@@ -44,12 +49,14 @@
 | `Enemies/` | 6 | 原图 1024² / 帧 128² | ✅ |
 | `Items/` | 4 | 原图 1024² / `item_star_sprite` 48² | ✅ |
 | `Effects/` | 4 | 220–558²（已按 F12 裁紧） | ✅ |
-| `Terrain/` | 7 | 摆件 200×165 / 200×323 / 200×103 / 61×52 | 🔴 不是瓦片，见 §3 |
+| `Terrain/` | 10 | 摆件 7（200×165 / 200×323 / 200×103 / 61×52）+ **底板三段 3**（96/384/96 × 144） | 三段 ✅；摆件 ⛔ 本作不接入，见 §3 |
 | `UI/` | 3 | 1024² | ✅ |
 
-**总数 41 = 29 张正式资产 + 12 张精灵派生图。**
+**总数 44 = 29 张正式资产 + 12 张精灵派生图 + 3 张底板切片。**
 29 与 `ART_GUIDE` 里写的「29 张入库」是同一个数（G5 当次口径）：9 角色 + 3 敌 + 3 道具 + 4 特效 + 7 地形 + 3 UI。
-多出的 12 张是 `_sprite` 后缀的标准化帧（8 角色 + 3 敌 + 1 星），由原图派生、脚底锚点统一，供运行时直接用。
+12 张是 `_sprite` 后缀的标准化帧（8 角色 + 3 敌 + 1 星），由原图派生、脚底锚点统一。
+3 张底板切片（`ground_left/mid/right`）由 `terrain_grass_top` 裁切 + 镜像构造而来，
+**不走生成门禁**（源图已过 G1–G5），走 `ASSET_RULES.md` 的拼接断言 —— 两套判据并联。
 
 完整来源追溯见 `approved/manifest.json`（每个 key 记录 source → approved 路径 + 门禁备注）。
 
@@ -64,13 +71,15 @@
 `godot/assets/art/`（`approved/` 的单向镜像）。旧 31 帧仍完整留在 `art/hero/` 作历史证据，
 回滚时从那里取。守卫：`godot/tests/asset_wiring.gd`（旧路径清零 + ANIM 全可加载）。
 
-**② 地形不是瓦片。** `Terrain/` 是整块摆件（一块石头 = 一张图），本项目是 `TILE=48` 的 tilemap。
-直接铺会露缝、断边。要铺 tilemap **必须另做可平铺瓦片**，不能拿摆件凑。
+**② 地形拆成两半：能拼的只有底板三段，摆件一个都不进关卡。**
 
-Godot 测试房现在这么处理：地面 = **一块** `terrain_grass_top` 横向拉到 960 宽
-（非等比 1.135×，13% 拉伸看不出来），平台 = `terrain_stone_block_200` 单块摆件，
-其余是 `pillar / bench / grass_decor` 摆件。**没有一个 tilemap 层** —— 不是偷懒，
-是因为还没有可平铺瓦片，硬铺出来的缝比空着更难看。
+- **底板**：`ground_left` / `ground_mid` / `ground_right`（96 / 384 / 96 × 144），
+  按 `宽 = 96×2 + 384×N` 拼，三条接缝逐像素相等。地面和平台都用这一套。
+- **摆件**（`terrain_stone_block` / `pillar` / `bench` / `grass_decor`）：带顶面的 2.5D 物件，
+  **本作不接入** —— 横版平视下会把透视带进来，而且不能铺。详见 `ASSET_RULES §4`。
+
+摆件为什么不能凑合着铺：一块石头一张图，横向重复会出现同一个收口反复；
+且顶面朝观众，角色站上去像站在斜面上。要铺就必须另做可平铺件，没有捷径。
 
 ---
 
