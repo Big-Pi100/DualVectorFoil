@@ -10,6 +10,8 @@
 
 > **技术形态（2026-11-26 白哥定版）：Godot 是唯一开发主线。**
 > - `godot/` → **唯一主线**。所有新功能只写这里。用 Godot 打开 **`godot/` 子目录**，不是仓库根
+> - **引擎锁定 Godot 4.7.2-stable（build `ed1daf0bf`）**，本机 `E:/godot/Godot_v4.7.2-stable_win64.exe`。
+>   跑错版本会被 `godot/tests/env_check.gd` 拦住；定版理由见 `docs/gdd/07 §9`
 > - `src/` + `build.py` → **冻结的 web 基线**。不再加功能，只作为「完整可玩的行为参照」——
 >   手感标定值、424 项断言的期望值都来自它
 >

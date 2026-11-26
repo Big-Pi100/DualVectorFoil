@@ -97,14 +97,17 @@
 
 ### 4.2 · Godot（主线）
 
-**改 `godot/` 下任何东西都跑。** 现有 3 套共 36 项判定，覆盖远少于基线（424 项），
+**改 `godot/` 下任何东西都跑。** 现有 4 套共 44 项判定，覆盖远少于基线（424 项），
 所以**手感类改动必须同时看实机截图**，不能只信无头测试：
 
 ```bash
-G="/e/godot/Godot_v4.4.1-stable_win64_console.exe"
+G="/e/godot/Godot_v4.7.2-stable_win64_console.exe"     # 版本定版，别换别的
+"$G" --headless --path godot --script res://tests/env_check.gd     # 引擎版本/物理步/过滤
 "$G" --headless --path godot --script res://tests/feel_smoke.gd    # 手感
 "$G" --headless --path godot --script res://tests/combat_smoke.gd  # 战斗组件 + 存档
 ```
+
+`env_check` 红了先修环境，别继续测——满跳数值本身依赖 120Hz 物理步与 4.7 的积分行为。
 
 要求：满跳 `203.9 ± 8 px`、水平 `270 ± 20 px/s`、松手后 `vx` 归零、轻点跳 `≤ 80 px`。
 **改跳跃/重力数值必须重跑**，并把新标定值同步到 `godot/README.md` 的参数表。

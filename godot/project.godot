@@ -1,6 +1,10 @@
 ; 二向箔 · Godot 工程
+;
+; 引擎定版：Godot 4.7.2-stable（build ed1daf0bf，GL Compatibility）。2026-11-26 从 4.4.1 升级。
+; 别用别的版本打开——手感数字会静默失准。守卫：tests/env_check.gd；定版理由：docs/gdd/07 §9。
+;
 ; 从 web 原型（src/game.js）移植。手感参数逐字照抄 aos 预设，改数前先看
-; 项目根目录 STYLE_LOCK.md / DEV_FLOW.md。
+; FEEL_TABLE.md（实测值）/ DEV_FLOW.md（流程）/ docs/gdd/（玩法）。
 
 config_version=5
 
@@ -9,7 +13,7 @@ config_version=5
 config/name="二向箔"
 config/description="类银河恶魔城横版动作。照片被拍扁之后，你得走进去把人弄出来。"
 run/main_scene="res://scenes/main.tscn"
-config/features=PackedStringArray("4.4", "GL Compatibility")
+config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
 
 [autoload]

@@ -634,7 +634,7 @@ node dc_feel_check.js     # 28 项：取消窗口、连打 CD
 **Godot（`godot/`）**
 
 ```bash
-G="E:/godot/Godot_v4.4.1-stable_win64_console.exe"
+G="E:/godot/Godot_v4.7.2-stable_win64_console.exe"   # 版本定版见 docs/gdd/07 §9
 "$G" --headless --path godot --script res://tests/feel_smoke.gd      # 手感标定
 "$G" --headless --path godot --script res://tests/feel_compare.gd    # aos vs crayon 对照
 "$G" --headless --path godot --script res://tests/preset_key.gd      # F1/F2 切换链路

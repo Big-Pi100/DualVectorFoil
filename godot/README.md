@@ -1,9 +1,14 @@
-# Godot 4.4 工程 · 二向箔
+# Godot 4.7.2 工程 · 二向箔
 
 **唯一开发主线**（2026-11-26 白哥定）。所有新功能只写这里。
 `../src/`（web 原型）已**冻结为行为基线**，不再演进——它的 424 项断言与手感标定值是这边的对照物。
 
-> 为什么转过来、迁移顺序、代价（测试覆盖 424 → 36）：`../docs/gdd/07 §10`。
+> **引擎版本已定版：Godot 4.7.2-stable（build `ed1daf0bf`）**，2026-11-26 从 4.4.1 升级。
+> 与美术规范的验证环境（`art/ART_GUIDE.md` 头部）对齐，不再维护"规范 4.7 / 工程 4.4"的双口径。
+> 定版理由、升级实测、拒绝其他版本的理由：`../docs/gdd/07 §9`。跑错版本会被
+> `tests/env_check.gd` 拦住——**别用别的版本打开这个工程**，手感数字会静默失准。
+
+> 为什么转过来、迁移顺序、代价（测试覆盖 424 → 44）：`../docs/gdd/07 §10`。
 
 ## 怎么打开
 
@@ -13,34 +18,37 @@
 E:\IdentityCard\game-soulkeep\godot\
 ```
 
-本机编辑器：`E:\godot\Godot_v4.4.1-stable_win64.exe`
+本机编辑器：`E:\godot\Godot_v4.7.2-stable_win64.exe`
 
 > 仓库根目录没有 `project.godot`，Godot 认不出来——那不是配置问题，是两套工程。
 
 ## 跑
 
 ```bash
+# 0. 先验引擎对不对（2 秒，跑错版本后面全是白测）
+"E:/godot/Godot_v4.7.2-stable_win64_console.exe" --headless --path godot --script res://tests/env_check.gd
+
 # 直接玩
-"E:/godot/Godot_v4.4.1-stable_win64.exe" --path godot
+"E:/godot/Godot_v4.7.2-stable_win64.exe" --path godot
 
 # 手感验证（无头，量跳高/速度，跟 web 基线对账）
-"E:/godot/Godot_v4.4.1-stable_win64_console.exe" --headless --path godot --script res://tests/feel_smoke.gd
+"E:/godot/Godot_v4.7.2-stable_win64_console.exe" --headless --path godot --script res://tests/feel_smoke.gd
 
 # 两套预设实测对照（满跳 / 轻点跳 / 加速帧数 / 翻滚位移）
-"E:/godot/Godot_v4.4.1-stable_win64_console.exe" --headless --path godot --script res://tests/feel_compare.gd
+"E:/godot/Godot_v4.7.2-stable_win64_console.exe" --headless --path godot --script res://tests/feel_compare.gd
 
 # F1 / F2 切换链路是否真的通
-"E:/godot/Godot_v4.4.1-stable_win64_console.exe" --headless --path godot --script res://tests/preset_key.gd
+"E:/godot/Godot_v4.7.2-stable_win64_console.exe" --headless --path godot --script res://tests/preset_key.gd
 
 # 战斗组件 + 存档（无头）
-"E:/godot/Godot_v4.4.1-stable_win64_console.exe" --headless --path godot --script res://tests/combat_smoke.gd
+"E:/godot/Godot_v4.7.2-stable_win64_console.exe" --headless --path godot --script res://tests/combat_smoke.gd
 
 # 沸腾线 shader：先出两帧，再比对（比对脚本是 Python）
-"E:/godot/Godot_v4.4.1-stable_win64_console.exe" --path godot --script res://tests/boil_shot.gd
+"E:/godot/Godot_v4.7.2-stable_win64_console.exe" --path godot --script res://tests/boil_shot.gd
 python godot/tests/boil_check.py
 
 # 渲染快照（必须带窗口，headless 是 dummy 渲染器出不了图）
-"E:/godot/Godot_v4.4.1-stable_win64_console.exe" --path godot --script res://tests/shot.gd
+"E:/godot/Godot_v4.7.2-stable_win64_console.exe" --path godot --script res://tests/shot.gd
 ```
 
 ## 当前完成度
@@ -48,6 +56,7 @@ python godot/tests/boil_check.py
 | 模块 | 状态 |
 |---|---|
 | 工程骨架 / 分辨率 960×540 / 120Hz 物理 | ✅ |
+| **引擎版本定版 4.7.2 + 守卫测试** | ✅ `tests/env_check.gd` 8 项断言，跑错版本直接红 |
 | 玩家：跑 / 摩擦 / 跳 / 二段跳 / 顶点滞空 / 松手切断 | ✅ 手感已标定 |
 | 两套手感预设：F1 aos（定版）/ F2 crayon（参考） | ✅ 可热切换，HUD 显示实测峰值 |
 | 翻滚 / 后跃（aos=后跃、crayon=前滚） | ✅ 可玩，无敌帧未接 Hurtbox |
