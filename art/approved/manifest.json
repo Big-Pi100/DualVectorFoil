@@ -262,5 +262,23 @@
     "source": "art/approved/Terrain/terrain_grass_top.png",
     "approved": "art/approved/Terrain/ground_right.png",
     "note": "derived: 底板右端 96x120 = mirror(ground_left)，左缘与 mid 右缘逐像素相等"
+  },
+  "enemy_slime_ally_00_sprite": {
+    "category": "Enemies",
+    "source": "art/tools/duo_state.py",
+    "approved": "art/approved/Enemies/enemy_slime_ally_00_sprite.png",
+    "note": "原住民态：idle 版换色系（生成物，勿手改）；alpha 逐像素同 dark 版"
+  },
+  "enemy_bat_ally_00_sprite": {
+    "category": "Enemies",
+    "source": "art/tools/duo_state.py",
+    "approved": "art/approved/Enemies/enemy_bat_ally_00_sprite.png",
+    "note": "原住民态：idle 版换色系（生成物，勿手改）；alpha 逐像素同 dark 版"
+  },
+  "enemy_spike_ally_00_sprite": {
+    "category": "Enemies",
+    "source": "art/tools/duo_state.py",
+    "approved": "art/approved/Enemies/enemy_spike_ally_00_sprite.png",
+    "note": "原住民态：idle 版换色系（生成物，勿手改）；alpha 逐像素同 dark 版"
   }
 }

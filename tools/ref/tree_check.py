@@ -264,7 +264,7 @@ def check_parasite(r05: str, r03: str, r02: str) -> list[str]:
     if seg02:
         # 必须查**表头行**：整段含"来源"不够 —— 表下面那句解释里也有"来源"两个字，
         # 删掉列名照样能糊过去（这条是反向验证抓出来的，别改回去）
-        hdr = [ln for ln in seg02.splitlines() if ln.strip().startswith("| 名 |")]
+        hdr = [ln for ln in seg02.splitlines() if ln.strip().startswith("| 名")]
         if not hdr or "来源" not in hdr[0]:
             errs.append("02 §5.3: 敌人表头没有「来源」列 —— 两类怪只活在叙事文档里")
         else:
@@ -285,6 +285,99 @@ def check_parasite(r05: str, r03: str, r02: str) -> list[str]:
     return errs
 
 
+def table_cells(seg: str, header_kw: str) -> tuple[list[str], list[list[str]]]:
+    """取一张 markdown 表：返回 (表头单元格, 数据行单元格)。
+
+    为什么不用正则扫全文：本项目已经栽过三次「拿关键词比整段」——
+    表下面那句解释文字里也有同样的词，于是删掉列名照样 PASS。
+    这里**只从表头行往下取**，越过表头就停，逼断言盯住结构位置。
+    """
+    lines = seg.splitlines()
+    start = next((i for i, l in enumerate(lines)
+                  if l.strip().startswith("|") and header_kw in l), None)
+    if start is None:
+        return [], []
+    hdr = [c.strip() for c in lines[start].strip().strip("|").split("|")]
+    rows = []
+    for l in lines[start + 2:]:            # 跳过表头 + |---| 分隔行
+        if not l.strip().startswith("|"):
+            break
+        rows.append([c.strip() for c in l.strip().strip("|").split("|")])
+    return hdr, rows
+
+
+def check_duo(r05: str, r03: str, r02: str) -> list[str]:
+    """第三轮：原住民两态 / 一套造型两套色系（2026-11-27 白哥定）。"""
+    errs: list[str] = []
+
+    # 1. 05 §1.5.1 必须在，且白哥两个要点都在
+    seg = tree_section(r05, "#### 1.5.1", "## 2.")
+    if not seg:
+        errs.append("05: 找不到 §1.5.1「原住民一直站在你面前」—— 两套色系没有叙事落点")
+    else:
+        for k in ("完全同样造型", "两套色系", "原住民一直站在你面前"):
+            if k not in seg:
+                errs.append(f"05 §1.5.1: 少了「{k}」—— 白哥这条设定缺一块")
+        # 白哥给的两个例子必须原样在（换了名字就是换了设定）
+        for a, b in (("史莱姆", "小精灵"), ("蝙蝠", "粉翼蝠")):
+            if not same_line(seg, a, b):
+                errs.append(f"05 §1.5.1: 例子「{a} ↔ {b}」不在了 —— 白哥举的实例被改掉")
+        # 断言不能用「换色系」这种泛词：§1.5.1 里"换色系 + 换眼睛"也含它，
+        # 删掉真正的约束句照样 PASS（反向验证第一次就抓到了这个）。
+        # 必须要求两个特异词同行：「换色」+「轮廓」—— 后者整节只出现在那句约束里。
+        if not same_line(seg, "换色", "轮廓"):
+            errs.append("05 §1.5.1: 没有一行同时写「换色」和「轮廓」"
+                        "—— 约束句被删，读者会以为是换一套模型，美术量翻倍")
+
+    # 2. 05 §5 敌人表：每一行都必须有原住民态
+    seg5 = tree_section(r05, "## 5. 敌人", "### 5.1")
+    hdr, rows = table_cells(seg5, "原住民态")
+    if not hdr:
+        errs.append("05 §5: 敌人表没有「原住民态」列 —— 两套色系只活在 §1.5.1 的散文里")
+    else:
+        ci = next((i for i, h in enumerate(hdr) if "原住民态" in h), -1)
+        empty = [r[0] for r in rows if ci >= 0 and (ci >= len(r) or not r[ci].strip("—*- "))]
+        if ci < 0:
+            errs.append("05 §5: 「原住民态」列名读不出来")
+        elif empty:
+            errs.append(f"05 §5: {len(empty)} 个敌人没有原住民态（{', '.join(empty)}）"
+                        "—— 有暗色没亮色，等于只有一套")
+        if len(rows) != 5:
+            errs.append(f"05 §5: 敌人表 {len(rows)} 行，首发应为 5")
+
+    # 3. 05 §5.2：外来种必须永远没有 ally
+    seg52 = tree_section(r05, "### 5.2", "### 5.3")
+    if "永远不给" not in seg52 or "_ally" not in seg52:
+        errs.append("05 §5.2: 没写「外来种永远不给 _ally 版」—— 一旦给了'健康的藤'，分类就塌")
+
+    # 4. 03 §6：招安的画面反馈必须是换色，不是变身
+    seg6 = tree_section(r03, "## 6. 守卫军", "## 7.")
+    if "换色" not in seg6:
+        errs.append("03 §6: 招安没写「换色」—— 玩法反馈与资产（两套色）脱节")
+    if "变身" in seg6 and "不是变身" not in seg6:
+        errs.append("03 §6: 招安写成了「变身」—— 变身要新模型，两套色系就白做了")
+    # 招安 ≠ 复原：守军能守不能种。少了这条，下一个读者会问"人都回来了为什么还要我种"，
+    # 顺着改就把 30 分钟成熟 + 回访整个循环拆了。
+    if not same_line(seg6, "守田", "不能种田"):
+        errs.append("03 §6: 没写「守卫军能守田、不能种田」—— 招安≠复原一松，回访循环会被删掉")
+
+    # 5. 02 §5.3：表头必须有物种 / 原住民态，且 5 行都填
+    seg02 = tree_section(r02, "### 5.3", "### 5.4")
+    hdr2, rows2 = table_cells(seg02, "原住民态")
+    if not hdr2:
+        errs.append("02 §5.3: 敌人表没有「原住民态」列 —— 战斗章看不到两套色")
+    else:
+        for col in ("物种", "原住民态"):
+            if not any(col in h for h in hdr2):
+                errs.append(f"02 §5.3: 表头缺「{col}」列")
+        ci = next((i for i, h in enumerate(hdr2) if "原住民态" in h), -1)
+        empty = [r[0] for r in rows2 if ci >= 0 and (ci >= len(r) or not r[ci].strip("—*- "))]
+        if empty:
+            errs.append(f"02 §5.3: {len(empty)} 个敌人没填原住民态（{', '.join(empty)}）")
+
+    return errs
+
+
 def main() -> int:
     d = load()
     r05 = DOC05.read_text(encoding="utf-8")
@@ -298,7 +391,7 @@ def main() -> int:
         return 0
 
     errs = (check_internal(d) + check_05(r05, d) + check_03(r03) + check_04(r04)
-            + check_ref(rref) + check_parasite(r05, r03, r02))
+            + check_ref(rref) + check_parasite(r05, r03, r02) + check_duo(r05, r03, r02))
 
     g = d["girdling"]
     w = d["wound"]
@@ -331,7 +424,8 @@ def main() -> int:
         for e in errs:
             print("FAIL  " + e)
         return 1
-    print("PASS  两条流自洽 + 八处翻译齐全 + 寄生/黑化/物资两分在位 + 禁令在位 + 03/04/02 已接上背景")
+    print("PASS  两条流自洽 + 八处翻译 + 寄生/黑化/物资两分 + 两套色系（敌人表每行都有原住民态）"
+          " + 禁令在位 + 03/04/02 已接上背景")
     return 0
 
 
