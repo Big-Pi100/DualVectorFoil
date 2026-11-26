@@ -42,66 +42,64 @@ BY_DIR = {"Characters": "sprite", "Enemies": "sprite", "Terrain": "prop",
           "Effects": "fx", "Items": "item", "UI": "ui"}
 
 # ── 状态 ─────────────────────────────────────────────────────────────
-# 这是**我的**判断，白哥可以逐张改。每一条都要有理由，理由写在 why 里。
-S_WIRED = "wired"        # 已接入，不动
-S_KEEP = "keep"          # 保留，等着接
-S_ARCHIVE = "archive"    # 母版，不镜像进 Godot，只作再派生的源
-S_HOLD = "hold"          # 待定，缺前提（玩法定义 / 二选一 / HUD 未定稿）
-S_DROP = "drop"          # 建议弃
+# 「现在用不到」≠「该弃」。2026-11-26 白哥的决定：除石凳全留，
+# 因为「用不到只是现在，不代表一直用不到」——尤其地图要做 X/Y 双轴之后，
+# 原先被判「进不了关卡」的立体件，在纵向房里有重新出场的可能。
+S_WIRED = "wired"        # 已接入
+S_READY = "ready"        # 现在就有玩法钩子，可直接接线
+S_SPARE = "spare"        # 留库备用：暂时没用，但保留
+S_DROP = "drop"          # 弃用（本期只有石凳一张）
 
-LABEL = {S_WIRED: "已接入", S_KEEP: "保留待接", S_ARCHIVE: "母版",
-         S_HOLD: "待定", S_DROP: "建议弃"}
+LABEL = {S_WIRED: "已接入", S_READY: "可接线", S_SPARE: "留库备用", S_DROP: "弃用"}
 CATNAME = {"Characters": "角色", "Enemies": "敌人", "Items": "道具",
            "Effects": "特效", "Terrain": "地形", "UI": "界面"}
 CATORDER = ["Characters", "Enemies", "Items", "Effects", "Terrain", "UI"]
 
 DECISION = {
     # ── 角色 ─────────────────────────────────────────────────────
-    "player_side_00_sprite":   (S_KEEP, "横版站立。7 个已接状态之一"),
-    "player_run_00_sprite":    (S_KEEP, "跑"),
-    "player_jump_00_sprite":   (S_KEEP, "起跳，暂时兼作下落帧"),
-    "player_back_00_sprite":   (S_KEEP, "后跃（朝镜头反面弹开）"),
-    "player_attack_00_sprite": (S_KEEP, "攻击，暂时兼作施法帧"),
-    "player_hurt_00_sprite":   (S_KEEP, "受击"),
-    "player_climb_00_sprite":  (S_KEEP, "攀爬。已挂进 ANIM 表，逻辑还没接"),
-    "player_idle_00_sprite":   (S_KEEP, "正面站姿。横版用不上，但过场 / UI 立绘能用，留着零成本"),
-    "origami_bird_idle_00":    (S_HOLD, "折纸鸟。主体 119×104，比蝙蝠 sprite（48 高）画得出细节。"
-                                        "「纸片蝙蝠」到底用鸟还是用蝙蝠，得你定"),
+    "player_side_00_sprite":   (S_READY, "横版站立"),
+    "player_run_00_sprite":    (S_READY, "跑"),
+    "player_jump_00_sprite":   (S_READY, "起跳，暂时兼作下落帧"),
+    "player_back_00_sprite":   (S_READY, "后跃（朝镜头反面弹开）"),
+    "player_attack_00_sprite": (S_READY, "攻击，暂时兼作施法帧"),
+    "player_hurt_00_sprite":   (S_READY, "受击"),
+    "player_climb_00_sprite":  (S_READY, "攀爬。纵向房一上就要用（梯子 / 藤蔓）"),
+    "player_idle_00_sprite":   (S_READY, "正面站姿。过场 / UI 立绘"),
+    "origami_bird_idle_00":    (S_SPARE, "折纸鸟。主体 119×104，比蝙蝠 sprite 大一圈，飞行敌的备用件"),
 
     # ── 敌人 ─────────────────────────────────────────────────────
-    "enemy_slime_idle_00_sprite": (S_KEEP, "对应 GDD 的「纸团」：直线滚撞、撞墙散开"),
-    "enemy_bat_idle_00_sprite":   (S_HOLD, "和折纸鸟二选一当飞行敌。48 高，细节空间小"),
-    "enemy_spike_idle_00_sprite": (S_DROP, "刺球 ≠ GDD 的「折痕体」（折起无敌、展开可打）。"
-                                          "形态不是同一件事，留着只会被误接"),
+    "enemy_slime_idle_00_sprite": (S_READY, "对应 GDD 的「纸团」：直线滚撞、撞墙散开"),
+    "enemy_bat_idle_00_sprite":   (S_SPARE, "飞行敌备用。48 高，细节空间比鸟小"),
+    "enemy_spike_idle_00_sprite": (S_SPARE, "刺球。GDD 的折痕体是另一个形态，但刺球本身可以做独立敌种"),
 
     # ── 道具 ─────────────────────────────────────────────────────
-    "item_star_sprite":  (S_KEEP, "48×48。GDD 说投掷物是「种出来的弹药」但形态未定，"
-                                  "星是最省事的候选"),
-    "item_key_00":       (S_DROP, "GDD 全文没有钥匙门 / 上锁玩法"),
-    "item_lantern_00":   (S_DROP, "GDD 全文没有照明 / 视野玩法（暗房是补给点，不是黑屏）"),
+    "item_star_sprite":  (S_READY, "48×48。投掷物形态未定，星是最省事的候选"),
+    "item_key_00":       (S_SPARE, "玩法里暂无钥匙门。留库，城堡题材很容易长出门锁"),
+    "item_lantern_00":   (S_SPARE, "暂无照明玩法。留库，可做纵向房的光源装饰"),
 
     # ── 特效 ─────────────────────────────────────────────────────
-    "fx_hit_00":       (S_KEEP, "命中反馈，战斗必需"),
-    "fx_jump_puff_00": (S_KEEP, "起跳扬尘，手感件"),
-    "fx_harvest_00":   (S_KEEP, "采收。种植是核心循环，必需"),
-    "fx_purify_00":    (S_HOLD, "「净化」不在四技能（投掷/折叠/生长/底片）里，对应哪个技能未定"),
+    "fx_hit_00":       (S_READY, "命中反馈，战斗必需"),
+    "fx_jump_puff_00": (S_READY, "起跳扬尘，手感件"),
+    "fx_harvest_00":   (S_READY, "采收。种植是核心循环，必需"),
+    "fx_purify_00":    (S_SPARE, "「净化」暂不对应四技能之一。留库"),
 
     # ── 地形 ─────────────────────────────────────────────────────
-    "ground_left":    (S_KEEP, "底板左端 96×144"),
-    "ground_mid":     (S_KEEP, "底板中段 384×144，回文，可无限拼"),
-    "ground_right":   (S_KEEP, "底板右端 96×144"),
-    "terrain_grass_top":       (S_ARCHIVE, "三段底板的源。裁切脚本要读它，必须留；运行时一张不读"),
-    "terrain_stone_block":     (S_DROP, "立体石块母版。规则禁用（§4），母版留着也没人用"),
-    "terrain_stone_block_200": (S_DROP, "从上一张缩出来的平台件。已撤出场景"),
-    "terrain_stone_pillar":    (S_DROP, "立体石柱母版，同上"),
-    "terrain_stone_pillar_200": (S_DROP, "石柱摆件，已撤出场景"),
-    "terrain_stone_bench":     (S_DROP, "石凳摆件，已撤出场景"),
-    "terrain_grass_decor":     (S_DROP, "草丛摆件，已撤出场景"),
+    "ground_left":    (S_READY, "底板左端 96×144。纵向房也能当台边缘用"),
+    "ground_mid":     (S_READY, "底板中段 384×144，回文，可无限拼"),
+    "ground_right":   (S_READY, "底板右端 96×144"),
+    "terrain_grass_top":       (S_SPARE, "三段底板的源。必须留；运行时一张不读"),
+    "terrain_stone_block":     (S_SPARE, "立体石块母版。竖向叠层、背景岩体都可能用到"),
+    "terrain_stone_block_200": (S_SPARE, "石块摆件。已撤出场景，但纵向房可当悬崖/岩柱"),
+    "terrain_stone_pillar":    (S_SPARE, "立体石柱母版，同上"),
+    "terrain_stone_pillar_200": (S_SPARE, "石柱摆件。纵向房里天然是「撑住天花板」的构件"),
+    "terrain_stone_bench":     (S_DROP, "唯一弃件：石凳。横向房被撤，纵向房也用不上它——"
+                                       "它既不承重也不成景，占 6KB 但占一份维护注意力"),
+    "terrain_grass_decor":     (S_SPARE, "草丛摆件。前景/背景点缀"),
 
     # ── UI ───────────────────────────────────────────────────────
-    "ui_hud_frame_00":  (S_HOLD, "HUD 现在是纯代码绘制，一张图没用。换图的话这张要做九宫格"),
-    "ui_heart_icon_00": (S_HOLD, "血量图标。等 HUD 定稿"),
-    "ui_button_base_00": (S_HOLD, "按钮底。手机触屏按钮可能用得上"),
+    "ui_hud_frame_00":  (S_SPARE, "HUD 现在是纯代码绘制。换图的话这张要做九宫格"),
+    "ui_heart_icon_00": (S_SPARE, "血量图标。等 HUD 定稿"),
+    "ui_button_base_00": (S_SPARE, "按钮底。手机触屏按钮用得上"),
 }
 
 # 1024 母版：状态跟随它的运行时派生件，避免「sprite 弃了、母版还留着」
@@ -179,11 +177,11 @@ def collect() -> list[dict]:
         if key in DECISION:
             status, why = DECISION[key]
         elif key in MASTER_OF and MASTER_OF[key] in DECISION:
-            up = DECISION[MASTER_OF[key]][0]
-            status = S_ARCHIVE if up in (S_KEEP, S_WIRED) else up
-            why = f"1024 母版，跟随 {MASTER_OF[key]} 的决定"
+            # 母版永远只是「留库」——它不进运行时，跟着派生件一起留下就够了
+            status = S_SPARE
+            why = f"1024 母版，源件；派生件 {MASTER_OF[key]} → {LABEL[DECISION[MASTER_OF[key]][0]]}"
         else:
-            status, why = S_ARCHIVE, "1024 母版 / 源图，不直接进渲染"
+            status, why = S_SPARE, "1024 母版 / 源图，不直接进渲染"
 
         if path.stem in wired:      # 以代码里的实际引用为准，压过上面的判断
             status, why = S_WIRED, "已在 Godot 场景或状态表里被引用"
@@ -229,7 +227,7 @@ def render(cards: list[dict]) -> str:
     chips = "".join(
         f'<button class="chip" data-filter="{s}"><i class="dot {s}"></i>{LABEL[s]} '
         f'<b>{counts.get(s, 0)}</b></button>'
-        for s in (S_WIRED, S_KEEP, S_ARCHIVE, S_HOLD, S_DROP))
+        for s in (S_WIRED, S_READY, S_SPARE, S_DROP))
 
     return f"""<!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8">
@@ -238,7 +236,7 @@ def render(cards: list[dict]) -> str:
 <style>
   :root {{
     --paper:#f7f3e8; --ink:#2b2722; --muted:#7c7366; --line:#dcd3bf; --card:#fffdf6;
-    --wired:#2f7d4f; --keep:#2b6cb0; --archive:#8a8175; --hold:#b7791f; --drop:#b03a2e;
+    --wired:#2f7d4f; --ready:#2b6cb0; --spare:#8a8175; --drop:#b03a2e;
   }}
   * {{ box-sizing:border-box; }}
   body {{ margin:0; background:var(--paper); color:var(--ink);
@@ -257,9 +255,8 @@ def render(cards: list[dict]) -> str:
     padding:5px 12px; cursor:pointer; font-size:12.5px; }}
   .btn:hover {{ border-color:var(--ink); }}
   .dot {{ display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:5px; }}
-  .dot.wired {{ background:var(--wired); }} .dot.keep {{ background:var(--keep); }}
-  .dot.archive {{ background:var(--archive); }} .dot.hold {{ background:var(--hold); }}
-  .dot.drop {{ background:var(--drop); }}
+  .dot.wired {{ background:var(--wired); }} .dot.ready {{ background:var(--ready); }}
+  .dot.spare {{ background:var(--spare); }} .dot.drop {{ background:var(--drop); }}
   .legend {{ color:var(--muted); font-size:11.5px; margin-top:7px; line-height:1.7; }}
   main {{ padding:10px 24px 90px; }}
   h2 {{ font-size:12.5px; letter-spacing:.16em; color:var(--muted); font-weight:600;
@@ -287,9 +284,8 @@ def render(cards: list[dict]) -> str:
   .why {{ font-size:11.5px; color:#5c5449; line-height:1.45; margin-top:1px; flex:1; }}
   .st {{ font-size:11px; font-weight:700; }}
   .card[data-status="wired"] .st {{ color:var(--wired); }}
-  .card[data-status="keep"] .st {{ color:var(--keep); }}
-  .card[data-status="archive"] .st {{ color:var(--archive); }}
-  .card[data-status="hold"] .st {{ color:var(--hold); }}
+  .card[data-status="ready"] .st {{ color:var(--ready); }}
+  .card[data-status="spare"] .st {{ color:var(--spare); }}
   .card[data-status="drop"] .st {{ color:var(--drop); }}
   label.pick {{ display:flex; align-items:center; gap:6px; margin-top:7px; font-size:11.5px;
     color:var(--muted); cursor:pointer; border-top:1px dashed var(--line); padding-top:7px; }}
@@ -303,7 +299,7 @@ def render(cards: list[dict]) -> str:
 </style></head>
 <body>
 <header>
-  <h1>资产盘点 · 选件表 <small>44 张 · 勾选 = 留下 · 默认勾选是按我的建议</small></h1>
+  <h1>资产盘点 · 选件表 <small>44 张 · 勾选 = 留下 · 默认按 2026-11-26 的决定：除石凳全留</small></h1>
   <div class="bar">
     <button class="chip" data-filter="all" aria-pressed="true">全部 <b>{len(cards)}</b></button>
     {chips}
@@ -314,7 +310,10 @@ def render(cards: list[dict]) -> str:
   <div class="legend">
     尺寸都是<b>原始像素</b>，不是显示尺寸。角色统一 340² 帧框（主体高 251 → 显示 128）；
     敌人 sprite 128²（主体高 48 = 1 TILE）；底板高 144 = 3 TILE。
-    缩略图已裁到主体，框里留白看不到 —— 但摆位锚点算的是帧框，不是主体。
+    缩略图已裁到主体，框里留白看不到 —— 但摆位锚点算的是帧框，不是主体。<br>
+    <b>这张表只覆盖 X 轴资产。</b>地图要做 X/Y 双轴（恶魔城式纵向房），纵向件
+    （侧壁 / 阶梯 / 梯子 / 顶棚 / 附着平台）<b>目前一张都没有</b>，清单见
+    <code>art/ASSET_RULES.md §5</code>。
   </div>
 </header>
 <main>
