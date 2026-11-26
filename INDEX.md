@@ -85,6 +85,7 @@
 | `docs/ref/AUDIT_001_DVF.md` | 外部审计 | DVF（方向/速度/感觉）评分 |
 | `docs/ref/NIGHTFALL_REVIEW.md` | 外部评审 | 技术与产品意见 |
 | `docs/ref/CRAYON_ODYSSEY_GDD.md` | 《色彩旅人》GDD/TDD **原文归档** | 数值出处（480 / 1320 / 460 / 0.14…）。已抄成 `F2` 预设，只作对照 |
+| `docs/ref/REF_ARIA_OF_SORROW.md` | 《晓月圆舞曲》魂/道具系统拆解 | **技能分层（4 层成本模型）、55:24:35:6 配比、贵≠强的效率表、能力门 5/6 确定获取**。数据在 `aos_souls.json`（120 条），可视化 `aos_souls.html` |
 
 ## ⚪ 历史报告（`docs/history/`，只读，不再更新）
 
