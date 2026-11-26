@@ -81,7 +81,9 @@ jobs:
           "$GODOT_BIN" --version
 
       - name: 导入资产
-        run: "$(cat /tmp/godot_bin_path)" --headless --path . --import
+        run: |
+          GODOT_BIN=$(cat /tmp/godot_bin_path)
+          "$GODOT_BIN" --headless --path . --import
 
       - name: 注入签名配置（仅 signed=true）
         env:
