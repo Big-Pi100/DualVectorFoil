@@ -1,0 +1,70 @@
+{
+  "_note": "世界树生理的事实底座。只收'能被查到'的机制与数值，不收比喻。引用时以本文件为准，不要凭印象写。",
+  "_verified": "2026-11-27",
+  "_used_by": ["docs/gdd/05_叙事与主角.md §1.3-§1.5", "docs/gdd/03_经营与种植.md §0", "docs/gdd/04_关卡与地图.md §2"],
+
+  "two_streams": {
+    "xylem": {
+      "carries": "水 + 溶解矿质",
+      "direction": "根 → 叶，单向向上",
+      "located_in": "木质部（木头里面，树皮之内）",
+      "cells": "成熟后是死细胞（导管/管胞）",
+      "driving_force": "蒸腾拉力"
+    },
+    "phloem": {
+      "carries": "蔗糖 + 有机物",
+      "direction": "叶 → 根/果，主要向下（源到库）",
+      "located_in": "韧皮部（树皮内层）",
+      "cells": "活细胞（筛管 + 伴胞）",
+      "driving_force": "压力流（pressure-flow）"
+    },
+    "cambium": "夹在两者之间的一层薄的分裂细胞，树皮 = 形成层以外的全部",
+    "independently_cuttable": true
+  },
+
+  "girdling": {
+    "definition": "环剥/环状剥皮：剥掉绕树干一圈的树皮（含韧皮部与形成层）",
+    "phloem_removed": true,
+    "xylem_intact": true,
+    "roots_starve": true,
+    "leaves_stay_hydrated": true,
+    "transpiration_immediate_effect": false,
+    "seedling_days_without_sugar_to_roots": 140,
+    "above_looks_healthy": "数周到数月",
+    "bark_above_swells": true,
+    "bark_below_dies": true,
+    "band_width_cm": [10, 15],
+    "key_reading": "一条切口就能把两套运输系统分开 —— 上行断与下行断是两个独立的失败模式"
+  },
+
+  "wound": {
+    "heals": false,
+    "heals_note": "树不修复受损组织，术语上 'healing' 是误称",
+    "process": "区隔化 CODIT（compartmentalization of decay in trees），四道壁",
+    "callus_starts_weeks": [2, 4],
+    "small_wound_growing_seasons": [1, 2],
+    "large_wound_years": [3, 5],
+    "large_wound_threshold_inch": 2,
+    "callus_grows_from": "两侧最快，上下慢",
+    "wound_dressing_helps": false,
+    "wound_dressing_note": "研究未证明能加速封口或减少感染；涂封反而闷湿促腐",
+    "fall_slower_pct": 20,
+    "key_reading": "伤口只能被包起来、隔开，不会被修回原样 —— 这是结局'带疤活着'的事实依据"
+  },
+
+  "design_map": [
+    {"system": "清完一个区域", "physiology": "打通一段被堵的管", "why_harder": "怪物是塞在管里的东西，不是占领者"},
+    {"system": "得到一块地", "physiology": "露出一处断面", "why_harder": "断面是清的结果，所以'地来自清图'是因果不是奖励"},
+    {"system": "打怪掉种子", "physiology": "取回被偷走的籽", "why_harder": "战→农从'拾荒'变成'追赃'"},
+    {"system": "种植 → 收成", "physiology": "长愈伤组织封住断面", "why_harder": "树自己封口，玩家只供料 —— 种田不是治疗"},
+    {"system": "守卫军", "physiology": "免疫细胞", "why_harder": "招安 = 改写，不是雇佣"},
+    {"system": "袭击", "physiology": "感染复发", "why_harder": "地不会消失，只是重新堵上"}
+  ],
+
+  "do_not_copy": [
+    {"thing": "真实愈合时间尺度（3–5 年）", "why": "游戏内压到 30 分钟 = 一个生长季；照搬等于永远收不到"},
+    {"thing": "伤口涂封剂 / 药膏系统", "why": "真实研究证明无效。有依据的减法，别做"},
+    {"thing": "汁液液体物理", "why": "00 §5 已判成本高收益低；只做'看得见在流'的表现，不做模拟"},
+    {"thing": "树的健康度数值 / 修复任务清单", "why": "05 §1.5：会变成第四个系统，稀释丢地的压力"}
+  ]
+}
