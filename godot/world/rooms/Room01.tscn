@@ -1,25 +1,151 @@
-[gd_scene format=4]
+[gd_scene format=3]
 
 [ext_resource type="Script" path="res://world/rooms/BaseRoom.gd" id="1_room"]
 [ext_resource type="PackedScene" path="res://entities/player/Player.tscn" id="2_player"]
-[ext_resource type="TileSet" path="res://world/tiles/ground_tileset.tres" id="2_ylynl"]
 [ext_resource type="PackedScene" path="res://ui/TouchHUD.tscn" id="3_hud"]
 [ext_resource type="PackedScene" path="res://world/interactables/SoilPlot.tscn" id="4_plot"]
 [ext_resource type="Script" path="res://world/interactables/SoilPlot.gd" id="5_6cwqj"]
 [ext_resource type="Script" path="res://world/interactables/RoomDoor.gd" id="5_door"]
 [ext_resource type="Shader" path="res://world/shaders/desaturate_wipe.gdshader" id="6_shader"]
+[ext_resource type="Script" path="res://ui/TutorialHint.gd" id="7_tutorial"]
+[ext_resource type="Script" path="res://ui/StatusBanner.gd" id="8_banner"]
 [ext_resource type="Script" path="res://entities/player/Player.gd" id="11_brv1k"]
 [ext_resource type="Script" path="res://ui/TouchHUD.gd" id="13_jflwy"]
+[ext_resource type="Script" path="res://world/interactables/SwitchGate.gd" id="16_jflwy"]
+[ext_resource type="Script" path="res://world/interactables/Lever.gd" id="17_45tgs"]
+[ext_resource type="Script" path="res://world/debug/WireOverlay.gd" id="17_jflwy"]
 [ext_resource type="Shader" path="res://world/shaders/env_light.gdshader" id="94_env"]
 [ext_resource type="Script" path="res://world/interactables/VistaZone.gd" id="97_vista"]
 [ext_resource type="Shader" path="res://world/shaders/paper_grain.gdshader" id="98_paper"]
-[ext_resource type="Texture2D" path="res://art/approved/Terrain/terrain_grass_decor.png" id="99_grass"]
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_floor"]
-size = Vector2(1200, 40)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_jflwy"]
+size = Vector2(4800, 384)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_door"]
-size = Vector2(60, 140)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_45tgs"]
+size = Vector2(2016, 480)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ttpj5"]
+size = Vector2(1776, 96)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_7gajm"]
+size = Vector2(336, 768)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_qqsth"]
+size = Vector2(912, 672)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_24nps"]
+size = Vector2(576, 48)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_3fttm"]
+size = Vector2(96, 624)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_sclbp"]
+size = Vector2(432, 576)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_3mxl4"]
+size = Vector2(96, 576)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_2shkq"]
+size = Vector2(240, 576)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_rh5s5"]
+size = Vector2(48, 768)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_v4wc1"]
+size = Vector2(624, 528)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_a70fq"]
+size = Vector2(528, 96)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_n3m7w"]
+size = Vector2(144, 96)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_qtf3e"]
+size = Vector2(48, 384)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_kbrwp"]
+size = Vector2(336, 240)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ofe0u"]
+size = Vector2(240, 240)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_kbhxr"]
+size = Vector2(288, 240)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_v30yi"]
+size = Vector2(192, 144)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bx7op"]
+size = Vector2(528, 144)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_lebnr"]
+size = Vector2(192, 144)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ktj6f"]
+size = Vector2(3024, 144)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_4er3e"]
+size = Vector2(240, 12)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_763av"]
+size = Vector2(192, 12)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_oisvl"]
+size = Vector2(192, 12)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_w8ylq"]
+size = Vector2(192, 12)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_i1t0p"]
+size = Vector2(240, 12)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_epw8r"]
+size = Vector2(192, 12)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_5musk"]
+size = Vector2(192, 12)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_6bm8c"]
+size = Vector2(240, 12)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ey823"]
+size = Vector2(192, 12)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_sxek3"]
+size = Vector2(192, 12)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_s72tb"]
+size = Vector2(240, 12)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_5ikb2"]
+size = Vector2(192, 12)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_q2ypx"]
+size = Vector2(192, 12)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_vb3pu"]
+size = Vector2(432, 12)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_w548l"]
+size = Vector2(240, 12)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_cj5f8"]
+size = Vector2(192, 12)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_su5ft"]
+size = Vector2(192, 12)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_5chku"]
+size = Vector2(240, 12)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_4seyy"]
+size = Vector2(192, 12)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_2ov3s"]
+size = Vector2(240, 12)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_txel5"]
+size = Vector2(240, 12)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_desat"]
 shader = ExtResource("6_shader")
@@ -31,102 +157,960 @@ shader_parameter/wipe_radius = 0.0
 shader = ExtResource("98_paper")
 shader_parameter/grain_strength = 0.14
 shader_parameter/fiber_strength = 0.1
+shader_parameter/paper_tint = null
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_env"]
 shader = ExtResource("94_env")
 shader_parameter/night = 0.0
 shader_parameter/moon_tint = Color(0.42, 0.38, 0.78, 1)
+shader_parameter/tint_pull = null
+shader_parameter/veg_protect = null
+shader_parameter/sat_scale = null
+shader_parameter/sat_add = null
+shader_parameter/val_mul = null
+shader_parameter/val_add = null
+shader_parameter/contrast_boost = null
+shader_parameter/lift = null
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_vista"]
 size = Vector2(140, 120)
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_m47fr"]
+size = Vector2(60, 140)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_sds2u"]
+size = Vector2(60, 140)
+
 [node name="Room01" type="Node2D" unique_id=1879676123]
 script = ExtResource("1_room")
+invader_count = 23
+invade_on_enter = true
+display_name = "入口厅"
 
-[node name="SpawnFromLeft" type="Marker2D" parent="." unique_id=1281216352]
-position = Vector2(180, 560)
+[node name="Terrain" type="Node2D" parent="." unique_id=1089245248]
+z_index = -10
 
-[node name="SpawnFromRight" type="Marker2D" parent="." unique_id=31317968]
-position = Vector2(1040, 560)
+[node name="WireBackdrop" type="ColorRect" parent="Terrain" unique_id=928087228]
+offset_left = -1024.0
+offset_top = -1024.0
+offset_right = 5824.0
+offset_bottom = 2944.0
+mouse_filter = 2
+color = Color(0.072, 0.084, 0.102, 1)
 
-[node name="Floor" type="StaticBody2D" parent="." unique_id=1314605553]
-position = Vector2(640, 620)
+[node name="Solids" type="StaticBody2D" parent="Terrain" unique_id=1756767834]
+collision_mask = 0
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Floor" unique_id=2050783465]
-shape = SubResource("RectangleShape2D_floor")
+[node name="Box0" type="CollisionShape2D" parent="Terrain/Solids" unique_id=295165970]
+position = Vector2(2416, 192)
+shape = SubResource("RectangleShape2D_jflwy")
 
-[node name="Visual" type="ColorRect" parent="Floor" unique_id=108798203]
-offset_left = -600.0
-offset_top = -20.0
-offset_right = 600.0
-offset_bottom = 20.0
-color = Color(0.95, 0.9, 0.72, 1)
+[node name="Box1" type="CollisionShape2D" parent="Terrain/Solids" unique_id=84898524]
+position = Vector2(1024, 624)
+shape = SubResource("RectangleShape2D_45tgs")
 
-[node name="GroundTiles" type="TileMapLayer" parent="Floor" unique_id=864812938]
-position = Vector2(-640, -20)
-tile_map_data = PackedByteArray("AAAAAAAAAQAAAAAAAAABAAAAAQABAAAAAAACAAAAAQACAAAAAAADAAAAAQADAAAAAAAEAAAAAQAAAAAAAAAFAAAAAQABAAAAAAAGAAAAAQACAAAAAAAHAAAAAQADAAAAAAAIAAAAAQAAAAAAAAAJAAAAAQABAAAAAAAKAAAAAQACAAAAAAALAAAAAQADAAAAAAAMAAAAAQAAAAAAAAANAAAAAQABAAAAAAA=")
-tile_set = ExtResource("2_ylynl")
+[node name="Box2" type="CollisionShape2D" parent="Terrain/Solids" unique_id=479158294]
+position = Vector2(3928, 432)
+shape = SubResource("RectangleShape2D_ttpj5")
 
-[node name="GrassDecor0" type="Sprite2D" parent="Floor" unique_id=979166670]
-position = Vector2(-420, -14)
-scale = Vector2(0.85, 0.85)
-texture = ExtResource("99_grass")
+[node name="Box3" type="CollisionShape2D" parent="Terrain/Solids" unique_id=526739647]
+position = Vector2(3208, 864)
+shape = SubResource("RectangleShape2D_7gajm")
 
-[node name="GrassDecor1" type="Sprite2D" parent="Floor" unique_id=1496007731]
-position = Vector2(-140, -14)
-scale = Vector2(0.85, 0.85)
-texture = ExtResource("99_grass")
+[node name="Box4" type="CollisionShape2D" parent="Terrain/Solids" unique_id=238536345]
+position = Vector2(4360, 816)
+shape = SubResource("RectangleShape2D_qqsth")
 
-[node name="GrassDecor2" type="Sprite2D" parent="Floor" unique_id=678554423]
-position = Vector2(140, -14)
-scale = Vector2(0.85, 0.85)
-texture = ExtResource("99_grass")
+[node name="Box5" type="CollisionShape2D" parent="Terrain/Solids" unique_id=1919078157]
+position = Vector2(2512, 648)
+shape = SubResource("RectangleShape2D_24nps")
 
-[node name="GrassDecor3" type="Sprite2D" parent="Floor" unique_id=494618182]
-position = Vector2(420, -14)
-scale = Vector2(0.85, 0.85)
-texture = ExtResource("99_grass")
+[node name="Box6" type="CollisionShape2D" parent="Terrain/Solids" unique_id=1046746938]
+position = Vector2(2992, 936)
+shape = SubResource("RectangleShape2D_3fttm")
+
+[node name="Box7" type="CollisionShape2D" parent="Terrain/Solids" unique_id=1013364069]
+position = Vector2(2584, 960)
+shape = SubResource("RectangleShape2D_sclbp")
+
+[node name="Box8" type="CollisionShape2D" parent="Terrain/Solids" unique_id=689609831]
+position = Vector2(3424, 960)
+shape = SubResource("RectangleShape2D_3mxl4")
+
+[node name="Box9" type="CollisionShape2D" parent="Terrain/Solids" unique_id=915395049]
+position = Vector2(3784, 960)
+shape = SubResource("RectangleShape2D_2shkq")
+
+[node name="Box10" type="CollisionShape2D" parent="Terrain/Solids" unique_id=55457321]
+position = Vector2(40, 1248)
+shape = SubResource("RectangleShape2D_rh5s5")
+
+[node name="Box11" type="CollisionShape2D" parent="Terrain/Solids" unique_id=700858144]
+position = Vector2(1720, 1128)
+shape = SubResource("RectangleShape2D_v4wc1")
+
+[node name="Box12" type="CollisionShape2D" parent="Terrain/Solids" unique_id=137618222]
+position = Vector2(4168, 1200)
+shape = SubResource("RectangleShape2D_a70fq")
+
+[node name="Box13" type="CollisionShape2D" parent="Terrain/Solids" unique_id=251107922]
+position = Vector2(4744, 1200)
+shape = SubResource("RectangleShape2D_n3m7w")
+
+[node name="Box14" type="CollisionShape2D" parent="Terrain/Solids" unique_id=937925715]
+position = Vector2(4792, 1440)
+shape = SubResource("RectangleShape2D_qtf3e")
+
+[node name="Box15" type="CollisionShape2D" parent="Terrain/Solids" unique_id=1363027274]
+position = Vector2(376, 1800)
+shape = SubResource("RectangleShape2D_kbrwp")
+
+[node name="Box16" type="CollisionShape2D" parent="Terrain/Solids" unique_id=1386369648]
+position = Vector2(1192, 1800)
+shape = SubResource("RectangleShape2D_ofe0u")
+
+[node name="Box17" type="CollisionShape2D" parent="Terrain/Solids" unique_id=2124543613]
+position = Vector2(1648, 1800)
+shape = SubResource("RectangleShape2D_kbhxr")
+
+[node name="Box18" type="CollisionShape2D" parent="Terrain/Solids" unique_id=1050007606]
+position = Vector2(112, 1848)
+shape = SubResource("RectangleShape2D_v30yi")
+
+[node name="Box19" type="CollisionShape2D" parent="Terrain/Solids" unique_id=1722807015]
+position = Vector2(808, 1848)
+shape = SubResource("RectangleShape2D_bx7op")
+
+[node name="Box20" type="CollisionShape2D" parent="Terrain/Solids" unique_id=1630615888]
+position = Vector2(1408, 1848)
+shape = SubResource("RectangleShape2D_lebnr")
+
+[node name="Box21" type="CollisionShape2D" parent="Terrain/Solids" unique_id=2083283041]
+position = Vector2(3304, 1848)
+shape = SubResource("RectangleShape2D_ktj6f")
+
+[node name="Blocks" type="Node2D" parent="Terrain" unique_id=7440306]
+
+[node name="BlockFill0" type="ColorRect" parent="Terrain/Blocks" unique_id=1232520719]
+offset_left = 16.0
+offset_right = 4816.0
+offset_bottom = 384.0
+mouse_filter = 2
+color = Color(0.18, 0.212, 0.251, 1)
+
+[node name="BlockEdge0" type="Line2D" parent="Terrain/Blocks" unique_id=2075943662]
+points = PackedVector2Array(16, 0, 4816, 0, 4816, 384, 16, 384, 16, 0)
+width = 2.0
+default_color = Color(0.502, 0.56, 0.639, 1)
+antialiased = true
+
+[node name="BlockFill1" type="ColorRect" parent="Terrain/Blocks" unique_id=1099889845]
+offset_left = 16.0
+offset_top = 384.0
+offset_right = 2032.0
+offset_bottom = 864.0
+mouse_filter = 2
+color = Color(0.18, 0.212, 0.251, 1)
+
+[node name="BlockEdge1" type="Line2D" parent="Terrain/Blocks" unique_id=1728468383]
+points = PackedVector2Array(16, 384, 2032, 384, 2032, 864, 16, 864, 16, 384)
+width = 2.0
+default_color = Color(0.502, 0.56, 0.639, 1)
+antialiased = true
+
+[node name="BlockFill2" type="ColorRect" parent="Terrain/Blocks" unique_id=2005557366]
+offset_left = 3040.0
+offset_top = 384.0
+offset_right = 4816.0
+offset_bottom = 480.0
+mouse_filter = 2
+color = Color(0.18, 0.212, 0.251, 1)
+
+[node name="BlockEdge2" type="Line2D" parent="Terrain/Blocks" unique_id=409206948]
+points = PackedVector2Array(3040, 384, 4816, 384, 4816, 480, 3040, 480, 3040, 384)
+width = 2.0
+default_color = Color(0.502, 0.56, 0.639, 1)
+antialiased = true
+
+[node name="BlockFill3" type="ColorRect" parent="Terrain/Blocks" unique_id=2080497622]
+offset_left = 3040.0
+offset_top = 480.0
+offset_right = 3376.0
+offset_bottom = 1248.0
+mouse_filter = 2
+color = Color(0.18, 0.212, 0.251, 1)
+
+[node name="BlockEdge3" type="Line2D" parent="Terrain/Blocks" unique_id=1425124100]
+points = PackedVector2Array(3040, 480, 3376, 480, 3376, 1248, 3040, 1248, 3040, 480)
+width = 2.0
+default_color = Color(0.502, 0.56, 0.639, 1)
+antialiased = true
+
+[node name="BlockFill4" type="ColorRect" parent="Terrain/Blocks" unique_id=136249400]
+offset_left = 3904.0
+offset_top = 480.0
+offset_right = 4816.0
+offset_bottom = 1152.0
+mouse_filter = 2
+color = Color(0.18, 0.212, 0.251, 1)
+
+[node name="BlockEdge4" type="Line2D" parent="Terrain/Blocks" unique_id=1218266329]
+points = PackedVector2Array(3904, 480, 4816, 480, 4816, 1152, 3904, 1152, 3904, 480)
+width = 2.0
+default_color = Color(0.502, 0.56, 0.639, 1)
+antialiased = true
+
+[node name="BlockFill5" type="ColorRect" parent="Terrain/Blocks" unique_id=1481255105]
+offset_left = 2224.0
+offset_top = 624.0
+offset_right = 2800.0
+offset_bottom = 672.0
+mouse_filter = 2
+color = Color(0.18, 0.212, 0.251, 1)
+
+[node name="BlockEdge5" type="Line2D" parent="Terrain/Blocks" unique_id=708960360]
+points = PackedVector2Array(2224, 624, 2800, 624, 2800, 672, 2224, 672, 2224, 624)
+width = 2.0
+default_color = Color(0.502, 0.56, 0.639, 1)
+antialiased = true
+
+[node name="BlockFill6" type="ColorRect" parent="Terrain/Blocks" unique_id=795798750]
+offset_left = 2944.0
+offset_top = 624.0
+offset_right = 3040.0
+offset_bottom = 1248.0
+mouse_filter = 2
+color = Color(0.18, 0.212, 0.251, 1)
+
+[node name="BlockEdge6" type="Line2D" parent="Terrain/Blocks" unique_id=697996332]
+points = PackedVector2Array(2944, 624, 3040, 624, 3040, 1248, 2944, 1248, 2944, 624)
+width = 2.0
+default_color = Color(0.502, 0.56, 0.639, 1)
+antialiased = true
+
+[node name="BlockFill7" type="ColorRect" parent="Terrain/Blocks" unique_id=211694892]
+offset_left = 2368.0
+offset_top = 672.0
+offset_right = 2800.0
+offset_bottom = 1248.0
+mouse_filter = 2
+color = Color(0.18, 0.212, 0.251, 1)
+
+[node name="BlockEdge7" type="Line2D" parent="Terrain/Blocks" unique_id=72840359]
+points = PackedVector2Array(2368, 672, 2800, 672, 2800, 1248, 2368, 1248, 2368, 672)
+width = 2.0
+default_color = Color(0.502, 0.56, 0.639, 1)
+antialiased = true
+
+[node name="BlockFill8" type="ColorRect" parent="Terrain/Blocks" unique_id=1859180854]
+offset_left = 3376.0
+offset_top = 672.0
+offset_right = 3472.0
+offset_bottom = 1248.0
+mouse_filter = 2
+color = Color(0.18, 0.212, 0.251, 1)
+
+[node name="BlockEdge8" type="Line2D" parent="Terrain/Blocks" unique_id=70165586]
+points = PackedVector2Array(3376, 672, 3472, 672, 3472, 1248, 3376, 1248, 3376, 672)
+width = 2.0
+default_color = Color(0.502, 0.56, 0.639, 1)
+antialiased = true
+
+[node name="BlockFill9" type="ColorRect" parent="Terrain/Blocks" unique_id=876508476]
+offset_left = 3664.0
+offset_top = 672.0
+offset_right = 3904.0
+offset_bottom = 1248.0
+mouse_filter = 2
+color = Color(0.18, 0.212, 0.251, 1)
+
+[node name="BlockEdge9" type="Line2D" parent="Terrain/Blocks" unique_id=1893066530]
+points = PackedVector2Array(3664, 672, 3904, 672, 3904, 1248, 3664, 1248, 3664, 672)
+width = 2.0
+default_color = Color(0.502, 0.56, 0.639, 1)
+antialiased = true
+
+[node name="BlockFill10" type="ColorRect" parent="Terrain/Blocks" unique_id=631574928]
+offset_left = 16.0
+offset_top = 864.0
+offset_right = 64.0
+offset_bottom = 1632.0
+mouse_filter = 2
+color = Color(0.18, 0.212, 0.251, 1)
+
+[node name="BlockEdge10" type="Line2D" parent="Terrain/Blocks" unique_id=716640957]
+points = PackedVector2Array(16, 864, 64, 864, 64, 1632, 16, 1632, 16, 864)
+width = 2.0
+default_color = Color(0.502, 0.56, 0.639, 1)
+antialiased = true
+
+[node name="BlockFill11" type="ColorRect" parent="Terrain/Blocks" unique_id=1733000273]
+offset_left = 1408.0
+offset_top = 864.0
+offset_right = 2032.0
+offset_bottom = 1392.0
+mouse_filter = 2
+color = Color(0.18, 0.212, 0.251, 1)
+
+[node name="BlockEdge11" type="Line2D" parent="Terrain/Blocks" unique_id=1410570840]
+points = PackedVector2Array(1408, 864, 2032, 864, 2032, 1392, 1408, 1392, 1408, 864)
+width = 2.0
+default_color = Color(0.502, 0.56, 0.639, 1)
+antialiased = true
+
+[node name="BlockFill12" type="ColorRect" parent="Terrain/Blocks" unique_id=1509843145]
+offset_left = 3904.0
+offset_top = 1152.0
+offset_right = 4432.0
+offset_bottom = 1248.0
+mouse_filter = 2
+color = Color(0.18, 0.212, 0.251, 1)
+
+[node name="BlockEdge12" type="Line2D" parent="Terrain/Blocks" unique_id=214540826]
+points = PackedVector2Array(3904, 1152, 4432, 1152, 4432, 1248, 3904, 1248, 3904, 1152)
+width = 2.0
+default_color = Color(0.502, 0.56, 0.639, 1)
+antialiased = true
+
+[node name="BlockFill13" type="ColorRect" parent="Terrain/Blocks" unique_id=780382502]
+offset_left = 4672.0
+offset_top = 1152.0
+offset_right = 4816.0
+offset_bottom = 1248.0
+mouse_filter = 2
+color = Color(0.18, 0.212, 0.251, 1)
+
+[node name="BlockEdge13" type="Line2D" parent="Terrain/Blocks" unique_id=1459470752]
+points = PackedVector2Array(4672, 1152, 4816, 1152, 4816, 1248, 4672, 1248, 4672, 1152)
+width = 2.0
+default_color = Color(0.502, 0.56, 0.639, 1)
+antialiased = true
+
+[node name="BlockFill14" type="ColorRect" parent="Terrain/Blocks" unique_id=1865820831]
+offset_left = 4768.0
+offset_top = 1248.0
+offset_right = 4816.0
+offset_bottom = 1632.0
+mouse_filter = 2
+color = Color(0.18, 0.212, 0.251, 1)
+
+[node name="BlockEdge14" type="Line2D" parent="Terrain/Blocks" unique_id=762094004]
+points = PackedVector2Array(4768, 1248, 4816, 1248, 4816, 1632, 4768, 1632, 4768, 1248)
+width = 2.0
+default_color = Color(0.502, 0.56, 0.639, 1)
+antialiased = true
+
+[node name="BlockFill15" type="ColorRect" parent="Terrain/Blocks" unique_id=1863877603]
+offset_left = 208.0
+offset_top = 1680.0
+offset_right = 544.0
+offset_bottom = 1920.0
+mouse_filter = 2
+color = Color(0.18, 0.212, 0.251, 1)
+
+[node name="BlockEdge15" type="Line2D" parent="Terrain/Blocks" unique_id=1155746760]
+points = PackedVector2Array(208, 1680, 544, 1680, 544, 1920, 208, 1920, 208, 1680)
+width = 2.0
+default_color = Color(0.502, 0.56, 0.639, 1)
+antialiased = true
+
+[node name="BlockFill16" type="ColorRect" parent="Terrain/Blocks" unique_id=1940668589]
+offset_left = 1072.0
+offset_top = 1680.0
+offset_right = 1312.0
+offset_bottom = 1920.0
+mouse_filter = 2
+color = Color(0.18, 0.212, 0.251, 1)
+
+[node name="BlockEdge16" type="Line2D" parent="Terrain/Blocks" unique_id=700746656]
+points = PackedVector2Array(1072, 1680, 1312, 1680, 1312, 1920, 1072, 1920, 1072, 1680)
+width = 2.0
+default_color = Color(0.502, 0.56, 0.639, 1)
+antialiased = true
+
+[node name="BlockFill17" type="ColorRect" parent="Terrain/Blocks" unique_id=1154569141]
+offset_left = 1504.0
+offset_top = 1680.0
+offset_right = 1792.0
+offset_bottom = 1920.0
+mouse_filter = 2
+color = Color(0.18, 0.212, 0.251, 1)
+
+[node name="BlockEdge17" type="Line2D" parent="Terrain/Blocks" unique_id=1022973749]
+points = PackedVector2Array(1504, 1680, 1792, 1680, 1792, 1920, 1504, 1920, 1504, 1680)
+width = 2.0
+default_color = Color(0.502, 0.56, 0.639, 1)
+antialiased = true
+
+[node name="BlockFill18" type="ColorRect" parent="Terrain/Blocks" unique_id=668461348]
+offset_left = 16.0
+offset_top = 1776.0
+offset_right = 208.0
+offset_bottom = 1920.0
+mouse_filter = 2
+color = Color(0.18, 0.212, 0.251, 1)
+
+[node name="BlockEdge18" type="Line2D" parent="Terrain/Blocks" unique_id=1997985915]
+points = PackedVector2Array(16, 1776, 208, 1776, 208, 1920, 16, 1920, 16, 1776)
+width = 2.0
+default_color = Color(0.502, 0.56, 0.639, 1)
+antialiased = true
+
+[node name="BlockFill19" type="ColorRect" parent="Terrain/Blocks" unique_id=1698084246]
+offset_left = 544.0
+offset_top = 1776.0
+offset_right = 1072.0
+offset_bottom = 1920.0
+mouse_filter = 2
+color = Color(0.18, 0.212, 0.251, 1)
+
+[node name="BlockEdge19" type="Line2D" parent="Terrain/Blocks" unique_id=612032009]
+points = PackedVector2Array(544, 1776, 1072, 1776, 1072, 1920, 544, 1920, 544, 1776)
+width = 2.0
+default_color = Color(0.502, 0.56, 0.639, 1)
+antialiased = true
+
+[node name="BlockFill20" type="ColorRect" parent="Terrain/Blocks" unique_id=47194511]
+offset_left = 1312.0
+offset_top = 1776.0
+offset_right = 1504.0
+offset_bottom = 1920.0
+mouse_filter = 2
+color = Color(0.18, 0.212, 0.251, 1)
+
+[node name="BlockEdge20" type="Line2D" parent="Terrain/Blocks" unique_id=805281670]
+points = PackedVector2Array(1312, 1776, 1504, 1776, 1504, 1920, 1312, 1920, 1312, 1776)
+width = 2.0
+default_color = Color(0.502, 0.56, 0.639, 1)
+antialiased = true
+
+[node name="BlockFill21" type="ColorRect" parent="Terrain/Blocks" unique_id=1442471865]
+offset_left = 1792.0
+offset_top = 1776.0
+offset_right = 4816.0
+offset_bottom = 1920.0
+mouse_filter = 2
+color = Color(0.18, 0.212, 0.251, 1)
+
+[node name="BlockEdge21" type="Line2D" parent="Terrain/Blocks" unique_id=1658396878]
+points = PackedVector2Array(1792, 1776, 4816, 1776, 4816, 1920, 1792, 1920, 1792, 1776)
+width = 2.0
+default_color = Color(0.502, 0.56, 0.639, 1)
+antialiased = true
+
+[node name="Platforms" type="StaticBody2D" parent="Terrain" unique_id=2133373586]
+collision_layer = 2
+collision_mask = 0
+
+[node name="Plat0" type="CollisionShape2D" parent="Terrain/Platforms" unique_id=1680658630]
+position = Vector2(2632, 486)
+shape = SubResource("RectangleShape2D_4er3e")
+one_way_collision = true
+one_way_collision_margin = 8.0
+
+[node name="Plat1" type="CollisionShape2D" parent="Terrain/Platforms" unique_id=926966313]
+position = Vector2(2128, 630)
+shape = SubResource("RectangleShape2D_763av")
+one_way_collision = true
+one_way_collision_margin = 8.0
+
+[node name="Plat2" type="CollisionShape2D" parent="Terrain/Platforms" unique_id=710149115]
+position = Vector2(2224, 822)
+shape = SubResource("RectangleShape2D_oisvl")
+one_way_collision = true
+one_way_collision_margin = 8.0
+
+[node name="Plat3" type="CollisionShape2D" parent="Terrain/Platforms" unique_id=804249539]
+position = Vector2(3568, 822)
+shape = SubResource("RectangleShape2D_w8ylq")
+one_way_collision = true
+one_way_collision_margin = 8.0
+
+[node name="Plat4" type="CollisionShape2D" parent="Terrain/Platforms" unique_id=1937226743]
+position = Vector2(1192, 1014)
+shape = SubResource("RectangleShape2D_i1t0p")
+one_way_collision = true
+one_way_collision_margin = 8.0
+
+[node name="Plat5" type="CollisionShape2D" parent="Terrain/Platforms" unique_id=1245619511]
+position = Vector2(2128, 1014)
+shape = SubResource("RectangleShape2D_epw8r")
+one_way_collision = true
+one_way_collision_margin = 8.0
+
+[node name="Plat6" type="CollisionShape2D" parent="Terrain/Platforms" unique_id=1122659479]
+position = Vector2(3568, 1014)
+shape = SubResource("RectangleShape2D_5musk")
+one_way_collision = true
+one_way_collision_margin = 8.0
+
+[node name="Plat7" type="CollisionShape2D" parent="Terrain/Platforms" unique_id=692150769]
+position = Vector2(904, 1206)
+shape = SubResource("RectangleShape2D_6bm8c")
+one_way_collision = true
+one_way_collision_margin = 8.0
+
+[node name="Plat8" type="CollisionShape2D" parent="Terrain/Platforms" unique_id=167538822]
+position = Vector2(2224, 1206)
+shape = SubResource("RectangleShape2D_ey823")
+one_way_collision = true
+one_way_collision_margin = 8.0
+
+[node name="Plat9" type="CollisionShape2D" parent="Terrain/Platforms" unique_id=888997127]
+position = Vector2(3568, 1206)
+shape = SubResource("RectangleShape2D_sxek3")
+one_way_collision = true
+one_way_collision_margin = 8.0
+
+[node name="Plat10" type="CollisionShape2D" parent="Terrain/Platforms" unique_id=187770362]
+position = Vector2(1192, 1398)
+shape = SubResource("RectangleShape2D_s72tb")
+one_way_collision = true
+one_way_collision_margin = 8.0
+
+[node name="Plat11" type="CollisionShape2D" parent="Terrain/Platforms" unique_id=1221286935]
+position = Vector2(2128, 1398)
+shape = SubResource("RectangleShape2D_5ikb2")
+one_way_collision = true
+one_way_collision_margin = 8.0
+
+[node name="Plat12" type="CollisionShape2D" parent="Terrain/Platforms" unique_id=1800818702]
+position = Vector2(3568, 1398)
+shape = SubResource("RectangleShape2D_q2ypx")
+one_way_collision = true
+one_way_collision_margin = 8.0
+
+[node name="Plat13" type="CollisionShape2D" parent="Terrain/Platforms" unique_id=938573429]
+position = Vector2(4360, 1398)
+shape = SubResource("RectangleShape2D_vb3pu")
+one_way_collision = true
+one_way_collision_margin = 8.0
+
+[node name="Plat14" type="CollisionShape2D" parent="Terrain/Platforms" unique_id=674273089]
+position = Vector2(904, 1590)
+shape = SubResource("RectangleShape2D_w548l")
+one_way_collision = true
+one_way_collision_margin = 8.0
+
+[node name="Plat15" type="CollisionShape2D" parent="Terrain/Platforms" unique_id=2094855923]
+position = Vector2(1936, 1590)
+shape = SubResource("RectangleShape2D_cj5f8")
+one_way_collision = true
+one_way_collision_margin = 8.0
+
+[node name="Plat16" type="CollisionShape2D" parent="Terrain/Platforms" unique_id=1724325120]
+position = Vector2(2176, 1590)
+shape = SubResource("RectangleShape2D_su5ft")
+one_way_collision = true
+one_way_collision_margin = 8.0
+
+[node name="Plat17" type="CollisionShape2D" parent="Terrain/Platforms" unique_id=200536572]
+position = Vector2(3304, 1590)
+shape = SubResource("RectangleShape2D_5chku")
+one_way_collision = true
+one_way_collision_margin = 8.0
+
+[node name="Plat18" type="CollisionShape2D" parent="Terrain/Platforms" unique_id=1317366893]
+position = Vector2(3568, 1590)
+shape = SubResource("RectangleShape2D_4seyy")
+one_way_collision = true
+one_way_collision_margin = 8.0
+
+[node name="Plat19" type="CollisionShape2D" parent="Terrain/Platforms" unique_id=520885628]
+position = Vector2(3880, 1590)
+shape = SubResource("RectangleShape2D_2ov3s")
+one_way_collision = true
+one_way_collision_margin = 8.0
+
+[node name="Plat20" type="CollisionShape2D" parent="Terrain/Platforms" unique_id=1494559348]
+position = Vector2(4408, 1590)
+shape = SubResource("RectangleShape2D_txel5")
+one_way_collision = true
+one_way_collision_margin = 8.0
+
+[node name="PlatformVisuals" type="Node2D" parent="Terrain" unique_id=304991319]
+
+[node name="PlatBar0" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=1505238440]
+points = PackedVector2Array(2512, 480, 2752, 480)
+width = 3.0
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="PlatTick0" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=762400085]
+points = PackedVector2Array(2512, 480, 2512, 512)
+width = 1.8
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="@Line2D@2" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=961330148]
+points = PackedVector2Array(2752, 480, 2752, 512)
+width = 1.8
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="PlatBar1" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=1449811617]
+points = PackedVector2Array(2032, 624, 2224, 624)
+width = 3.0
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="PlatTick1" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=60274708]
+points = PackedVector2Array(2032, 624, 2032, 656)
+width = 1.8
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="@Line2D@3" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=1919376745]
+points = PackedVector2Array(2224, 624, 2224, 656)
+width = 1.8
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="PlatBar2" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=766268584]
+points = PackedVector2Array(2128, 816, 2320, 816)
+width = 3.0
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="PlatTick2" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=1926511665]
+points = PackedVector2Array(2128, 816, 2128, 848)
+width = 1.8
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="@Line2D@4" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=1819282557]
+points = PackedVector2Array(2320, 816, 2320, 848)
+width = 1.8
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="PlatBar3" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=1891384043]
+points = PackedVector2Array(3472, 816, 3664, 816)
+width = 3.0
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="PlatTick3" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=1364895444]
+points = PackedVector2Array(3472, 816, 3472, 848)
+width = 1.8
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="@Line2D@5" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=959340224]
+points = PackedVector2Array(3664, 816, 3664, 848)
+width = 1.8
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="PlatBar4" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=757458188]
+points = PackedVector2Array(1072, 1008, 1312, 1008)
+width = 3.0
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="PlatTick4" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=1543843424]
+points = PackedVector2Array(1072, 1008, 1072, 1040)
+width = 1.8
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="@Line2D@6" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=6269193]
+points = PackedVector2Array(1312, 1008, 1312, 1040)
+width = 1.8
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="PlatBar5" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=175451189]
+points = PackedVector2Array(2032, 1008, 2224, 1008)
+width = 3.0
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="PlatTick5" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=684710999]
+points = PackedVector2Array(2032, 1008, 2032, 1040)
+width = 1.8
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="@Line2D@7" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=625523329]
+points = PackedVector2Array(2224, 1008, 2224, 1040)
+width = 1.8
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="PlatBar6" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=1608843644]
+points = PackedVector2Array(3472, 1008, 3664, 1008)
+width = 3.0
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="PlatTick6" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=1387415191]
+points = PackedVector2Array(3472, 1008, 3472, 1040)
+width = 1.8
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="@Line2D@8" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=436488631]
+points = PackedVector2Array(3664, 1008, 3664, 1040)
+width = 1.8
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="PlatBar7" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=647795580]
+points = PackedVector2Array(784, 1200, 1024, 1200)
+width = 3.0
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="PlatTick7" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=1134120084]
+points = PackedVector2Array(784, 1200, 784, 1232)
+width = 1.8
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="@Line2D@9" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=1770540817]
+points = PackedVector2Array(1024, 1200, 1024, 1232)
+width = 1.8
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="PlatBar8" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=306135930]
+points = PackedVector2Array(2128, 1200, 2320, 1200)
+width = 3.0
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="PlatTick8" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=1544585734]
+points = PackedVector2Array(2128, 1200, 2128, 1232)
+width = 1.8
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="@Line2D@10" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=1800070526]
+points = PackedVector2Array(2320, 1200, 2320, 1232)
+width = 1.8
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="PlatBar9" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=1553721606]
+points = PackedVector2Array(3472, 1200, 3664, 1200)
+width = 3.0
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="PlatTick9" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=1822095319]
+points = PackedVector2Array(3472, 1200, 3472, 1232)
+width = 1.8
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="@Line2D@11" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=1061506778]
+points = PackedVector2Array(3664, 1200, 3664, 1232)
+width = 1.8
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="PlatBar10" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=14855446]
+points = PackedVector2Array(1072, 1392, 1312, 1392)
+width = 3.0
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="PlatTick10" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=654549620]
+points = PackedVector2Array(1072, 1392, 1072, 1424)
+width = 1.8
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="@Line2D@12" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=575184203]
+points = PackedVector2Array(1312, 1392, 1312, 1424)
+width = 1.8
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="PlatBar11" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=1876704936]
+points = PackedVector2Array(2032, 1392, 2224, 1392)
+width = 3.0
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="PlatTick11" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=980878709]
+points = PackedVector2Array(2032, 1392, 2032, 1424)
+width = 1.8
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="@Line2D@13" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=1903254941]
+points = PackedVector2Array(2224, 1392, 2224, 1424)
+width = 1.8
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="PlatBar12" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=1244085604]
+points = PackedVector2Array(3472, 1392, 3664, 1392)
+width = 3.0
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="PlatTick12" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=929140513]
+points = PackedVector2Array(3472, 1392, 3472, 1424)
+width = 1.8
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="@Line2D@14" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=295343170]
+points = PackedVector2Array(3664, 1392, 3664, 1424)
+width = 1.8
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="PlatBar13" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=1530328846]
+points = PackedVector2Array(4144, 1392, 4576, 1392)
+width = 3.0
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="PlatTick13" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=1326825066]
+points = PackedVector2Array(4144, 1392, 4144, 1424)
+width = 1.8
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="@Line2D@15" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=191005619]
+points = PackedVector2Array(4576, 1392, 4576, 1424)
+width = 1.8
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="PlatBar14" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=482099095]
+points = PackedVector2Array(784, 1584, 1024, 1584)
+width = 3.0
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="PlatTick14" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=1728015852]
+points = PackedVector2Array(784, 1584, 784, 1616)
+width = 1.8
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="@Line2D@16" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=61376150]
+points = PackedVector2Array(1024, 1584, 1024, 1616)
+width = 1.8
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="PlatBar15" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=2076291185]
+points = PackedVector2Array(1840, 1584, 2032, 1584)
+width = 3.0
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="PlatTick15" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=1510710319]
+points = PackedVector2Array(1840, 1584, 1840, 1616)
+width = 1.8
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="@Line2D@17" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=2114198212]
+points = PackedVector2Array(2032, 1584, 2032, 1616)
+width = 1.8
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="PlatBar16" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=1640060953]
+points = PackedVector2Array(2080, 1584, 2272, 1584)
+width = 3.0
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="PlatTick16" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=1421175725]
+points = PackedVector2Array(2080, 1584, 2080, 1616)
+width = 1.8
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="@Line2D@18" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=1887986533]
+points = PackedVector2Array(2272, 1584, 2272, 1616)
+width = 1.8
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="PlatBar17" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=2069759825]
+points = PackedVector2Array(3184, 1584, 3424, 1584)
+width = 3.0
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="PlatTick17" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=732860121]
+points = PackedVector2Array(3184, 1584, 3184, 1616)
+width = 1.8
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="@Line2D@19" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=1943753793]
+points = PackedVector2Array(3424, 1584, 3424, 1616)
+width = 1.8
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="PlatBar18" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=694763403]
+points = PackedVector2Array(3472, 1584, 3664, 1584)
+width = 3.0
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="PlatTick18" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=1553528966]
+points = PackedVector2Array(3472, 1584, 3472, 1616)
+width = 1.8
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="@Line2D@20" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=801160837]
+points = PackedVector2Array(3664, 1584, 3664, 1616)
+width = 1.8
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="PlatBar19" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=573016457]
+points = PackedVector2Array(3760, 1584, 4000, 1584)
+width = 3.0
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="PlatTick19" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=1674123636]
+points = PackedVector2Array(3760, 1584, 3760, 1616)
+width = 1.8
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="@Line2D@21" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=23094124]
+points = PackedVector2Array(4000, 1584, 4000, 1616)
+width = 1.8
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="PlatBar20" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=1023249592]
+points = PackedVector2Array(4288, 1584, 4528, 1584)
+width = 3.0
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="PlatTick20" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=1176636171]
+points = PackedVector2Array(4288, 1584, 4288, 1616)
+width = 1.8
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
+
+[node name="@Line2D@22" type="Line2D" parent="Terrain/PlatformVisuals" unique_id=883183573]
+points = PackedVector2Array(4528, 1584, 4528, 1616)
+width = 1.8
+default_color = Color(0.941, 0.659, 0.235, 1)
+antialiased = true
 
 [node name="SoilPlot" type="Area2D" parent="." unique_id=245748934 instance=ExtResource("4_plot")]
-position = Vector2(360, 578)
+position = Vector2(360, 1658)
 script = ExtResource("5_6cwqj")
-
-[node name="DoorToSafeHouse" type="Area2D" parent="." unique_id=971149574]
-position = Vector2(90, 540)
-script = ExtResource("5_door")
-target_scene_path = "res://world/rooms/SafeHouse.tscn"
-target_spawn_name = "SpawnFromRest"
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="DoorToSafeHouse" unique_id=1897377379]
-shape = SubResource("RectangleShape2D_door")
-
-[node name="Label" type="Label" parent="DoorToSafeHouse" unique_id=634731523]
-offset_left = -60.0
-offset_top = -100.0
-offset_right = 60.0
-offset_bottom = -70.0
-theme_override_font_sizes/font_size = 20
-theme_override_colors/font_color = Color(0.35, 0.2, 0.1, 1)
-text = "← 休息小屋"
-horizontal_alignment = 1
-
-[node name="DoorToRoom02" type="Area2D" parent="." unique_id=969905204]
-position = Vector2(1180, 540)
-script = ExtResource("5_door")
-target_scene_path = "res://world/rooms/Room02.tscn"
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="DoorToRoom02" unique_id=746178558]
-shape = SubResource("RectangleShape2D_door")
-
-[node name="Label" type="Label" parent="DoorToRoom02" unique_id=407724649]
-offset_left = -60.0
-offset_top = -100.0
-offset_right = 60.0
-offset_bottom = -70.0
-theme_override_font_sizes/font_size = 20
-theme_override_colors/font_color = Color(0.35, 0.2, 0.1, 1)
-text = "→ 画页二"
-horizontal_alignment = 1
 
 [node name="InvadersContainer" type="Node2D" parent="." unique_id=1147887987]
 
@@ -162,7 +1146,7 @@ script = ExtResource("11_brv1k")
 script = ExtResource("13_jflwy")
 
 [node name="VistaPoint" type="Area2D" parent="." unique_id=1755686747]
-position = Vector2(540, 560)
+position = Vector2(1192, 968)
 script = ExtResource("97_vista")
 vista_title = "画页尽头的草地"
 
@@ -178,3 +1162,162 @@ theme_override_font_sizes/font_size = 18
 theme_override_colors/font_color = Color(0.35, 0.2, 0.1, 1)
 text = "驻足 · 眺望"
 horizontal_alignment = 1
+
+[node name="TutorialHint" type="CanvasLayer" parent="." unique_id=1319078997]
+layer = 50
+script = ExtResource("7_tutorial")
+
+[node name="StatusBanner" type="CanvasLayer" parent="." unique_id=188083914]
+layer = 40
+script = ExtResource("8_banner")
+
+[node name="Doors" type="Node2D" parent="." unique_id=1176260207]
+
+[node name="DoorToSafeHouse" type="Area2D" parent="Doors" unique_id=1910746391]
+position = Vector2(40, 1752)
+script = ExtResource("5_door")
+target_scene_path = "res://world/rooms/SafeHouse.tscn"
+target_spawn_name = "SpawnFromRest"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Doors/DoorToSafeHouse" unique_id=909533112]
+shape = SubResource("RectangleShape2D_m47fr")
+
+[node name="Label" type="Label" parent="Doors/DoorToSafeHouse" unique_id=411159143]
+offset_left = 34.0
+offset_top = -96.0
+offset_right = 180.0
+offset_bottom = -66.0
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.784, 0.824, 0.878, 1)
+text = "← 休息小屋"
+
+[node name="DoorToRoom02" type="Area2D" parent="Doors" unique_id=1585592168]
+position = Vector2(4792, 1752)
+script = ExtResource("5_door")
+target_scene_path = "res://world/rooms/Room02.tscn"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Doors/DoorToRoom02" unique_id=1855706614]
+shape = SubResource("RectangleShape2D_sds2u")
+
+[node name="Label" type="Label" parent="Doors/DoorToRoom02" unique_id=1826005962]
+offset_left = -180.0
+offset_top = -96.0
+offset_right = -34.0
+offset_bottom = -66.0
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.784, 0.824, 0.878, 1)
+text = "→ 画页二"
+horizontal_alignment = 2
+
+[node name="Mechanisms" type="Node2D" parent="." unique_id=1360564106]
+
+[node name="Gate" type="StaticBody2D" parent="Mechanisms" unique_id=258198540]
+position = Vector2(3088, 1248)
+collision_mask = 0
+script = ExtResource("16_jflwy")
+cells = 11
+
+[node name="Lever" type="Area2D" parent="Mechanisms" unique_id=773350592]
+position = Vector2(2728, 624)
+script = ExtResource("17_45tgs")
+
+[node name="SpawnFromLeft" type="Marker2D" parent="." unique_id=1857572411]
+position = Vector2(184, 1752)
+
+[node name="SpawnFromRight" type="Marker2D" parent="." unique_id=542039116]
+position = Vector2(4648, 1752)
+
+[node name="EnemySpawn0" type="Marker2D" parent="." unique_id=1373749104]
+position = Vector2(2632, 456)
+metadata/variant = 2
+
+[node name="EnemySpawn1" type="Marker2D" parent="." unique_id=1418428019]
+position = Vector2(2152, 791)
+metadata/variant = 0
+
+[node name="EnemySpawn2" type="Marker2D" parent="." unique_id=997386290]
+position = Vector2(1144, 983)
+metadata/variant = 0
+
+[node name="EnemySpawn3" type="Marker2D" parent="." unique_id=988525629]
+position = Vector2(568, 1032)
+metadata/variant = 2
+
+[node name="EnemySpawn4" type="Marker2D" parent="." unique_id=795624552]
+position = Vector2(1336, 1080)
+metadata/variant = 2
+
+[node name="EnemySpawn5" type="Marker2D" parent="." unique_id=1749150690]
+position = Vector2(856, 1175)
+metadata/variant = 0
+
+[node name="EnemySpawn6" type="Marker2D" parent="." unique_id=461250318]
+position = Vector2(4264, 1320)
+metadata/variant = 2
+
+[node name="EnemySpawn7" type="Marker2D" parent="." unique_id=636902636]
+position = Vector2(3256, 1368)
+metadata/variant = 2
+
+[node name="EnemySpawn8" type="Marker2D" parent="." unique_id=1188959681]
+position = Vector2(1720, 1655)
+metadata/variant = 0
+
+[node name="EnemySpawn9" type="Marker2D" parent="." unique_id=559698809]
+position = Vector2(3880, 1559)
+metadata/variant = 0
+
+[node name="EnemySpawn10" type="Marker2D" parent="." unique_id=1823537526]
+position = Vector2(328, 1655)
+metadata/variant = 0
+
+[node name="EnemySpawn11" type="Marker2D" parent="." unique_id=1703968523]
+position = Vector2(1192, 1655)
+metadata/variant = 0
+
+[node name="EnemySpawn12" type="Marker2D" parent="." unique_id=822418527]
+position = Vector2(1624, 1655)
+metadata/variant = 0
+
+[node name="EnemySpawn13" type="Marker2D" parent="." unique_id=28985321]
+position = Vector2(616, 1751)
+metadata/variant = 0
+
+[node name="EnemySpawn14" type="Marker2D" parent="." unique_id=494148930]
+position = Vector2(904, 1751)
+metadata/variant = 0
+
+[node name="EnemySpawn15" type="Marker2D" parent="." unique_id=1729779331]
+position = Vector2(1912, 1751)
+metadata/variant = 0
+
+[node name="EnemySpawn16" type="Marker2D" parent="." unique_id=689719110]
+position = Vector2(2200, 1751)
+metadata/variant = 0
+
+[node name="EnemySpawn17" type="Marker2D" parent="." unique_id=7286373]
+position = Vector2(2488, 1751)
+metadata/variant = 0
+
+[node name="EnemySpawn18" type="Marker2D" parent="." unique_id=94457569]
+position = Vector2(2776, 1751)
+metadata/variant = 0
+
+[node name="EnemySpawn19" type="Marker2D" parent="." unique_id=304921188]
+position = Vector2(3352, 1751)
+metadata/variant = 0
+
+[node name="EnemySpawn20" type="Marker2D" parent="." unique_id=1254282631]
+position = Vector2(3736, 1751)
+metadata/variant = 0
+
+[node name="EnemySpawn21" type="Marker2D" parent="." unique_id=885319729]
+position = Vector2(4120, 1751)
+metadata/variant = 0
+
+[node name="EnemySpawn22" type="Marker2D" parent="." unique_id=1941103376]
+position = Vector2(4600, 1751)
+metadata/variant = 0
+
+[node name="WireOverlay" type="Node2D" parent="." unique_id=1417619260]
+script = ExtResource("17_jflwy")

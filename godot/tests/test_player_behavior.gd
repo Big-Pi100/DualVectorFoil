@@ -39,12 +39,42 @@ func _initialize() -> void:
 	Input.action_release("jump")
 	_check(_player.velocity.y < 0.0, "跳跃后应有向上速度，实际 vy=%.1f" % _player.velocity.y)
 
-	# 3. 二段跳（空中再按一次）
-	await _wait_frames(8)
+	# 3. 折叠（二段跳）：**必须先解锁**——S2 之前这里能过只是因为二段跳默认打开，
+	#    它其实从没被"锁"过。现在二段跳是能力，未解锁时按第二下不该有任何反应。
+	#
+	#    时机也很重要：原来是起跳后 8 帧（0.13s）就按，那时 vy 还在 -630 附近，
+	#    "vy < -200" 这条断言**不按第二下也一样成立** —— 它测不出二段跳有没有发生。
+	#    改成等接近顶点（单跳 917ms，顶点约 0.46s）再按，此时 vy 接近 0，
+	#    二段一生效就会突变到 -697，两者才分得开。
+	await _wait_frames(28)
+	var vy_apex: float = _player.velocity.y
 	Input.action_press("jump")
 	await _wait_frames(2)
 	Input.action_release("jump")
-	_check(_player.velocity.y < -200.0, "二段跳应再次向上，实际 vy=%.1f" % _player.velocity.y)
+	_check(_player.velocity.y < -600.0 == false,
+		"未解锁折叠时按第二下不应二段跳（顶点 vy=%.1f → 按后 vy=%.1f）"
+		% [vy_apex, _player.velocity.y])
+
+	# 3b. 落地后解锁，同一个动作必须真的生效 ——
+	#     否则上面那条只证明"按键没反应"，证明不了"能力锁"。
+	await _wait_frames(60)
+	_check(_player.is_on_floor(), "解锁前应已落回地板，实际 y=%.1f" % _player.global_position.y)
+	_world_state().call("unlock_ability", "fold")
+	await _wait_frames(4)
+	_check(_player.can_double_jump, "解锁折叠后落地应重新充能（can_double_jump=%s）"
+		% str(_player.can_double_jump))
+
+	Input.action_press("jump")
+	await _wait_frames(2)
+	Input.action_release("jump")
+	await _wait_frames(28)
+	var vy_apex2: float = _player.velocity.y
+	Input.action_press("jump")
+	await _wait_frames(2)
+	Input.action_release("jump")
+	_check(_player.velocity.y < -600.0,
+		"解锁折叠后同一时机应能二段跳（顶点 vy=%.1f → 按后 vy=%.1f）"
+		% [vy_apex2, _player.velocity.y])
 
 	# 4. 攻击：检查攻击状态与判定框激活
 	await _wait_frames(60)
@@ -81,6 +111,12 @@ func _initialize() -> void:
 func _wait_frames(n: int) -> void:
 	for i: int in range(n):
 		await physics_frame
+
+## `--script` 模式下 autoload 的全局名在**编译期**还没注册，
+## 直接写 `WorldState.xxx` 会 Compile Error（Identifier not found）。
+## 入口脚本只能走 /root 取节点；场景里的脚本不受影响。
+func _world_state() -> Node:
+	return root.get_node("/root/WorldState")
 
 func _check(ok: bool, msg: String) -> void:
 	if not ok:

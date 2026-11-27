@@ -176,10 +176,22 @@ func _setup() -> void:
 	_check(_skill_slots == [1, 2], "技能槽信号应为 [1,2]，实际 %s" % [str(_skill_slots)])
 	_check(_interacts == 1, "互动信号应触发一次，实际 %d" % _interacts)
 
-	# ===== 8. 零惩罚失败 =====
+	# ===== 8. 零惩罚失败（S1：死亡有 0.7s 倒地演出，respawn 因此是延时的）=====
 	_player.take_damage(999.0)
-	_check(_respawns == 1, "死亡应触发一次 respawn_requested，实际 %d" % _respawns)
-	_check(is_equal_approx(_player.get("hp"), _player.max_hp), "死亡后应回满血")
+	_check(is_equal_approx(float(_player.get("hp")), 0.0),
+		"死亡瞬间血量归零且不被同一帧回满，实际 %.0f" % float(_player.get("hp")))
+	_check(bool(_player.get("is_dead")), "死亡瞬间进入死亡态")
+	_check(_respawns == 0, "倒地演出期间尚未请求复活，实际 %d" % _respawns)
+	var respawn_waited: bool = false
+	for i: int in range(180):
+		if _respawns > 0:
+			respawn_waited = true
+			break
+		await _frames(1)
+	_check(respawn_waited, "倒地演出结束后触发一次 respawn_requested，实际 %d" % _respawns)
+	_player.call("revive")
+	_check(not bool(_player.get("is_dead")), "复活后退出死亡态")
+	_check(is_equal_approx(_player.get("hp"), _player.max_hp), "复活后回满血")
 
 	# ===== 9. TouchHUD 输入注入 =====
 	_player.virtual_move_vector = Vector2(1, 0)

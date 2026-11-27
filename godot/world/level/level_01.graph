@@ -1,0 +1,55 @@
+! level_01.graph · 关卡图（Dead Cells「混合方法」第 3 步）
+!
+! 这张图只描述「本关需要哪些类型的房间、怎么连」，**不描述房间长什么样**。
+! 房间长什么样在 rooms/blueprints/*.txt 里，是手工零件（第 2 步）。
+! 拼装由 world/level/gen_level.py 做（第 4/5 步），敌人在拼装时按 seed 重洒（第 6 步）。
+!
+! 语法：
+!   seed=<int>                       整局的根种子，改一个数就是另一局
+!   node <id> tag=<tag> template=<a,b,c> [after=<父> | below=<父>] [repeat=a-b] [branch=1]
+!
+!   tag      决定「这间房在关卡里的职能」，也决定敌人密度（见 gen_level.py 的 TAG_SPAWNS）
+!   template 是该 tag 的候选池，拼装时按 seed 抽一个 —— 这是「变化」的第一层
+!   after    横向接：父的右门 → 子的左门（门洞按**行**对齐）
+!   below    纵向接：父的下门 → 子的上门（门洞按**列**对齐）
+!   repeat   这一段放 a~b 间，具体几间由 seed 决定 —— 这是「变化」的第二层
+!   branch   支线：挂在父房间的地板洞下面，走完回到原地，不往下传
+!
+! 三层变化叠起来，同一个种子换一个数就是另一局：
+!   抽哪个模板（template）× 放几间（repeat）× 支线挂在哪（branch）
+!
+! 这一版的形状：
+!
+!   地面 ──entry──[combat_a ×1~2]──hall（抬 30 格，七层平台）
+!                                    │
+!                                  corner（L 进 D 出）
+!                                    ↓
+!                                  shaft（42 格高塔）
+!                                    ↓
+!                                 landing（U 进 R 出）
+!                                    │
+!                                  combat_b ×1~2
+!                                    ├──┐
+!                                    │  pocket（地板洞下沉口袋，打完爬回来）
+!                                    ├──┘
+!                                  shop──boss
+!
+! 已删 gate 节点（原「满高闸门 + 高台拉杆」）：DC 的门是层内 1~2 格的小尺度元素，
+! 不是 44 格宽的结构段。删掉后宽度 258 → 214 格 = 8.02 屏，自动落进目标区间。
+! 见 docs/gdd/13_关卡拼装.md §17。
+!
+! 玩家先往右爬高，再从塔里一层层掉下去，落回地面；路上被口袋绊一次。
+
+seed=20261127
+
+! id          tag       候选模板                         父节点
+node entry    tag=start   template=room_02
+node combat_a tag=combat  template=room_03,room_02,part_hall   repeat=1-2 after=entry
+node hall     tag=combat  template=part_hall         after=combat_a
+node corner   tag=combat  template=part_corner                 after=hall
+node shaft    tag=combat  template=part_tower                  below=corner
+node landing  tag=combat  template=part_landing                below=shaft
+node combat_b tag=combat  template=room_04,room_03             repeat=1-2 after=landing
+node pocket   tag=combat  template=part_pocket                 below=combat_b branch=1
+node shop     tag=shop    template=room_04                     after=combat_b
+node boss     tag=boss    template=room_05                     after=shop

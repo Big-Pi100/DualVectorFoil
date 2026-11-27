@@ -4,7 +4,7 @@
     python art/tools/asset_rules_check.py
     python art/tools/asset_rules_check.py -v      # 逐张打印
 
-它查四件事，每件都是规则里写死过的：
+它查五件事，每件都是规则里写死过的：
 
   1. **manifest 覆盖**：库里每张 PNG 都有条目，每个条目对应的文件都存在
      —— 防「孤儿资产」（入库了但没人知道它是什么角色）和「死引用」。
@@ -12,6 +12,11 @@
   3. **role 专属断言**：`tile_cap`/`tile_mid` 走三段拼接的全套判据
      （尺寸 / 三条接缝 / 回文 / 收口 / 无洞），`sprite` 查帧框。
   4. **摆件不进关卡**：`prop` 类不得出现在任何 Godot 场景里（§4 的硬规则）。
+  5. **弃用件不得被引用**：`contact_sheet.py` 判成 `S_DROP` 的资产，
+     任何 `.tscn` / `.tres` / `.gd` 都不许引用它 —— 哪怕只是拿来当占位替身。
+     （2026-11-27 补：`terrain_stone_block` 判了弃用却还在 Room04/05 的
+     书堆、灯塔里当替身贴图，四天没人发现，因为"弃用"和"引用"之间
+     从来没有检查连着。判据写在表里，不等于判据被执行。）
 
 风格（笔触 / 洋红 / 门禁 G1–G5）不归这里管，归 `ART_GUIDE.md` 和 `extract_magenta.py`。
 两套判据是**并联**的：都过才算能用的资产。
@@ -20,6 +25,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import json
 import re
 import sys
@@ -121,17 +127,35 @@ PROP_USAGE_OK: dict[str, dict[str, str]] = {
 # 占位：场景里确实在用，但用的是"拿通用石构件拼一个地标"，不是设计过的资产。
 # 它们曾经被登记成 PROP_USAGE_OK（"已接入"），等于把占位洗成了合规 —— 这是错的。
 # 占位必须报错而不是登记：留着的意义就是"这是一个待办"，绿了就会被忘掉。
-PROP_PLACEHOLDER: dict[str, dict[str, str]] = {
-    "godot/world/rooms/Room03.tscn": {
-        "terrain_stone_pillar_200": "风车：Tower 竖一块石柱，Blade0-2 拿 item_star_sprite 当叶片",
-    },
-    "godot/world/rooms/Room04.tscn": {
-        "terrain_stone_block_200": "纸书堆：Book0-2 + Bookmark 都是同一张立方石缩放/旋转",
-    },
-    "godot/world/rooms/Room05.tscn": {
-        "terrain_stone_block_200": "灯塔：TowerBase/Mid/Top 是同一张立方石叠三次，灯室用星星图代替",
-    },
-}
+#
+# 2026-11-27：三条（Room03 风车 / Room04 书堆 / Room05 灯塔）已全部换成
+# `Polygon2D` 原始几何体 —— 灰色占位块是灰盒，借用别处的成品图当替身不是。
+# 表留空作为机制：以后再有"拿 A 拼 B"的占位，写进这里，它会红。
+PROP_PLACEHOLDER: dict[str, dict[str, str]] = {}
+
+
+def dropped_keys() -> set[str]:
+    """从 `contact_sheet.py` 的 `DECISION` 表里读 `S_DROP` 的键。
+
+    用 `ast` 读源码而不是 `import`：`contact_sheet` 会拉起 PIL 并在导入时算表，
+    而这里只需要那张表的**键集合**。反而是"判据只有一份"更重要 ——
+    两处各写一份弃用清单，迟早会漂。
+    """
+    src = (Path(__file__).resolve().parent / "contact_sheet.py").read_text(encoding="utf-8")
+    tree = ast.parse(src)
+    for node in tree.body:
+        targets = node.targets if isinstance(node, ast.Assign) else []
+        if not any(getattr(t, "id", None) == "DECISION" for t in targets):
+            continue
+        if not isinstance(node.value, ast.Dict):
+            continue
+        keys: set[str] = set()
+        for k, v in zip(node.value.keys, node.value.values):
+            first = v.elts[0] if isinstance(v, ast.Tuple) and v.elts else None
+            if isinstance(first, ast.Name) and first.id == "S_DROP":
+                keys.add(ast.literal_eval(k))
+        return keys
+    return set()
 
 
 def _base_key(key: str) -> str:
@@ -249,6 +273,26 @@ def main() -> int:
         print(f"  ✓ {len(ok_hits)} 处已登记用法，全部是 Sprite2D 构景")
         for line in ok_hits:
             print(f"    · {line}")
+
+    print("\n[drop] 弃用件不得被任何场景/脚本引用")
+    dropped = dropped_keys()
+    drop_hits: list[str] = []
+    for f in GODOT.rglob("*"):
+        if f.suffix not in (".tscn", ".tres", ".gd") or ".godot" in f.parts:
+            continue
+        rel = f.relative_to(ROOT).as_posix()
+        txt = f.read_text(encoding="utf-8", errors="ignore")
+        for name in sorted(dropped):
+            if re.search(rf"(?<![\w-]){re.escape(name)}(?![\w-])", txt):
+                drop_hits.append(f"{rel} 引用了弃用件 {name}（contact_sheet 判 S_DROP）")
+    bad += drop_hits
+    if dropped:
+        if drop_hits:
+            print(f"  🔴 弃用件 {len(dropped)} 个，被引用 {len(drop_hits)} 处：")
+            for line in drop_hits:
+                print(f"    · {line}")
+        else:
+            print(f"  ✓ 弃用件 {len(dropped)} 个（{'、'.join(sorted(dropped))}），零引用")
 
     print("\n[role] 分布")
     for role in sorted(by_role):

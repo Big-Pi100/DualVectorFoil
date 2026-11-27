@@ -1,8 +1,9 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://core/components/Hurtbox.gd" id="1_hurtbox"]
 [ext_resource type="Script" path="res://world/enemies/InvaderVisual.gd" id="2_visual"]
 [ext_resource type="Shader" path="res://world/shaders/boiling_line.gdshader" id="3_boil"]
+[ext_resource type="Script" path="res://world/enemies/InvaderAI.gd" id="4_ai"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_boil"]
 shader = ExtResource("3_boil")
@@ -23,3 +24,6 @@ shape = SubResource("RectangleShape2D_invader")
 [node name="Visual" type="Sprite2D" parent="."]
 material = SubResource("ShaderMaterial_boil")
 script = ExtResource("2_visual")
+
+[node name="AI" type="Node" parent="."]
+script = ExtResource("4_ai")

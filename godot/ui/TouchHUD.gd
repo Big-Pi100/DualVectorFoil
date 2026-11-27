@@ -13,6 +13,7 @@ extends CanvasLayer
 @export var press_feedback_modulate: Color = Color(0.72, 0.72, 0.72, 1.0)
 
 @onready var root_control: Control = $RootControl
+@onready var right_group: Control = $RootControl/RightButtonsGroup
 @onready var left_area: Control = $RootControl/LeftJoystickArea
 @onready var joy_base: Control = $RootControl/LeftJoystickArea/JoystickBase
 @onready var joy_knob: Control = $RootControl/LeftJoystickArea/JoystickKnob
@@ -25,6 +26,9 @@ extends CanvasLayer
 @onready var btn_skill_2: Button = $RootControl/RightButtonsGroup/BtnSkill2
 @onready var btn_heal: Button = $RootControl/BtnHeal
 @onready var btn_interact: Button = $RootControl/BtnInteract
+# 不标 HealthBar 类型：`--script` 模式下 class_name 全局类晚于脚本解析注册，
+# 标了会在测试里直接 Parse Error，整个 HUD 脚本失效、触屏和血条一起坏掉。
+@onready var health_bar: Control = $RootControl/HealthBar
 
 var player: Player = null
 var _joystick_touch_index: int = -1
@@ -35,6 +39,12 @@ func _ready() -> void:
 	joy_base.visible = false
 	joy_knob.visible = false
 	btn_interact.visible = false
+	# 没有触屏就隐藏虚拟按键。六颗按钮占掉右半屏 40%，
+	# 把房间的台阶和门全挡在后面（2026-11-27 实拍 shot_Room01.png 一眼就能看出来）——
+	# 键鼠玩家看房间，不该隔着一层用不上的按钮。
+	if not DisplayServer.is_touchscreen_available():
+		right_group.visible = false
+		btn_heal.visible = false
 	if get_node_or_null("/root/WorldState") != null:
 		WorldState.vista_mode_changed.connect(_on_vista_mode_changed)
 
@@ -89,6 +99,10 @@ func _connect_press_feedback(button: Button) -> void:
 
 func bind_player(target_player: Player) -> void:
 	player = target_player
+	# 血条跟着同一条绑定走：房间只需要认「HUD 绑上玩家」这一个动作，
+	# 不必知道 HUD 内部还有哪些显示件。
+	if health_bar != null and health_bar.has_method("bind_player"):
+		health_bar.call("bind_player", target_player)
 
 func set_interact_prompt(visible_prompt: bool, label_text: String = "交互") -> void:
 	btn_interact.visible = visible_prompt

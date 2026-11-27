@@ -17,7 +17,9 @@ const ENTITY_SCENES: Array[String] = [
 ]
 const MAX_TEXTURE_W: float = 512.0   # 超过即用了 1024 原图而非游戏尺寸标准版
 const MAX_RENDER: float = 500.0      # 单个 Sprite 渲染包围盒上限（视口 1280×720）
-const MAX_COLLISION: float = 1200.0  # 地板 1200×40 是唯一允许到 1200 的碰撞体
+## 上限 1300：旧地板 1200×40；蓝图地形会合并出跨整面墙的天花板/地面（1248×48），
+## 那是合法的整块地形，不是导入事故。真要防的是"尺寸离谱到物理会炸"的碰撞体。
+const MAX_COLLISION: float = 1300.0
 
 var _fail_count: int = 0
 var _sprite_count: int = 0
@@ -146,22 +148,54 @@ func _audit_touch_hud() -> void:
 			var rj: Rect2 = _rect(buttons[j])
 			_check(not ri.intersects(rj), "按钮重叠: %s / %s" % [buttons[i].name, buttons[j].name])
 	# 道具星星主体 36px：灯塔灯 / 风车叶片等装饰放大不得失控（曾出现 2.2 倍→79px）
+	#
+	# 2026-11-27：这些装饰从 `Sprite2D`（借 item_star 的图）换成了 `Polygon2D`
+	# 原始几何体。原来这里写 `find_child(...) as Sprite2D`，换完之后拿到 null、
+	# 循环空转 —— **全称判断在空集合上永远为真**，测试照样绿，等于判据被删了都没人知道。
+	# 所以两件事一起改：量形状而不是量节点类型；再断言"至少量到几个"，
+	# 让"空转"本身变成失败。
+	var measured: int = 0
 	for path_key: String in ["LampStar", "Blade0", "Blade1", "Blade2"]:
 		for room_path: String in ROOM_SCENES:
 			var rp: PackedScene = load(room_path) as PackedScene
 			if rp == null:
 				continue
 			var ri: Node = rp.instantiate()
-			var lamp: Sprite2D = ri.find_child(path_key, true, false) as Sprite2D
-			if lamp != null and lamp.texture != null:
-				var rendered_h: float = float(lamp.texture.get_height()) * absf(lamp.scale.y)
-				_check(rendered_h <= 72.0, "%s/%s 道具渲染高 %.0fpx 超基线" % [room_path, path_key, rendered_h])
+			var deco: Node2D = ri.find_child(path_key, true, false) as Node2D
+			if deco != null:
+				var rendered_h: float = _visual_height(deco)
+				if rendered_h > 0.0:
+					measured += 1
+					_check(rendered_h <= 72.0,
+						"%s/%s 道具渲染高 %.0fpx 超基线" % [room_path, path_key, rendered_h])
 			ri.free()
+	_check(measured >= 4, "装饰高度判据至少量到 4 个节点（实测 %d 个，判据空转）" % measured)
 	var group_left: float = group.anchor_left * 1280.0
 	_check(is_equal_approx(group_left, 704.0), "按钮组起点 x=704 与摇杆判定边界对齐（无死区）")
 	var interact: Button = hud.get_node_or_null("RootControl/BtnInteract") as Button
 	_check(interact != null and is_equal_approx(interact.anchor_left, 1.0), "交互键在右上角不压画面中央")
 	hud.free()
+
+## 装饰节点的**渲染高度**：Sprite2D 量贴图高×scale，Polygon2D 量多边形包围盒高×scale。
+## 不按节点类型分两支判据 —— 换实现方式时判据应当跟着形状走。
+func _visual_height(n: Node2D) -> float:
+	if n is Sprite2D:
+		var s := n as Sprite2D
+		if s.texture == null:
+			return 0.0
+		return float(s.texture.get_height()) * absf(s.scale.y)
+	if n is Polygon2D:
+		var p := n as Polygon2D
+		if p.polygon.is_empty():
+			return 0.0
+		var lo: float = INF
+		var hi: float = -INF
+		for v: Vector2 in p.polygon:
+			lo = minf(lo, v.y)
+			hi = maxf(hi, v.y)
+		return (hi - lo) * absf(p.scale.y)
+	return 0.0
+
 
 func _rect(btn: Button) -> Rect2:
 	return Rect2(btn.offset_left, btn.offset_top, btn.offset_right - btn.offset_left,

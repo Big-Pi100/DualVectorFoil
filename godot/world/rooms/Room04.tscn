@@ -1,8 +1,8 @@
-[gd_scene format=4]
+[gd_scene format=3]
 
 [ext_resource type="Script" path="res://world/rooms/BaseRoom.gd" id="1_room"]
 [ext_resource type="PackedScene" path="res://entities/player/Player.tscn" id="2_player"]
-[ext_resource type="TileSet" path="res://world/tiles/ground_tileset.tres" id="2_qllfk"]
+[ext_resource type="Texture2D" path="res://art/approved/Terrain/ground_mid.png" id="2_ylj5c"]
 [ext_resource type="PackedScene" path="res://ui/TouchHUD.tscn" id="3_hud"]
 [ext_resource type="PackedScene" path="res://world/interactables/SoilPlot.tscn" id="4_plot"]
 [ext_resource type="Script" path="res://world/interactables/RoomDoor.gd" id="5_door"]
@@ -13,15 +13,48 @@
 [ext_resource type="Shader" path="res://world/shaders/env_light.gdshader" id="94_env"]
 [ext_resource type="Script" path="res://world/interactables/VistaZone.gd" id="95_vista"]
 [ext_resource type="Shader" path="res://world/shaders/paper_grain.gdshader" id="96_paper"]
-[ext_resource type="Texture2D" path="res://art/approved/Items/item_star_sprite.png" id="97_star"]
-[ext_resource type="Texture2D" path="res://art/approved/Terrain/terrain_stone_block_200.png" id="98_block"]
-[ext_resource type="Texture2D" path="res://art/approved/Terrain/terrain_grass_decor.png" id="99_grass"]
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_floor"]
-size = Vector2(1200, 40)
+[sub_resource type="Gradient" id="Gradient_w7mk4"]
+colors = PackedColorArray(0.98, 0.95, 0.88, 1, 0.62, 0.565, 0.47, 1)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_door"]
-size = Vector2(60, 140)
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_rx5bx"]
+gradient = SubResource("Gradient_w7mk4")
+width = 256
+height = 256
+fill = 1
+fill_from = Vector2(0.42, 0.62)
+fill_to = Vector2(0.98, 1.1)
+
+[sub_resource type="Gradient" id="Gradient_ylj5c"]
+colors = PackedColorArray(0.13, 0.1, 0.075, 0.55, 0.13, 0.1, 0.075, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_qllfk"]
+gradient = SubResource("Gradient_ylj5c")
+width = 8
+height = 128
+fill_from = Vector2(0.5, 0)
+fill_to = Vector2(0.5, 1)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_jymi2"]
+size = Vector2(1248, 48)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_mu7nw"]
+size = Vector2(48, 432)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_lem5f"]
+size = Vector2(48, 432)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_fm1o3"]
+size = Vector2(96, 336)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_avkpk"]
+size = Vector2(96, 336)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_2607t"]
+size = Vector2(1248, 96)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_2pvih"]
+size = Vector2(192, 12)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_desat"]
 shader = ExtResource("6_shader")
@@ -33,131 +66,357 @@ shader_parameter/wipe_radius = 0.0
 shader = ExtResource("96_paper")
 shader_parameter/grain_strength = 0.14
 shader_parameter/fiber_strength = 0.1
+shader_parameter/paper_tint = null
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_env"]
 shader = ExtResource("94_env")
 shader_parameter/night = 0.0
 shader_parameter/moon_tint = Color(0.42, 0.38, 0.78, 1)
+shader_parameter/tint_pull = null
+shader_parameter/veg_protect = null
+shader_parameter/sat_scale = null
+shader_parameter/sat_add = null
+shader_parameter/val_mul = null
+shader_parameter/val_add = null
+shader_parameter/contrast_boost = null
+shader_parameter/lift = null
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_vista"]
 size = Vector2(140, 120)
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_4i0y2"]
+size = Vector2(60, 140)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_q335o"]
+size = Vector2(60, 140)
+
 [node name="Room04" type="Node2D" unique_id=1773435488]
 script = ExtResource("1_room")
 room_id = "room_04"
+invader_count = 2
 
-[node name="SpawnFromLeft" type="Marker2D" parent="." unique_id=1674791744]
-position = Vector2(180, 560)
+[node name="Terrain" type="Node2D" parent="." unique_id=1434418927]
+z_index = -10
 
-[node name="SpawnFromRight" type="Marker2D" parent="." unique_id=1281778627]
-position = Vector2(1040, 560)
+[node name="Backdrop0_0" type="TextureRect" parent="Terrain" unique_id=2009748009]
+offset_right = 1280.0
+offset_bottom = 720.0
+mouse_filter = 2
+texture = SubResource("GradientTexture2D_rx5bx")
 
-[node name="Floor" type="StaticBody2D" parent="." unique_id=196569740]
-position = Vector2(640, 620)
+[node name="TopShade" type="TextureRect" parent="Terrain" unique_id=1477520094]
+offset_right = 1248.0
+offset_bottom = 396.0
+mouse_filter = 2
+texture = SubResource("GradientTexture2D_qllfk")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Floor" unique_id=1499371123]
-shape = SubResource("RectangleShape2D_floor")
+[node name="Solids" type="StaticBody2D" parent="Terrain" unique_id=799454718]
+collision_mask = 0
 
-[node name="Visual" type="ColorRect" parent="Floor" unique_id=742031159]
-offset_left = -600.0
-offset_top = -20.0
-offset_right = 600.0
-offset_bottom = 20.0
-color = Color(0.9, 0.86, 0.72, 1)
+[node name="Box0" type="CollisionShape2D" parent="Terrain/Solids" unique_id=864768050]
+position = Vector2(640, 24)
+shape = SubResource("RectangleShape2D_jymi2")
 
-[node name="GroundTiles" type="TileMapLayer" parent="Floor" unique_id=1000173848]
-position = Vector2(-640, -20)
-tile_map_data = PackedByteArray("AAAAAAAAAQAAAAAAAAABAAAAAQABAAAAAAACAAAAAQACAAAAAAADAAAAAQADAAAAAAAEAAAAAQAAAAAAAAAFAAAAAQABAAAAAAAGAAAAAQACAAAAAAAHAAAAAQADAAAAAAAIAAAAAQAAAAAAAAAJAAAAAQABAAAAAAAKAAAAAQACAAAAAAALAAAAAQADAAAAAAAMAAAAAQAAAAAAAAANAAAAAQABAAAAAAA=")
-tile_set = ExtResource("2_qllfk")
+[node name="Box1" type="CollisionShape2D" parent="Terrain/Solids" unique_id=1418649613]
+position = Vector2(40, 264)
+shape = SubResource("RectangleShape2D_mu7nw")
 
-[node name="GrassDecor0" type="Sprite2D" parent="Floor" unique_id=2074695741]
-position = Vector2(-420, -14)
-scale = Vector2(0.85, 0.85)
-texture = ExtResource("99_grass")
+[node name="Box2" type="CollisionShape2D" parent="Terrain/Solids" unique_id=725667855]
+position = Vector2(1240, 264)
+shape = SubResource("RectangleShape2D_lem5f")
 
-[node name="GrassDecor1" type="Sprite2D" parent="Floor" unique_id=1449210564]
-position = Vector2(420, -14)
-scale = Vector2(0.85, 0.85)
-texture = ExtResource("99_grass")
+[node name="Box3" type="CollisionShape2D" parent="Terrain/Solids" unique_id=129261642]
+position = Vector2(208, 312)
+shape = SubResource("RectangleShape2D_fm1o3")
+
+[node name="Box4" type="CollisionShape2D" parent="Terrain/Solids" unique_id=1617423928]
+position = Vector2(1072, 312)
+shape = SubResource("RectangleShape2D_avkpk")
+
+[node name="Box5" type="CollisionShape2D" parent="Terrain/Solids" unique_id=375775075]
+position = Vector2(640, 672)
+shape = SubResource("RectangleShape2D_2607t")
+
+[node name="Blocks" type="Node2D" parent="Terrain" unique_id=1213056911]
+
+[node name="Block0" type="ColorRect" parent="Terrain/Blocks" unique_id=1407944183]
+offset_left = 16.0
+offset_right = 1264.0
+offset_bottom = 48.0
+mouse_filter = 2
+color = Color(0.34, 0.3, 0.25, 1)
+
+[node name="Block1" type="ColorRect" parent="Terrain/Blocks" unique_id=1352777973]
+offset_left = 16.0
+offset_top = 48.0
+offset_right = 64.0
+offset_bottom = 480.0
+mouse_filter = 2
+color = Color(0.34, 0.3, 0.25, 1)
+
+[node name="Block2" type="ColorRect" parent="Terrain/Blocks" unique_id=2085844015]
+offset_left = 1216.0
+offset_top = 48.0
+offset_right = 1264.0
+offset_bottom = 480.0
+mouse_filter = 2
+color = Color(0.34, 0.3, 0.25, 1)
+
+[node name="Block3" type="ColorRect" parent="Terrain/Blocks" unique_id=286221789]
+offset_left = 160.0
+offset_top = 144.0
+offset_right = 256.0
+offset_bottom = 480.0
+mouse_filter = 2
+color = Color(0.34, 0.3, 0.25, 1)
+
+[node name="Block4" type="ColorRect" parent="Terrain/Blocks" unique_id=2134494108]
+offset_left = 1024.0
+offset_top = 144.0
+offset_right = 1120.0
+offset_bottom = 480.0
+mouse_filter = 2
+color = Color(0.34, 0.3, 0.25, 1)
+
+[node name="Block5" type="ColorRect" parent="Terrain/Blocks" unique_id=411403428]
+offset_left = 16.0
+offset_top = 624.0
+offset_right = 1264.0
+offset_bottom = 720.0
+mouse_filter = 2
+color = Color(0.34, 0.3, 0.25, 1)
+
+[node name="Platforms" type="StaticBody2D" parent="Terrain" unique_id=1312283005]
+collision_layer = 2
+collision_mask = 0
+
+[node name="Plat0" type="CollisionShape2D" parent="Terrain/Platforms" unique_id=921254839]
+position = Vector2(640, 390)
+shape = SubResource("RectangleShape2D_2pvih")
+one_way_collision = true
+one_way_collision_margin = 8.0
+
+[node name="PlatformVisuals" type="Node2D" parent="Terrain" unique_id=1839322904]
+
+[node name="PlatShadow0" type="ColorRect" parent="Terrain/PlatformVisuals" unique_id=119798979]
+offset_left = 544.0
+offset_top = 416.0
+offset_right = 736.0
+offset_bottom = 423.0
+mouse_filter = 2
+color = Color(0.35, 0.3, 0.24, 0.13)
+
+[node name="PlatOutline0" type="ColorRect" parent="Terrain/PlatformVisuals" unique_id=477761597]
+offset_left = 541.5
+offset_top = 381.5
+offset_right = 738.5
+offset_bottom = 418.5
+mouse_filter = 2
+color = Color(0.3, 0.25, 0.2, 1)
+
+[node name="PlatVis0" type="ColorRect" parent="Terrain/PlatformVisuals" unique_id=89174755]
+offset_left = 544.0
+offset_top = 384.0
+offset_right = 736.0
+offset_bottom = 416.0
+mouse_filter = 2
+color = Color(0.8, 0.74, 0.61, 1)
+
+[node name="PlatLip0" type="ColorRect" parent="Terrain/PlatformVisuals/PlatVis0" unique_id=1920357965]
+layout_mode = 0
+offset_right = 192.0
+offset_bottom = 6.0
+mouse_filter = 2
+color = Color(0.97, 0.94, 0.85, 1)
+
+[node name="PlatBase0" type="ColorRect" parent="Terrain/PlatformVisuals/PlatVis0" unique_id=871772488]
+layout_mode = 0
+offset_top = 23.0
+offset_right = 192.0
+offset_bottom = 32.0
+mouse_filter = 2
+color = Color(0.55, 0.48, 0.39, 1)
+
+[node name="GroundArt" type="Node2D" parent="Terrain" unique_id=224040133]
+
+[node name="Ledge13_0" type="ColorRect" parent="Terrain/GroundArt" unique_id=2036490361]
+offset_left = 16.0
+offset_top = 624.0
+offset_right = 112.0
+offset_bottom = 630.0
+mouse_filter = 2
+color = Color(0.62, 0.72, 0.34, 1)
+
+[node name="Ledge13_2" type="ColorRect" parent="Terrain/GroundArt" unique_id=68635098]
+offset_left = 112.0
+offset_top = 624.0
+offset_right = 208.0
+offset_bottom = 630.0
+mouse_filter = 2
+color = Color(0.62, 0.72, 0.34, 1)
+
+[node name="Ledge13_4" type="ColorRect" parent="Terrain/GroundArt" unique_id=2028632503]
+offset_left = 208.0
+offset_top = 624.0
+offset_right = 304.0
+offset_bottom = 630.0
+mouse_filter = 2
+color = Color(0.62, 0.72, 0.34, 1)
+
+[node name="Ledge13_6" type="ColorRect" parent="Terrain/GroundArt" unique_id=890676139]
+offset_left = 304.0
+offset_top = 624.0
+offset_right = 400.0
+offset_bottom = 630.0
+mouse_filter = 2
+color = Color(0.62, 0.72, 0.34, 1)
+
+[node name="Ledge13_8" type="ColorRect" parent="Terrain/GroundArt" unique_id=624055860]
+offset_left = 400.0
+offset_top = 624.0
+offset_right = 496.0
+offset_bottom = 630.0
+mouse_filter = 2
+color = Color(0.62, 0.72, 0.34, 1)
+
+[node name="Ledge13_10" type="ColorRect" parent="Terrain/GroundArt" unique_id=563815708]
+offset_left = 496.0
+offset_top = 624.0
+offset_right = 592.0
+offset_bottom = 630.0
+mouse_filter = 2
+color = Color(0.62, 0.72, 0.34, 1)
+
+[node name="Ledge13_12" type="ColorRect" parent="Terrain/GroundArt" unique_id=529830074]
+offset_left = 592.0
+offset_top = 624.0
+offset_right = 688.0
+offset_bottom = 630.0
+mouse_filter = 2
+color = Color(0.62, 0.72, 0.34, 1)
+
+[node name="Ledge13_14" type="ColorRect" parent="Terrain/GroundArt" unique_id=907317712]
+offset_left = 688.0
+offset_top = 624.0
+offset_right = 784.0
+offset_bottom = 630.0
+mouse_filter = 2
+color = Color(0.62, 0.72, 0.34, 1)
+
+[node name="Ledge13_16" type="ColorRect" parent="Terrain/GroundArt" unique_id=1092851828]
+offset_left = 784.0
+offset_top = 624.0
+offset_right = 880.0
+offset_bottom = 630.0
+mouse_filter = 2
+color = Color(0.62, 0.72, 0.34, 1)
+
+[node name="Ledge13_18" type="ColorRect" parent="Terrain/GroundArt" unique_id=2111760117]
+offset_left = 880.0
+offset_top = 624.0
+offset_right = 976.0
+offset_bottom = 630.0
+mouse_filter = 2
+color = Color(0.62, 0.72, 0.34, 1)
+
+[node name="Ledge13_20" type="ColorRect" parent="Terrain/GroundArt" unique_id=1341756349]
+offset_left = 976.0
+offset_top = 624.0
+offset_right = 1072.0
+offset_bottom = 630.0
+mouse_filter = 2
+color = Color(0.62, 0.72, 0.34, 1)
+
+[node name="Ledge13_22" type="ColorRect" parent="Terrain/GroundArt" unique_id=689451895]
+offset_left = 1072.0
+offset_top = 624.0
+offset_right = 1168.0
+offset_bottom = 630.0
+mouse_filter = 2
+color = Color(0.62, 0.72, 0.34, 1)
+
+[node name="Ledge13_24" type="ColorRect" parent="Terrain/GroundArt" unique_id=584928713]
+offset_left = 1168.0
+offset_top = 624.0
+offset_right = 1264.0
+offset_bottom = 630.0
+mouse_filter = 2
+color = Color(0.62, 0.72, 0.34, 1)
+
+[node name="Ground3_3" type="Sprite2D" parent="Terrain/GroundArt" unique_id=1910139841]
+position = Vector2(208, 216)
+texture = ExtResource("2_ylj5c")
+hframes = 4
+
+[node name="Ground3_21" type="Sprite2D" parent="Terrain/GroundArt" unique_id=1208484890]
+position = Vector2(1072, 216)
+texture = ExtResource("2_ylj5c")
+hframes = 4
+
+[node name="CeilingRocks" type="Node2D" parent="Terrain" unique_id=1999045045]
+
+[node name="Rock0" type="Polygon2D" parent="Terrain/CeilingRocks" unique_id=1279144560]
+position = Vector2(184, 0)
+color = Color(0.31, 0.27, 0.22, 1)
+polygon = PackedVector2Array(-22, 0, 22, 0, 8.8, 133, 0, 190, -10.56, 121.6)
+
+[node name="Rock1" type="Polygon2D" parent="Terrain/CeilingRocks" unique_id=804950423]
+position = Vector2(424, 0)
+color = Color(0.31, 0.27, 0.22, 1)
+polygon = PackedVector2Array(-31, 0, 31, 0, 12.4, 103.6, 0, 148, -14.88, 94.72)
+
+[node name="Rock2" type="Polygon2D" parent="Terrain/CeilingRocks" unique_id=810160031]
+position = Vector2(664, 0)
+color = Color(0.31, 0.27, 0.22, 1)
+polygon = PackedVector2Array(-19, 0, 19, 0, 7.6, 143.5, 0, 205, -9.12, 131.2)
+
+[node name="Rock3" type="Polygon2D" parent="Terrain/CeilingRocks" unique_id=331200545]
+position = Vector2(1240, 0)
+color = Color(0.31, 0.27, 0.22, 1)
+polygon = PackedVector2Array(-26, 0, 26, 0, 10.4, 120.4, 0, 172, -12.48, 110.08)
+
+[node name="Rock4" type="Polygon2D" parent="Terrain/CeilingRocks" unique_id=734429797]
+position = Vector2(1480, 0)
+color = Color(0.31, 0.27, 0.22, 1)
+polygon = PackedVector2Array(-23, 0, 23, 0, 9.2, 137.2, 0, 196, -11.04, 125.44)
+
+[node name="Rock5" type="Polygon2D" parent="Terrain/CeilingRocks" unique_id=721326659]
+position = Vector2(1768, 0)
+color = Color(0.31, 0.27, 0.22, 1)
+polygon = PackedVector2Array(-29, 0, 29, 0, 11.6, 110.6, 0, 158, -13.92, 101.12)
 
 [node name="PaperBooks" type="Node2D" parent="." unique_id=1502990044]
-position = Vector2(880, 480)
+z_index = -5
+position = Vector2(1160, 430)
 
-[node name="Book0" type="Sprite2D" parent="PaperBooks" unique_id=1908150003]
+[node name="Book0" type="Polygon2D" parent="PaperBooks" unique_id=1908150003]
 position = Vector2(-30, 60)
-scale = Vector2(1.2, 0.9)
-texture = ExtResource("98_block")
+color = Color(0.86, 0.8, 0.66, 0.5)
+polygon = PackedVector2Array(-120, -74, 120, -74, 120, 74, -120, 74)
 
-[node name="Book1" type="Sprite2D" parent="PaperBooks" unique_id=2087928824]
+[node name="Book1" type="Polygon2D" parent="PaperBooks" unique_id=2087928824]
 position = Vector2(20, 10)
 rotation = -0.08
-scale = Vector2(1.1, 0.85)
-texture = ExtResource("98_block")
+color = Color(0.82, 0.76, 0.62, 0.5)
+polygon = PackedVector2Array(-110, -70, 110, -70, 110, 70, -110, 70)
 
-[node name="Book2" type="Sprite2D" parent="PaperBooks" unique_id=1019940758]
+[node name="Book2" type="Polygon2D" parent="PaperBooks" unique_id=1019940758]
 position = Vector2(-10, -40)
 rotation = 0.06
-scale = Vector2(1, 0.8)
-texture = ExtResource("98_block")
+color = Color(0.9, 0.85, 0.72, 0.5)
+polygon = PackedVector2Array(-100, -66, 100, -66, 100, 66, -100, 66)
 
-[node name="Bookmark" type="Sprite2D" parent="PaperBooks" unique_id=87473273]
+[node name="Bookmark" type="Polygon2D" parent="PaperBooks" unique_id=87473273]
 position = Vector2(40, -80)
-scale = Vector2(0.7, 0.7)
-texture = ExtResource("97_star")
-
-[node name="LibraryLabel" type="Label" parent="PaperBooks" unique_id=1261428871]
-offset_left = -130.0
-offset_top = -90.0
-offset_right = 130.0
-offset_bottom = -60.0
-theme_override_font_sizes/font_size = 18
-theme_override_colors/font_color = Color(0.35, 0.2, 0.1, 1)
-text = "折纸图书馆"
-horizontal_alignment = 1
+color = Color(0.85, 0.7, 0.38, 1)
+polygon = PackedVector2Array(-17, -17, 17, -17, 17, 17, -17, 17)
 
 [node name="SoilPlot" type="Area2D" parent="." unique_id=2084533160 instance=ExtResource("4_plot")]
-position = Vector2(360, 578)
+position = Vector2(360, 602)
 script = ExtResource("7_jymi2")
 plot_id = "room_04_plot_01"
 room_id = "room_04"
 default_seed_id = "bounce_marshmallow"
-
-[node name="DoorToRoom03" type="Area2D" parent="." unique_id=781672592]
-position = Vector2(90, 540)
-script = ExtResource("5_door")
-target_scene_path = "res://world/rooms/Room03.tscn"
-target_spawn_name = "SpawnFromRight"
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="DoorToRoom03" unique_id=439689174]
-shape = SubResource("RectangleShape2D_door")
-
-[node name="Label" type="Label" parent="DoorToRoom03" unique_id=175531609]
-offset_left = -60.0
-offset_top = -100.0
-offset_right = 60.0
-offset_bottom = -70.0
-theme_override_font_sizes/font_size = 20
-theme_override_colors/font_color = Color(0.35, 0.2, 0.1, 1)
-text = "← 风车草地"
-horizontal_alignment = 1
-
-[node name="DoorToRoom05" type="Area2D" parent="." unique_id=509092131]
-position = Vector2(1180, 540)
-script = ExtResource("5_door")
-target_scene_path = "res://world/rooms/Room05.tscn"
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="DoorToRoom05" unique_id=1061380629]
-shape = SubResource("RectangleShape2D_door")
-
-[node name="Label" type="Label" parent="DoorToRoom05" unique_id=1498005515]
-offset_left = -60.0
-offset_top = -100.0
-offset_right = 60.0
-offset_bottom = -70.0
-theme_override_font_sizes/font_size = 20
-theme_override_colors/font_color = Color(0.35, 0.2, 0.1, 1)
-text = "→ 糖果星光灯塔"
-horizontal_alignment = 1
 
 [node name="InvadersContainer" type="Node2D" parent="." unique_id=431004254]
 
@@ -193,7 +452,7 @@ script = ExtResource("13_mu7nw")
 script = ExtResource("15_lem5f")
 
 [node name="VistaPoint" type="Area2D" parent="." unique_id=1896527779]
-position = Vector2(560, 560)
+position = Vector2(560, 584)
 script = ExtResource("95_vista")
 vista_title = "折纸书页间的静谧"
 vista_anim = "side"
@@ -210,3 +469,55 @@ theme_override_font_sizes/font_size = 18
 theme_override_colors/font_color = Color(0.35, 0.2, 0.1, 1)
 text = "驻足 · 眺望书堆"
 horizontal_alignment = 1
+
+[node name="Doors" type="Node2D" parent="." unique_id=2030474555]
+
+[node name="DoorToRoom03" type="Area2D" parent="Doors" unique_id=1756656499]
+position = Vector2(40, 600)
+script = ExtResource("5_door")
+target_scene_path = "res://world/rooms/Room03.tscn"
+target_spawn_name = "SpawnFromRight"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Doors/DoorToRoom03" unique_id=74350614]
+shape = SubResource("RectangleShape2D_4i0y2")
+
+[node name="Label" type="Label" parent="Doors/DoorToRoom03" unique_id=1830603905]
+offset_left = 34.0
+offset_top = -96.0
+offset_right = 180.0
+offset_bottom = -66.0
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.35, 0.2, 0.1, 1)
+text = "← 画页三"
+
+[node name="DoorToRoom05" type="Area2D" parent="Doors" unique_id=256465621]
+position = Vector2(1240, 600)
+script = ExtResource("5_door")
+target_scene_path = "res://world/rooms/Room05.tscn"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Doors/DoorToRoom05" unique_id=165833819]
+shape = SubResource("RectangleShape2D_q335o")
+
+[node name="Label" type="Label" parent="Doors/DoorToRoom05" unique_id=1245157387]
+offset_left = -180.0
+offset_top = -96.0
+offset_right = -34.0
+offset_bottom = -66.0
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.35, 0.2, 0.1, 1)
+text = "→ 画页五"
+horizontal_alignment = 2
+
+[node name="SpawnFromLeft" type="Marker2D" parent="." unique_id=612394306]
+position = Vector2(184, 600)
+
+[node name="SpawnFromRight" type="Marker2D" parent="." unique_id=207599734]
+position = Vector2(1096, 600)
+
+[node name="EnemySpawn0" type="Marker2D" parent="." unique_id=1551528396]
+position = Vector2(424, 599)
+metadata/variant = 0
+
+[node name="EnemySpawn1" type="Marker2D" parent="." unique_id=244259870]
+position = Vector2(808, 599)
+metadata/variant = 0

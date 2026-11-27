@@ -14,6 +14,9 @@ extends SceneTree
 
 var _fail: int = 0
 
+## 房间状态准备（Room01 自 12 F0 起默认入侵，组件级用例要自己控制侵占状态）
+const _ROOM_STATE = preload("res://tests/support/room_state.gd")
+
 ## 与 env_light.gdshader 的 uniform 逐一对应。改 shader 不改这里（或反之）→ 当场炸。
 const CONTRACT_UNIFORMS: Array[String] = [
 	"night", "moon_tint", "tint_pull", "veg_protect",
@@ -147,6 +150,9 @@ func _test_invasion_drives_night() -> void:
 	var room: Node2D = (load("res://world/rooms/Room01.tscn") as PackedScene).instantiate() as Node2D
 	root.add_child(room)
 	await _frames(2)
+	# Room01 现在默认入侵（12 F0）。这条用例要的是「侵占前」那一半，自己钉回去。
+	_ROOM_STATE.force_uninvaded(ws, room)
+	await _frames(1)
 	_check(is_equal_approx(_night(room), 0.0),
 		"未侵占时 night=0（实际 %.2f）" % _night(room))
 

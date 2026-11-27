@@ -50,7 +50,15 @@ func _test_rooms() -> void:
 		root.add_child(room)
 		await _frames(2)
 		var floor_node: Node2D = room.get_node_or_null("Floor") as Node2D
-		_check(floor_node != null and floor_node.get_node_or_null("CollisionShape2D") != null,
+		if floor_node == null:
+			# 已迁移到蓝图地形的房间（2026-11-27 起）：Floor 被 Terrain 取代，
+			# 地面贴图断言搬到了 test_room_terrain.gd。这里只确认它换成了什么。
+			var terrain: Node2D = room.get_node_or_null("Terrain") as Node2D
+			_check(terrain != null, "%s 有地形（Floor 或 Terrain）" % p.get_file())
+			room.free()
+			await _frames(1)
+			continue
+		_check(floor_node.get_node_or_null("CollisionShape2D") != null,
 			"%s 地板碰撞体保留" % p.get_file())
 
 		# 底色 ColorRect 保留：它是兜底，也是"摘掉 TileMapLayer 就退回色块"的退路

@@ -1,0 +1,412 @@
+{
+  "seed": 20261127,
+  "tile": 48,
+  "cols": 214,
+  "rows": 75,
+  "px": [
+    10272,
+    3600
+  ],
+  "rooms": [
+    {
+      "id": "entry",
+      "tag": "start",
+      "template": "room_02",
+      "col": 0,
+      "row": 8,
+      "cols": 26,
+      "rows": 15,
+      "link": null,
+      "branch": false,
+      "door_in": [
+        "L",
+        12
+      ],
+      "door_out": [
+        "R",
+        11
+      ],
+      "after": null,
+      "spawned": [
+        2,
+        0
+      ]
+    },
+    {
+      "id": "combat_a",
+      "tag": "combat",
+      "template": "room_03",
+      "col": 26,
+      "row": 8,
+      "cols": 26,
+      "rows": 15,
+      "link": "h",
+      "branch": false,
+      "door_in": [
+        "L",
+        12
+      ],
+      "door_out": [
+        "R",
+        12
+      ],
+      "after": "entry",
+      "spawned": [
+        5,
+        1
+      ]
+    },
+    {
+      "id": "combat_a2",
+      "tag": "combat",
+      "template": "room_03",
+      "col": 52,
+      "row": 8,
+      "cols": 26,
+      "rows": 15,
+      "link": "h",
+      "branch": false,
+      "door_in": [
+        "L",
+        12
+      ],
+      "door_out": [
+        "R",
+        12
+      ],
+      "after": "combat_a",
+      "spawned": [
+        5,
+        1
+      ]
+    },
+    {
+      "id": "hall",
+      "tag": "combat",
+      "template": "part_hall",
+      "col": 78,
+      "row": 0,
+      "cols": 28,
+      "rows": 24,
+      "link": "h",
+      "branch": false,
+      "door_in": [
+        "L",
+        20
+      ],
+      "door_out": [
+        "R",
+        20
+      ],
+      "after": "combat_a2",
+      "spawned": [
+        5,
+        1
+      ]
+    },
+    {
+      "id": "corner",
+      "tag": "combat",
+      "template": "part_corner",
+      "col": 106,
+      "row": 4,
+      "cols": 24,
+      "rows": 20,
+      "link": "h",
+      "branch": false,
+      "door_in": [
+        "L",
+        16
+      ],
+      "door_out": [
+        "D",
+        19
+      ],
+      "after": "hall",
+      "spawned": [
+        5,
+        1
+      ]
+    },
+    {
+      "id": "shaft",
+      "tag": "combat",
+      "template": "part_tower",
+      "col": 110,
+      "row": 24,
+      "cols": 18,
+      "rows": 24,
+      "link": "v",
+      "branch": false,
+      "door_in": [
+        "U",
+        0
+      ],
+      "door_out": [
+        "D",
+        23
+      ],
+      "after": "corner",
+      "spawned": [
+        4,
+        1
+      ]
+    },
+    {
+      "id": "landing",
+      "tag": "combat",
+      "template": "part_landing",
+      "col": 112,
+      "row": 48,
+      "cols": 24,
+      "rows": 18,
+      "link": "v",
+      "branch": false,
+      "door_in": [
+        "U",
+        0
+      ],
+      "door_out": [
+        "R",
+        14
+      ],
+      "after": "shaft",
+      "spawned": [
+        5,
+        1
+      ]
+    },
+    {
+      "id": "combat_b",
+      "tag": "combat",
+      "template": "room_04",
+      "col": 136,
+      "row": 50,
+      "cols": 26,
+      "rows": 15,
+      "link": "h",
+      "branch": false,
+      "door_in": [
+        "L",
+        12
+      ],
+      "door_out": [
+        "R",
+        12
+      ],
+      "after": "landing",
+      "spawned": [
+        5,
+        1
+      ]
+    },
+    {
+      "id": "shop",
+      "tag": "shop",
+      "template": "room_04",
+      "col": 162,
+      "row": 50,
+      "cols": 26,
+      "rows": 15,
+      "link": "h",
+      "branch": false,
+      "door_in": [
+        "L",
+        12
+      ],
+      "door_out": [
+        "R",
+        12
+      ],
+      "after": "combat_b",
+      "spawned": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "boss",
+      "tag": "boss",
+      "template": "room_05",
+      "col": 188,
+      "row": 50,
+      "cols": 26,
+      "rows": 15,
+      "link": "h",
+      "branch": false,
+      "door_in": [
+        "L",
+        12
+      ],
+      "door_out": null,
+      "after": "shop",
+      "spawned": [
+        3,
+        1
+      ]
+    },
+    {
+      "id": "pocket",
+      "tag": "combat",
+      "template": "part_pocket",
+      "col": 140,
+      "row": 65,
+      "cols": 18,
+      "rows": 10,
+      "link": "v",
+      "branch": true,
+      "door_in": [
+        "U",
+        0
+      ],
+      "door_out": null,
+      "after": "combat_b",
+      "spawned": [
+        5,
+        1
+      ]
+    }
+  ],
+  "seams": [
+    {
+      "from": "entry",
+      "to": "combat_a",
+      "branch": false,
+      "link": "h",
+      "stand_row_a": 20,
+      "stand_row_b": 20,
+      "world_col": 26,
+      "world_cols": [
+        25,
+        26
+      ]
+    },
+    {
+      "from": "combat_a",
+      "to": "combat_a2",
+      "branch": false,
+      "link": "h",
+      "stand_row_a": 20,
+      "stand_row_b": 20,
+      "world_col": 52,
+      "world_cols": [
+        51,
+        52
+      ]
+    },
+    {
+      "from": "combat_a2",
+      "to": "hall",
+      "branch": false,
+      "link": "h",
+      "stand_row_a": 20,
+      "stand_row_b": 20,
+      "world_col": 78,
+      "world_cols": [
+        77,
+        78
+      ]
+    },
+    {
+      "from": "hall",
+      "to": "corner",
+      "branch": false,
+      "link": "h",
+      "stand_row_a": 20,
+      "stand_row_b": 20,
+      "world_col": 106,
+      "world_cols": [
+        105,
+        106
+      ]
+    },
+    {
+      "from": "corner",
+      "to": "shaft",
+      "branch": false,
+      "link": "v",
+      "world_col": 118,
+      "world_col_a": 118,
+      "world_col_b": 118,
+      "world_half": 1,
+      "world_row_a": 23,
+      "world_row_b": 24,
+      "world_rows": [
+        23,
+        24
+      ]
+    },
+    {
+      "from": "shaft",
+      "to": "landing",
+      "branch": false,
+      "link": "v",
+      "world_col": 118,
+      "world_col_a": 118,
+      "world_col_b": 118,
+      "world_half": 1,
+      "world_row_a": 47,
+      "world_row_b": 48,
+      "world_rows": [
+        47,
+        48
+      ]
+    },
+    {
+      "from": "landing",
+      "to": "combat_b",
+      "branch": false,
+      "link": "h",
+      "stand_row_a": 62,
+      "stand_row_b": 62,
+      "world_col": 136,
+      "world_cols": [
+        135,
+        136
+      ]
+    },
+    {
+      "from": "combat_b",
+      "to": "shop",
+      "branch": false,
+      "link": "h",
+      "stand_row_a": 62,
+      "stand_row_b": 62,
+      "world_col": 162,
+      "world_cols": [
+        161,
+        162
+      ]
+    },
+    {
+      "from": "shop",
+      "to": "boss",
+      "branch": false,
+      "link": "h",
+      "stand_row_a": 62,
+      "stand_row_b": 62,
+      "world_col": 188,
+      "world_cols": [
+        187,
+        188
+      ]
+    },
+    {
+      "from": "combat_b",
+      "to": "pocket",
+      "branch": true,
+      "link": "v",
+      "world_col": 149,
+      "world_col_a": 149,
+      "world_col_b": 149,
+      "world_half": 1,
+      "world_row_a": 63,
+      "world_row_b": 65,
+      "world_rows": [
+        63,
+        64,
+        65
+      ]
+    }
+  ]
+}

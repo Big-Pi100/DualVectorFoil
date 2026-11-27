@@ -9,6 +9,9 @@ signal plot_updated(plot_id: String, plot_data: Dictionary)
 signal room_invaded(room_id: String)
 signal room_purified(room_id: String)
 signal power_stat_changed(stat_name: String, new_value: float)
+## 能力解锁广播。目前只有 Player 订阅（刷新二段跳是否可用），
+## 以后的地图能力（投掷 / 生长）也走这一条，不要各开一个信号。
+signal ability_unlocked(ability_id: String)
 ## 风景眺望表现层事件：VistaZone 广播，Camera/HUD 各自订阅（跨模块零直接引用）。
 signal vista_mode_changed(active: bool, target_zoom: float, zoom_duration: float, hud_fade_duration: float, vista_anim: String)
 
@@ -22,6 +25,17 @@ var visited_rooms: Array[String] = []
 var farm_plots: Dictionary = {}
 var invaded_rooms: Array[String] = []
 var total_room_transitions: int = 0
+
+## 已净化房间：清过一次就永远算清过。
+## 与 invaded_rooms 是两个概念 —— 一个是"眼下有几间被占"，一个是"哪些已经归我了"。
+## 没有这张表，"已清房不复活"只是当前没触发而已：只要该房后来种上作物，
+## _try_trigger_gentle_invasion 会把它当成普通候选重新占掉。
+var purified_rooms: Array[String] = []
+
+## 安全屋不参与入侵判定（暗房 / 存档点不能有敌人）。
+## 默认值兜住"玩家还没进过安全屋"的情况（首次进入前历史农田里就有 safe_house）；
+## BaseRoom 在 is_safe_house 的房间进入时再登记一次，避免改了 room_id 之后两边脱节。
+var safe_room_ids: Array[String] = ["safe_house"]
 
 # 战力加成：唯一数据源。Player / 武器在 _ready 读取并订阅 power_stat_changed，
 # 避免「WorldState 记一份、实体又自己加一份」导致换场景后加成丢失或作物类型加错属性。
@@ -108,12 +122,14 @@ func _try_trigger_gentle_invasion(current_room_id: String) -> void:
 	if total_room_transitions % invasion_check_interval != 0:
 		return
 
-	# 候选：种有作物、非当前所在房间、尚未被入侵
+	# 候选：种有作物、非当前所在房间、尚未被入侵、没清过、不是安全屋
 	var candidates: Array[String] = []
 	for plot_id: String in farm_plots.keys():
 		var data: Dictionary = farm_plots[plot_id]
 		var r_id: String = str(data.get("room_id", ""))
 		if int(data.get("stage", 0)) >= 1 and r_id != "" and r_id != current_room_id:
+			if purified_rooms.has(r_id) or safe_room_ids.has(r_id):
+				continue
 			if not invaded_rooms.has(r_id) and not candidates.has(r_id):
 				candidates.append(r_id)
 
@@ -128,6 +144,9 @@ func purify_room(room_id: String) -> void:
 	if not invaded_rooms.has(room_id):
 		return
 	invaded_rooms.erase(room_id)
+	# 记入"已清"：此后温和入侵不再挑这间房（切片 S1 判据：已清的房不复活）
+	if not purified_rooms.has(room_id):
+		purified_rooms.append(room_id)
 	# 清怪奖励：该房间所有未成熟作物立刻推进 1 阶段（不是销毁）
 	for plot_id: String in farm_plots.keys():
 		var data: Dictionary = farm_plots[plot_id]
@@ -138,6 +157,31 @@ func purify_room(room_id: String) -> void:
 				farm_plots[plot_id] = data
 				plot_updated.emit(plot_id, data)
 	room_purified.emit(room_id)
+
+# ===== 房间归属：安全屋登记 =====
+
+## BaseRoom 在 is_safe_house 的房间进入时调用。幂等。
+func register_safe_room(room_id: String) -> void:
+	if room_id.is_empty() or safe_room_ids.has(room_id):
+		return
+	safe_room_ids.append(room_id)
+
+# ===== 能力解锁 =====
+
+## 能力 id 常量。为什么用常量而不是裸字符串：
+## Player 每帧要问一次，写错一个字母就会静默变成"永远没解锁"，
+## 而玩家看到的只是"跳不起来"——没人会怀疑是拼写。
+const ABILITY_FOLD: String = "fold"
+
+## 解锁一个能力。幂等：重复拾取不会重复广播。
+func unlock_ability(ability_id: String) -> void:
+	if ability_id.is_empty() or unlocked_abilities.has(ability_id):
+		return
+	unlocked_abilities.append(ability_id)
+	ability_unlocked.emit(ability_id)
+
+func has_ability(ability_id: String) -> bool:
+	return unlocked_abilities.has(ability_id)
 
 # ===== 最近休息点 =====
 
@@ -174,6 +218,7 @@ func save_game() -> Error:
 		"visited_rooms": visited_rooms,
 		"farm_plots": farm_plots,
 		"invaded_rooms": invaded_rooms,
+		"purified_rooms": purified_rooms,
 		"total_room_transitions": total_room_transitions,
 		"bonus_attack_damage": bonus_attack_damage,
 		"bonus_max_hp": bonus_max_hp,
@@ -211,6 +256,8 @@ func load_game() -> Error:
 	unlocked_abilities = _array_str(data.get("unlocked_abilities", []))
 	visited_rooms = _array_str(data.get("visited_rooms", []))
 	invaded_rooms = _array_str(data.get("invaded_rooms", []))
+	# 旧存档没有这个字段：读成空表 = "一间都没清过"，行为退化成加载前的样子，不会崩
+	purified_rooms = _array_str(data.get("purified_rooms", []))
 	farm_plots = _dict_plots(data.get("farm_plots", {}))
 	total_room_transitions = int(data.get("total_room_transitions", 0))
 	bonus_attack_damage = float(data.get("bonus_attack_damage", 0.0))
@@ -274,6 +321,8 @@ func reset_state() -> void:
 	visited_rooms.clear()
 	farm_plots.clear()
 	invaded_rooms.clear()
+	purified_rooms.clear()
+	safe_room_ids = ["safe_house"]
 	total_room_transitions = 0
 	bonus_attack_damage = 0.0
 	bonus_max_hp = 0.0

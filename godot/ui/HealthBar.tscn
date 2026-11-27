@@ -1,0 +1,67 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://ui/HealthBar.gd" id="1_hb"]
+[ext_resource type="Texture2D" path="res://art/approved/UI/ui_heart_icon_00.png" id="2_heart"]
+
+[node name="HealthBar" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 28.0
+offset_top = 72.0
+offset_right = 362.0
+offset_bottom = 128.0
+mouse_filter = 2
+script = ExtResource("1_hb")
+
+[node name="Heart" type="TextureRect" parent="."]
+layout_mode = 0
+offset_left = 0.0
+offset_top = -34.0
+offset_right = 96.0
+offset_bottom = 62.0
+mouse_filter = 2
+texture = ExtResource("2_heart")
+expand_mode = 1
+stretch_mode = 5
+
+; 条底：深褐半透明，压在纸底上不抢画面
+[node name="Track" type="ColorRect" parent="."]
+layout_mode = 0
+offset_left = 74.0
+offset_top = 8.0
+offset_right = 334.0
+offset_bottom = 26.0
+mouse_filter = 2
+color = Color(0.352, 0.243, 0.157, 0.45)
+
+[node name="Fill" type="ColorRect" parent="Track"]
+layout_mode = 0
+offset_right = 260.0
+offset_bottom = 18.0
+mouse_filter = 2
+color = Color(0.698, 0.227, 0.18, 1)
+
+; 四段刻痕：120 血按 30 一格，一次挨打 18 点 ≈ 半格，比一根光条好读
+[node name="Tick1" type="ColorRect" parent="Track"]
+layout_mode = 0
+offset_left = 65.0
+offset_bottom = 18.0
+offset_right = 67.0
+mouse_filter = 2
+color = Color(0.937, 0.898, 0.816, 0.55)
+
+[node name="Tick2" type="ColorRect" parent="Track"]
+layout_mode = 0
+offset_left = 130.0
+offset_bottom = 18.0
+offset_right = 132.0
+mouse_filter = 2
+color = Color(0.937, 0.898, 0.816, 0.55)
+
+[node name="Tick3" type="ColorRect" parent="Track"]
+layout_mode = 0
+offset_left = 195.0
+offset_bottom = 18.0
+offset_right = 197.0
+mouse_filter = 2
+color = Color(0.937, 0.898, 0.816, 0.55)

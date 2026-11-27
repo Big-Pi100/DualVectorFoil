@@ -33,7 +33,11 @@ func _load_room(path: String) -> PackedScene:
 
 ## 校验一扇门的 target 指向
 func _check_door(room: Node, door_name: String, expect_scene: String, expect_spawn: String) -> void:
+	# 2026-11-27 起门可以挂在房间根的 Doors/ 容器下（蓝图生成的地形），
+	# 所以递归找，不写死一级路径。
 	var door: Node = room.get_node_or_null(door_name)
+	if door == null:
+		door = room.find_child(door_name, true, false)
 	if door == null:
 		_check(false, "%s 存在" % door_name)
 		return

@@ -1,5 +1,7 @@
 extends SceneTree
 
+const _ROOM_STATE = preload("res://tests/support/room_state.gd")
+
 ## 三套 Shader 接入专项：
 ## 1) boiling_line 挂敌人精灵材质；2) paper_grain 全屏后处理层；3) desaturate_wipe 去色扩散参数链。
 ## 用真实场景树 + await 帧，验证资源有效、材质挂载、参数可驱动。
@@ -94,6 +96,8 @@ func _test_desaturate_chain() -> void:
 	var mat: ShaderMaterial = filter.material as ShaderMaterial
 	_check(mat != null and mat.shader != null, "去色材质挂载")
 	# 入侵 → desaturate_amount=1
+	# 先钉回未侵占再 append（Room01 自 12 F0 起默认入侵，直接 append 会重复）
+	_ROOM_STATE.force_uninvaded(ws, room)
 	ws.invaded_rooms.append("room_01")
 	room.call("_setup_invasion_state")
 	await _frames(1)

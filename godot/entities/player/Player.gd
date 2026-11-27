@@ -8,6 +8,7 @@ extends CharacterBody2D
 signal health_changed(current_hp: float, max_hp: float)
 signal skill_triggered(slot_index: int)
 signal interact_requested()
+signal died()
 signal respawn_requested()
 
 @export_group("属性与生存（低挫败感基调）")
@@ -22,16 +23,28 @@ signal respawn_requested()
 @export var move_speed: float = 290.0
 @export var acceleration: float = 2400.0
 @export var friction: float = 2600.0
-@export var jump_velocity: float = -490.0
-@export var double_jump_velocity: float = -430.0
+## 以下三个数由 FEEL_TABLE.md 反解，不是手感拍脑袋：
+##   单跳高 204px、滞空 917ms → g = 2h/(T/2)² = 2×204/0.4585² ≈ 1941，v0 = g×T/2 ≈ 890
+##   二段增量 125px → v = sqrt(2×1941×125) ≈ 697
+## 引擎默认 gravity = 980，故 gravity_scale = 1941/980 ≈ 1.98。
+## 改前代码是 -490 / -430 / 1.35，实测单跳只有 91px（1.9 格）——
+## 比设计值矮一半多，直接导致「房间只能是一条平路」。别凭感觉改回去。
+@export var jump_velocity: float = -890.0
+@export var double_jump_velocity: float = -697.0
 @export var dive_speed: float = 680.0
-@export var gravity_scale: float = 1.35
+@export var gravity_scale: float = 1.98
 @export var one_way_platform_layer: int = 2      # 单向平台所在的 2D 物理层编号（1-32）
 @export var drop_through_duration: float = 0.22  # 下穿期间临时关闭单向平台碰撞层的时长
 
 @export_group("动画表现（正式蜡笔资产）")
 @export var hurt_anim_duration: float = 0.35   # 受击动画最短停留时间
 @export var climb_anim_duration: float = 0.40  # 自动抓边攀爬动画停留时间
+
+@export_group("死亡与复活")
+## 倒地演出时长。这条不是"打磨"：死亡瞬间如果立刻切场景，玩家看不到血条归零、
+## 也看不到角色倒下，只会觉得"画面闪了一下我就到别处了"——读不出自己死过。
+## 0.7s = 血条见底（约 0.15s）+ 倒地定格（约 0.55s），够读，又不烦。
+@export var death_anim_duration: float = 0.7
 
 @export_group("翻滚、连招与格挡")
 @export var roll_speed: float = 480.0
@@ -58,7 +71,17 @@ var hp: float = 120.0
 var flasks: int = 3
 var facing_dir: float = 1.0
 var _roll_dir: float = 1.0 # 翻滚方向快照：翻滚期间不受外部转向影响
-var can_double_jump: bool = true
+
+## 本次滞空还剩不剩一次「折叠」（二段跳）。
+## 注意它**不是能力开关** —— 能力在 `WorldState.unlocked_abilities` 里，
+## 这个值只是"这一跳还能不能再跳一次"，落地才会按能力重新充能。
+## S2 之前它的初值写死 true，于是二段跳从第一帧就存在，
+## 折叠这个能力实际上从来没被"锁"过。
+var can_double_jump: bool = false
+
+## 死亡态：输入与物理全部停摆，等宿主调 revive() 才恢复。
+## 复活不由自己完成 —— 「死在哪、从哪爬起来」是房间的规则，不是角色的规则。
+var is_dead: bool = false
 
 var is_rolling: bool = false
 var is_invincible: bool = false
@@ -87,6 +110,13 @@ var _vista_zoom_tween: Tween = null
 # 动画状态：只驱动贴图，不影响任何手感/判定逻辑
 var _hurt_anim_timer: float = 0.0
 var _climb_anim_timer: float = 0.0
+## 一次滞空里只允许"自动抓边"帮一次。
+##
+## 为什么必须限次：这个辅助的条件是「没落地 + 正在下落 + 下方射线撞到、上方没撞到」，
+## 触发后 y -= 18、vy = -180。如果玩家贴着台边起跳，每次升到顶点都会重新满足条件 ——
+## 于是他在台边 18px 的范围内**永远上下抖**，既不落地也上不去。
+## 2026-11-27 航点机器人实测：卡在 y=1603（台面 1584 之下 19px）、floor=false、900 帧不动。
+var _ledge_assist_used: bool = false
 var _current_anim: StringName = &""
 
 # 外部 TouchHUD 注入的虚拟输入（与键盘并行，兼容测试直接置值）
@@ -135,6 +165,10 @@ func _exit_tree() -> void:
 			WorldState.vista_mode_changed.disconnect(_on_vista_mode_changed)
 
 func _physics_process(delta: float) -> void:
+	# 死亡演出期间彻底停摆：不读输入、不跑物理、不刷动画。
+	# 只放行位移会让玩家在倒地时还能被击退飘走，视觉上像"被打飞"而不是"倒下"。
+	if is_dead:
+		return
 	_update_timers(delta)
 	var move_vec: Vector2 = _get_move_input()
 	_handle_action_inputs(move_vec)
@@ -174,7 +208,9 @@ func _get_move_input() -> Vector2:
 func _update_timers(delta: float) -> void:
 	if is_on_floor():
 		_coyote_timer = coyote_time
-		can_double_jump = true
+		# 每帧查真源，不做缓存：缓存一旦漏刷新，玩家会"明明拿到了折叠却跳不起来"，
+		# 而这种情况在日志里完全看不出来。一次 Array.has() 远比一个查不出的 bug 便宜。
+		can_double_jump = _fold_unlocked()
 	else:
 		_coyote_timer = maxf(0.0, _coyote_timer - delta)
 
@@ -186,6 +222,11 @@ func _update_timers(delta: float) -> void:
 	_attack_lunge_timer = maxf(0.0, _attack_lunge_timer - delta)
 	_hurt_anim_timer = maxf(0.0, _hurt_anim_timer - delta)
 	_climb_anim_timer = maxf(0.0, _climb_anim_timer - delta)
+
+## 折叠是否已解锁。抽成函数是为了留一个唯一改点：
+## 以后加"章节内临时禁用能力"之类，只改这里，不用去翻跳跳逻辑。
+func _fold_unlocked() -> bool:
+	return WorldState.has_ability(WorldState.ABILITY_FOLD)
 
 func _handle_action_inputs(move_vec: Vector2) -> void:
 	if _is_action_just_pressed("jump"):
@@ -208,7 +249,7 @@ func _handle_action_inputs(move_vec: Vector2) -> void:
 	# 翻滚可随时打断当前攻击后摇（《重生细胞》核心手感）
 	if _roll_buffer_timer > 0.0 and not is_rolling and not is_diving and _roll_cd_timer <= 0.0:
 		_roll_buffer_timer = 0.0
-		_cancel_attack_for_roll()
+		_cancel_attack()
 		_perform_roll(move_vec.x)
 		return
 
@@ -308,13 +349,19 @@ func _perform_drop_through() -> void:
 	_is_dropping_through = false
 
 func _check_auto_ledge_grab() -> void:
+	if is_on_floor():
+		_ledge_assist_used = false
+		return
+	if _ledge_assist_used:
+		return
 	if not is_on_floor() and velocity.y > -120.0:
 		if ledge_bottom.is_colliding() and not ledge_top.is_colliding():
+			_ledge_assist_used = true
 			global_position.y -= 18.0
 			velocity.y = -180.0
 			_climb_anim_timer = climb_anim_duration
 
-func _cancel_attack_for_roll() -> void:
+func _cancel_attack() -> void:
 	_attack_token += 1
 	is_attacking = false
 	sword_rect.visible = false
@@ -336,10 +383,13 @@ func _perform_roll(input_x: float) -> void:
 
 	await get_tree().create_timer(roll_duration).timeout
 
-	visuals.scale = Vector2(_roll_dir, 1.0)
-	visuals.modulate.a = 1.0
 	is_rolling = false
 	_release_invincible("roll")
+	# 翻滚收尾会重写 scale/modulate，倒地期间必须让位给 _enter_death 的姿态
+	if is_dead:
+		return
+	visuals.scale = Vector2(_roll_dir, 1.0)
+	visuals.modulate.a = 1.0
 
 func _perform_attack(input_x: float) -> void:
 	_attack_token += 1
@@ -425,6 +475,9 @@ func trigger_skill(slot: int) -> void:
 	skill_triggered.emit(slot)
 
 func take_damage(amount: float, knockback: Vector2 = Vector2.ZERO) -> void:
+	# 已经倒下就不再结算：敌人后摇结束会继续挥击，若放行会连续触发死亡流程。
+	if is_dead:
+		return
 	if is_invincible:
 		# 翻滚 / 下砸 = 全向无敌；格挡只挡身前（判定体在朝向侧）。
 		# Hitbox 的 knockback.x 是击退方向：>0 表示攻击来自左侧，<0 来自右侧。
@@ -440,11 +493,55 @@ func _receive_damage(amount: float) -> void:
 	_hurt_anim_timer = hurt_anim_duration
 	health_changed.emit(hp, max_hp)
 	if hp <= 0.0:
-		# 零惩罚失败：状态回满，由外部场景监听 respawn_requested 送回安全点
-		hp = max_hp
-		flasks = max_flasks
-		health_changed.emit(hp, max_hp)
-		respawn_requested.emit()
+		_enter_death()
+
+## 死亡流程：血量停在 0（不在这里回满）、广播 died、倒地演出、之后才请求复活。
+##
+## 为什么回满血不能写在这里：`health_changed(0)` 与 `health_changed(max)` 若发在同一帧，
+## HUD 只渲染最终值，玩家永远看不到"血空了"。先前的写法就是先回满再 emit respawn，
+## 结果死亡在屏幕上完全不可见 —— 玩家只是突然出现在暗房。
+func _enter_death() -> void:
+	if is_dead:
+		return
+	is_dead = true
+	# 清空输入缓冲：否则死亡演出期间按下的跳跃/攻击会在复活后立刻生效
+	_jump_buffer_timer = 0.0
+	_roll_buffer_timer = 0.0
+	_cancel_attack()
+	velocity = Vector2.ZERO
+	_play_anim(&"hurt")
+	# 不用任何几何变形：`player_hurt_00_sprite.png` 本身就是「坐倒在地、闭眼皱眉」的姿势
+	# （就是 GDD 里写的「像折纸般坐地」）。之前压成 1.45×0.32 / 旋转 -72° 都试过，
+	# 都是把这张已经画好的图毁掉，反而读不出人倒了 —— 见 art/out/room/shot_hud_dead.png。
+	# 死亡的信息交给三处：坐地帧 + 褪色 + 血条清空/心形压暗，最后淡出转场。
+	visuals.rotation = 0.0
+	visuals.scale = Vector2(facing_dir, 1.0)
+	visuals.modulate = Color(0.62, 0.62, 0.68, 1.0)
+	died.emit()
+
+	await get_tree().create_timer(death_anim_duration).timeout
+	# 演出期间场景可能已被别的转场换掉（例如长椅/门），节点不在树里就别再发请求
+	if not is_inside_tree():
+		return
+	respawn_requested.emit()
+
+## 复活：由宿主（BaseRoom）在放好位置之后调用，恢复满血、满瓶、清无敌源、复位视觉。
+func revive() -> void:
+	is_dead = false
+	hp = max_hp
+	flasks = max_flasks
+	_hurt_anim_timer = 0.0
+	_invincible_sources.clear()
+	is_invincible = false
+	is_rolling = false
+	is_diving = false
+	is_parrying = false
+	shield_rect.visible = false
+	visuals.scale = Vector2(facing_dir, 1.0)
+	visuals.rotation = 0.0
+	visuals.modulate = Color.WHITE
+	velocity = Vector2.ZERO
+	health_changed.emit(hp, max_hp)
 
 func _is_action_just_pressed(action_name: String) -> bool:
 	return InputMap.has_action(action_name) and Input.is_action_just_pressed(action_name)

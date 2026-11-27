@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://ui/TouchHUD.gd" id="1_hud"]
+[ext_resource type="PackedScene" path="res://ui/HealthBar.tscn" id="2_hb"]
 
 [node name="TouchHUD" type="CanvasLayer"]
 script = ExtResource("1_hud")
@@ -122,3 +123,5 @@ offset_top = 130.0
 offset_right = -24.0
 offset_bottom = 226.0
 text = "交互"
+
+[node name="HealthBar" parent="RootControl" instance=ExtResource("2_hb")]

@@ -95,11 +95,22 @@ func _run_tests() -> void:
 	var invaders = room.get_node("InvadersContainer")
 	var filter_rect: ColorRect = room.get_node("PostProcessLayer/DesaturateRect")
 	_check(invaders != null and filter_rect != null, "Room01 节点树完整（容器 + 后处理层）")
+
+	# Room01 自 2026-11-27 起是 `invade_on_enter = true`（一进门就被占，这是关卡设计，
+	# 不是 bug）。本用例要的是「和平状态 → 手动 append → erase」的状态机，
+	# 所以先把它按回未入侵 —— 否则 `invaded_rooms` 里会有两个 room_01，
+	# `erase()` 只删一个，后面 4 条断言会连锁失败。
+	ws.invaded_rooms.erase("room_01")
+	room.call("_setup_invasion_state")
+	await _frames(2)
 	_check(not ws.invaded_rooms.has("room_01"), "初始未入侵")
 
 	ws.invaded_rooms.append("room_01")
 	room._setup_invasion_state()
-	_check(invaders.get_child_count() == 3, "入侵状态生成 3 只橡皮擦怪，实际 %d" % invaders.get_child_count())
+	# 数量来自蓝图（`E`/`F` 的个数 → invader_count），不写死。
+	var want: int = int(room.get("invader_count"))
+	_check(want > 0, "Room01 的 invader_count 合法（%d）" % want)
+	_check(invaders.get_child_count() == want, "入侵状态生成 %d 只橡皮擦怪，实际 %d" % [want, invaders.get_child_count()])
 	var mat: ShaderMaterial = filter_rect.material as ShaderMaterial
 	_check(is_equal_approx(float(mat.get_shader_parameter("desaturate_amount")), 1.0), "入侵时灰度去色开启")
 
@@ -112,13 +123,13 @@ func _run_tests() -> void:
 	# 二次入侵：验证容器仍可用
 	ws.invaded_rooms.append("room_01")
 	room._setup_invasion_state()
-	_check(invaders.get_child_count() == 3, "二次入侵仍能生成敌人，实际 %d" % invaders.get_child_count())
+	_check(invaders.get_child_count() == want, "二次入侵仍能生成 %d 只（实际 %d）" % [want, invaders.get_child_count()])
 
 	# ===== F. 清怪触发净化（真实 health_depleted 信号）=====
 	var invader = invaders.get_child(0)
 	invader.take_damage(999.0, Vector2.ZERO)
 	await _frames(2)
-	_check(invaders.get_child_count() == 2, "击杀一只怪后容器剩 2 只")
+	_check(invaders.get_child_count() == want - 1, "击杀一只怪后剩 %d 只（实际 %d）" % [want - 1, invaders.get_child_count()])
 	for child in invaders.get_children():
 		child.take_damage(999.0, Vector2.ZERO)
 	await _frames(3)
@@ -131,6 +142,11 @@ func _run_tests() -> void:
 	ws.reset_state()
 	var room2 = room_scene.instantiate()
 	root.add_child(room2)
+	await _frames(2)
+	# 同上：Room01 一进门就被占，而「被占的房间不许播种」是设计规则。
+	# 这个用例测的是播种信号链，不是入侵，所以先按回和平状态。
+	ws.invaded_rooms.erase("room_01")
+	room2.call("_setup_invasion_state")
 	await _frames(2)
 	var plot = room2.get_node("SoilPlot")
 	var p2 = room2.get_node("Player")

@@ -1,5 +1,7 @@
 extends SceneTree
 
+const _ROOM_STATE = preload("res://tests/support/room_state.gd")
+
 ## 敌人换装专项：3 种变体正式资产加载 + Hurtbox 契约 + 入侵清怪闭环。
 ## 用 await process_frame 让场景走真实帧（@onready / viewport / Hurtbox 血量就绪），
 ## 不用手动 trigger _ready 的 hack，避免 headless 假象。
@@ -80,16 +82,20 @@ func _test_battlefield_loop() -> void:
 	_root.add_child(room)
 	await _frames(3) # 走真实帧：@onready 引用 + viewport + Hurtbox 血量就绪
 	var invaders: Node2D = room.get_node("InvadersContainer") as Node2D
+	# Room01 自 12 F0 起默认入侵 → 先钉回未侵占，再自己 append，
+	# 否则数组里会有两个 "room_01"，purify 的 erase() 只删一个，净化断言永远 FAIL。
+	_ROOM_STATE.force_uninvaded(ws, room)
 	ws.invaded_rooms.append("room_01")
 	room.call("_setup_invasion_state")
 	await _frames(1)
-	_check(invaders.get_child_count() == 3, "入侵生成 3 只怪")
+	var want: int = int(room.get("invader_count"))
+	_check(invaders.get_child_count() == want, "入侵生成 %d 只怪（= invader_count）" % want)
 	var tex_ok: bool = true
 	for child: Node in invaders.get_children():
 		var vis: Sprite2D = child.get_node_or_null("Visual") as Sprite2D
 		if vis == null or vis.texture == null:
 			tex_ok = false
-	_check(tex_ok, "3 只生成怪的贴图均已加载")
+	_check(tex_ok, "%d 只生成怪的贴图均已加载" % want)
 	for child in invaders.get_children():
 		child.call("take_damage", 999.0, Vector2.ZERO)
 	await _frames(3)

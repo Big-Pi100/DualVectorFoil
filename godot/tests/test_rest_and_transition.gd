@@ -96,10 +96,15 @@ func _run_tests() -> void:
 	if safe_player != null:
 		safe_player.global_position = Vector2(100, 300)
 		safe_player.call("take_damage", 9999.0)
-		await _frames(2)
+		# S1 起死亡有 0.7s 倒地演出，复活是延时的 —— 用条件轮询，不数固定帧
+		var safe_revived: bool = await _wait_until(func() -> bool: \
+			return not bool(safe_player.get("is_dead")), 180)
 		var marker = safe_room.get_node_or_null("SpawnFromRest")
+		_check(safe_revived, "安全屋死亡后完成原地复活")
 		_check(marker != null and is_equal_approx(safe_player.global_position.x, marker.global_position.x),
 			"安全屋内死亡应原地挪回 SpawnFromRest，x=%.1f" % safe_player.global_position.x)
+		_check(is_equal_approx(float(safe_player.get("hp")), float(safe_player.get("max_hp"))),
+			"原地复活应回满血")
 
 	# ===== E. 野外房间死亡 → 淡出送回休息点 =====
 	_ws.set_rest_point("res://world/rooms/SafeHouse.tscn", "SpawnFromRest")
@@ -112,8 +117,10 @@ func _run_tests() -> void:
 	if wild_player != null:
 		var world_before: Node2D = get_current_scene()
 		wild_player.call("take_damage", 9999.0)
-		await _frames(4)
-		_check(_transition.call("is_transitioning"), "野外死亡应触发转场")
+		# 先等倒地演出走完、真正开始转场（0.7s 演出 + 0.25s 淡出）
+		var started: bool = await _wait_until(func() -> bool: \
+			return bool(_transition.call("is_transitioning")), 240)
+		_check(started, "野外死亡应触发转场")
 		await _frames(80)
 		_check(str(_ws.story_flags.get("next_spawn_marker", "")) == "" or true, "转场消费 marker 或留在 flags 均可")
 		_check(world_before == null or true, "场景树切换完成")
