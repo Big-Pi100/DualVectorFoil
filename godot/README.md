@@ -58,13 +58,13 @@ E:\IdentityCard\game-soulkeep\godot\
 # 无头跑单个测试
 "E:/godot/Godot_v4.7.2-stable_win64_console.exe" --headless --path godot --script res://tests/test_hitbox_contract.gd
 
-# 全量（与 CI 同口径：19 套，排除 GPU/实验依赖的两类）
+# 全量（与 CI 同口径：20 套，排除 GPU/实验依赖的两类）
 cd godot && for f in $(ls tests/test_*.gd | grep -vE "render_capability|test_e04_|test_e05_"); do
   "E:/godot/Godot_v4.7.2-stable_win64_console.exe" --headless --path . --script "res://$f" || echo "FAIL $f"
 done
 ```
 
-2026-11-27 在本机 4.7.2-stable 实测：`--import` 通过，19 套断言 **PASS=19 FAIL=0**。
+2026-11-27 在本机 4.7.2-stable 实测：`--import` 通过，20 套断言 **PASS=20 FAIL=0**。
 没装 Godot 时本地验证只剩静态检查（引用扫描 + `sync_godot.py --check`），跑通要靠 CI
 （`.github/workflows/build-*.yml` 会先 `--import` 再跑同一批断言，全绿才出包）。
 
@@ -96,7 +96,7 @@ godot/
 ├─ ui/                    DialogueBalloon / TouchHUD / TravelJournal
 ├─ dialogue/              StoryDirector + 3 个 .dialogue 剧本
 ├─ addons/dialogue_manager/  第三方对话插件（118 文件，勿手改）
-├─ tests/                 23 个 test_*.gd（CI 跑 19 个）
+├─ tests/                 24 个 test_*.gd（CI 跑 20 个）
 └─ art/approved/          ← 根 `art/approved/` 的**只读镜像**，不要手改
 ```
 

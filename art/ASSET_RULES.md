@@ -554,6 +554,29 @@ prototype（`src/game.js`）目前还引用基准件，接场景两态切换时�
 净化时两条 tween 并行：`wipe_radius` 扩散回彩色，`night` 同步退到 0。
 实机 `F3` 可手动开关，直接对比。
 
+##### 双端校验：python 守像素，Godot 守接线
+
+上面六条全在 `env_light.py --check` 里，它算的是**着色对不对**。
+但算对了不等于**接上了**——三个房间级失效全都不报错：
+
+| 失效 | 现象 | 为什么静默 |
+|---|---|---|
+| `EnvLightRect` 没挂材质 | 按 F3 毫无变化 | `mat == null` 处直接 `return` |
+| 节点排到 `DesaturateRect` 前面 | 紫月看不见 | 先上色再被整层洗灰 |
+| `night` 没跟侵占状态走 | 被占的房间还是日光 | 参数有名无实 |
+
+所以另有一端：`godot/tests/test_env_light.gd`（CI 第 20 套），守**接线**——
+
+- 房间清单是**扫 `world/rooms/` 目录**得到的，不是硬编码。以前三次踩过
+  "清单外的文件断言碰不到"（5 种敌人磁盘 3 种、空矩阵假通过、`BASE_STEMS` 漏野文件），
+  这次用磁盘全集反查：新增房间漏挂 `EnvLightRect` → 当场 FAIL。
+- 判「是不是 BaseRoom 系」看有没有 `room_id` 属性，`TestCombat` / `WhiteboxTest`
+  因此自动跳过，不用维护例外表。
+- `night` 的驱动、`F3` 的双向翻转、`EnvLightRect` 缺失时不崩，各一条。
+
+**反向验证过**：把 `Room03.tscn` 的 `EnvLightRect` 改名 → `FAIL Room03.tscn EnvLightRect 挂了材质`，
+还原后 20 套全绿。断言不是写了就算数，得看见它红过一次。
+
 ##### 旧的 8 张两态怎么办
 
 暂留作回退（`ground_*_dark/ally`、`terrain_grass_top_dark/ally`），
