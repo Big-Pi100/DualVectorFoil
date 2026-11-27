@@ -29,8 +29,18 @@ spike 青绿偏了 18°。做一次**全局色相旋转**，但**金色/黄色�
 （否则黄眼会变成绿眼 —— 旋转是对全图一致的，眼睛受不了）。
 
 用法：
-    python art/tools/ally_from_gen.py --set slime=path/to/raw.png [...]
+    # 新敌人的**暗黑态**入库（生图 → 抠图 → 按画布约定放置 → 校验基调）
+    python art/tools/ally_from_gen.py --dark lice=raw.png ink=raw.png
+    # 解放态（生图重画只改眼睛 → 色相归位）
+    python art/tools/ally_from_gen.py --set slime=raw.png [...]
     python art/tools/ally_from_gen.py --check
+
+已接入的五个物种（`02 §5.3` 的资产键，五只都是原生种，都有两态）：
+    slime 纸团→小精灵 · bat 纸片蝙蝠→粉翼蝠 · spike 折痕体→绒刺球
+    lice  纸屑群→纸虱   · ink 墨渍→露珠虫
+
+原始生成图留在 `art/out/duo/eye_gen/enemy_<物种>_{dark,ally}_raw.png`，
+重跑命令即出自这些文件 —— 换一批生图就换一批文件名，别覆盖。
 """
 from __future__ import annotations
 
@@ -55,6 +65,8 @@ TARGET_HUE = {
     "slime": 206.0,   # 水蓝
     "bat": 342.0,     # 樱粉
     "spike": 147.0,   # 薄荷绿
+    "lice": 45.0,     # 暖金（晒过的纸）—— 五敌人里第一个用这条带的
+    "ink": 196.0,     # 水蓝（露珠）—— 与 slime 170° 内的邻近带，见 ASSET_RULES §3.1.3 同带规则
 }
 # 生成版的色相分布横跨太宽，整体旋转到不了目标（bat 的紫跨 H240-330，
 # 一律 +31° 之后仍在 271-361，还是紫）。所以对这类要**分区映射**：
@@ -62,6 +74,8 @@ TARGET_HUE = {
 # slime 的蓝本来就准（H214 vs 目标 206），不需要分区。
 ZONES = {
     "slime": None,
+    "lice": None,     # 单色相（暖金纸），整体旋转够用
+    "ink": None,      # 单色相（靛紫→水蓝，Δ64°），整体旋转够用
     "bat": dict(
         zones=[(232, 288, 337, 1.95, 0.22),
                (288, 336, 344, 1.85, 0.21),
@@ -78,10 +92,10 @@ ZONES = {
 }
 
 # 生图偏暗时的明度补偿（加法平移，跟换色那条路同一个理由：平移保对比度）
-V_ADD = {"slime": 0.0, "bat": 0.10, "spike": 0.0}
+V_ADD = {"slime": 0.0, "bat": 0.10, "spike": 0.0, "lice": 0.26, "ink": 0.04}
 # 生图的饱和度普遍低于换色版（bat 的紫、spike 的绿都发灰），
 # 光旋色相救不回来，必须把身体区域的饱和拉到目标值。
-TARGET_SAT = {"slime": 0.50, "bat": 0.54, "spike": 0.56}
+TARGET_SAT = {"slime": 0.50, "bat": 0.54, "spike": 0.56, "lice": 0.44, "ink": 0.46}
 
 
 # ── 抠图 ────────────────────────────────────────────────────────────
@@ -233,6 +247,49 @@ def align(cut: Image.Image, dark_path: Path) -> Image.Image:
     return canvas
 
 
+# 画布约定 —— 不是猜的，是从三只既有 sprite 量出来的：
+#   slime bbox x[30,97] y[40,87] / bat x[29,95] y[40,87] / spike x[37,89] y[40,87]
+# 三只内容高都是 48、脚底都压在 y=87、最大宽度 68。新敌人生图后必须落到同一套，
+# 否则它们并排站着会一个高一个矮 —— 这是玩家一眼能看出来的错。
+CANVAS = 128
+CONTENT_H = 48
+BOTTOM_Y = 88        # 脚底线 = bbox 下沿 + 1
+MAX_W = 68
+
+
+def place(cut: Image.Image) -> Image.Image:
+    """按画布约定放置：内容高 48、脚底 y=87、水平居中、宽度不超过 68。"""
+    w, h = cut.size
+    k = CONTENT_H / h
+    if w * k > MAX_W:                     # 太宽（墨渍带墨渍滩）就按宽度收
+        k = MAX_W / w
+    tw, th = max(int(round(w * k)), 1), max(int(round(h * k)), 1)
+    sp = cut.resize((tw, th), Image.LANCZOS)
+    canvas = Image.new("RGBA", (CANVAS, CANVAS), (0, 0, 0, 0))
+    canvas.alpha_composite(sp, ((CANVAS - tw) // 2, BOTTOM_Y - th))
+    return canvas
+
+
+# 暗黑态的明度基调区间。既有三只实测 vavg 0.56/0.75/0.79、对比度 0.51-0.60，
+# 新敌人必须落进同一区间，否则并排站着像两块黑炭跟三只紫团子。
+DARK_V_RANGE = (0.50, 0.85)
+DARK_CMP_MIN = 0.40
+
+
+def tone_warn(im: Image.Image) -> str:
+    """暗黑态基调只验不修 —— 先量，越界就报，回源头重新生成。"""
+    sys.path.insert(0, str(ART / "tools"))
+    from duo_state import metrics
+
+    m = metrics(im)
+    bad = []
+    if not (DARK_V_RANGE[0] <= m["vavg"] <= DARK_V_RANGE[1]):
+        bad.append(f"Vavg {m['vavg']:.2f} 不在 {DARK_V_RANGE}")
+    if m["cmp"] < DARK_CMP_MIN:
+        bad.append(f"明暗对比度 {m['cmp']:.2f} < {DARK_CMP_MIN}（笔触被拍平）")
+    return "；".join(bad)
+
+
 def outline_iou(a_path: Path, b_path: Path, n: int = 128) -> float:
     def m(p):
         al = np.array(Image.open(p).convert("RGBA"))[..., 3] > 40
@@ -248,6 +305,26 @@ def main() -> int:
     args = sys.argv[1:]
     if not args or args[0] == "--check":
         return check()
+    if args[0] == "--dark":
+        # 新敌人的**暗黑态**入库：生图 → 抠图 → 按画布约定放置。
+        # 已有三只是从 art/experiments 的旧资产来的，没有产线；新敌人必须走这里，
+        # 否则"内容高 48 / 脚底 y=87"这条约定会漂。
+        for spec in args[1:]:
+            sp, raw = spec.split("=", 1)
+            cut, _ = cut_out(Path(raw))
+            placed = place(cut)
+            a = np.array(placed)
+            dst = ENEMY_DIR / f"enemy_{sp}_idle_00_sprite.png"
+            placed.save(dst)
+            ys, xs = np.nonzero(a[..., 3] > 40)
+            # 基调**只验不修**。第一版试过"后期加法平移拉亮"，结果 vlo 从 0.69 顶到 0.71、
+            # 对比度反而从 0.29 再没回来 —— 平图硬拉只会得到一张浅灰的纸。
+            # 明暗层次必须生在源头，入库只负责拦。
+            warn = tone_warn(placed)
+            print(f"  {sp}: dark → {dst.name}  bbox x[{xs.min()},{xs.max()}] y[{ys.min()},{ys.max()}]"
+                  + (f"  [警告] {warn}" if warn else ""))
+        return 0
+
     if args[0] == "--cut":
         OUT.mkdir(parents=True, exist_ok=True)
         for spec in args[1:]:
@@ -323,7 +400,7 @@ def check() -> int:
         for e in errs:
             print("FAIL  " + e)
         return 1
-    print("PASS  三只解放态：轮廓同一只、颜色落在自然色带、够鲜够亮")
+    print(f"PASS  {len(TARGET_HUE)} 只解放态：轮廓同一只、颜色落在自然色带、够鲜够亮")
     return 0
 
 

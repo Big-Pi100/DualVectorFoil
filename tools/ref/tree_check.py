@@ -32,6 +32,7 @@ DOC04 = GDD / "04_关卡与地图.md"
 DOC02 = GDD / "02_战斗系统.md"
 DOC_REF = REF / "REF_TREE_PHYSIOLOGY.md"
 JSON_REF = REF / "tree_physiology_refs.json"
+ENEMY_DIR = ROOT / "art" / "approved" / "Enemies"
 
 # 八处翻译：系统词 → 生理词（必须同一行出现）
 MAPPINGS = [
@@ -374,6 +375,28 @@ def check_duo(r05: str, r03: str, r02: str) -> list[str]:
         empty = [r[0] for r in rows2 if ci >= 0 and (ci >= len(r) or not r[ci].strip("—*- "))]
         if empty:
             errs.append(f"02 §5.3: {len(empty)} 个敌人没填原住民态（{', '.join(empty)}）")
+
+        # 6. 文档说 5 种，磁盘上就必须有 5 种 × 2 态。
+        # 加这条之前，02 写着 5 种而 art/approved/Enemies 只有 3 种，
+        # 两边各自都"合法"，谁也不报错 —— 美术欠账就是这么藏住的。
+        # 判据必须指向**文件存在**，不是指向文档里有个名字。
+        if "资产键" not in "".join(hdr2):
+            errs.append("02 §5.3: 表头缺「资产键」列 —— 文档名与文件名没有对应，"
+                        "读者只能靠猜 enemy_??_idle_00_sprite 是哪只")
+        else:
+            ki = next((i for i, h in enumerate(hdr2) if "资产键" in h), -1)
+            for r in rows2:
+                if ki < 0 or ki >= len(r):
+                    continue
+                key = r[ki].strip(" `*")
+                if not key:
+                    errs.append(f"02 §5.3: 「{r[0]}」没填资产键")
+                    continue
+                for st in ("idle", "ally"):
+                    f = ENEMY_DIR / f"enemy_{key}_{st}_00_sprite.png"
+                    if not f.exists():
+                        errs.append(f"02 §5.3: 「{r[0]}」的 {st} 版资产缺文件（{f.name}）"
+                                    "—— 表里写了、磁盘上没有")
 
     return errs
 

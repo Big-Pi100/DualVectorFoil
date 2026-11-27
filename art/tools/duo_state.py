@@ -459,13 +459,22 @@ def ally_path(key: str) -> Path:
     return ENEMY_DIR / f"{m.group(1)}_ally_{m.group(2)}_sprite.png"
 
 
+# 五个物种的中文名（GDD 05 §5 / 02 §5.3 同源）。色卡只管走**换色产线**的物种；
+# 走生图产线的物种没有色卡，靠 ally_from_gen.py 的 TARGET_HUE —— 但它们在
+# `--check` 里仍要参与同一份断言，所以名字必须能取到。
+SPECIES_CN = {
+    "slime": "小精灵", "bat": "粉翼蝠", "spike": "绒刺球",
+    "lice": "纸虱", "ink": "露珠虫",
+}
+
+
 def card_of(key: str) -> dict:
     sp = species_of(key)
-    if sp not in PALETTES:
-        raise SystemExit(
-            f"{sp} 没有色卡 —— 不猜目标色。先跑 `--probe` 看它的色相锚点，"
-            f"再往 PALETTES 里加一条（参照已有的 slime / bat / spike）")
-    return PALETTES[sp]
+    if sp in PALETTES:
+        return PALETTES[sp]
+    if sp not in SPECIES_CN:
+        raise SystemExit(f"未知物种 {sp}：既没色卡也不在 SPECIES_CN 里，不猜")
+    return dict(species=SPECIES_CN[sp], why="生图产线（ally_from_gen.py）", generated=True)
 
 
 # ── probe：量色相锚点（配色卡时的依据） ─────────────────────────────
@@ -549,7 +558,7 @@ def palette_sheet(rows) -> Path:
           "紫靛带 H215-322 —— 不管原物种什么颜色，被注入黑色素后一律发紫",
           [DARK_HUE_BAND], rows, 1)
     block(276, "ALLY  ·  解放态（本来的样子）",
-          "四条自然色带，每只占一条不重复 —— 这棵树有很多种居民",
+          "四条自然色带，同带最多 2 种（须近亲）—— 这棵树有很多种居民",
           ALLY_HUE_BANDS, rows, 2)
 
     d.line([(28, 262), (W - 28, 262)], fill=(210, 200, 188))
@@ -575,17 +584,24 @@ def main() -> int:
 
     errs: list[str] = []
     rows = []
+    # 只有"纯产出"（不带任何查看开关）才动文件。--palette/--sheet 只是画图，
+    # 不该顺手重算候选，更不该因为遇到生图物种就炸掉整张总览图。
+    produce = not any(f in args for f in ("--check", "--palette", "--sheet", "--probe"))
 
     for key, src in srcs:
         dark = Image.open(src).convert("RGBA")
         dst = ally_path(key)
         card = card_of(key)
-        if "--check" in args:
+        if "--check" in args or not produce:
             if not dst.exists():
                 errs.append(f"{key}: 还没生成 {dst.name} —— 跑一次不带 --check 的")
                 continue
             ally = Image.open(dst).convert("RGBA")
         else:
+            if card.get("generated"):
+                raise SystemExit(
+                    f"{key}: {card['species']} 没有色卡 —— 它走的是生图产线。"
+                    "换色救不了眼睛（凶感来自眼型），请用 ally_from_gen.py --set")
             # 默认只出候选，**不覆盖 approved**。
             # 2026-11-27 踩过：守卫循环里 `python duo_state.py`（无参数）跑了一次，
             # 把生成版 ally 覆盖回了换色版，而 --check 随后报 PASS（换色版本身是合法的）。
@@ -607,9 +623,15 @@ def main() -> int:
     print("-" * 70)
     for key, d, al, card, e in rows:
         md, ma = metrics(d), metrics(al)
-        print(f"{key:<28}{_hue_delta(md['hue'], ma['hue']):>7.0f}°"
-              f"  {md['sat']:.2f}→{ma['sat']:.2f}"
-              f"   {md['cmp']:.2f}→{ma['cmp']:.2f}")
+        if card.get("generated"):
+            # 生图版是重画的：色系来自目标带而不是继承 dark，
+            # 印"Δ色相/饱和塌没塌"会误导 —— 那两条判据对它本来就是关的。
+            print(f"{key:<28}{'生成版':>8}"
+                  f"  S {ma['sat']:.2f}   V {ma['vavg']:.2f}   带 {ma['hue']:.0f}°")
+        else:
+            print(f"{key:<28}{_hue_delta(md['hue'], ma['hue']):>7.0f}°"
+                  f"  {md['sat']:.2f}→{ma['sat']:.2f}"
+                  f"   {md['cmp']:.2f}→{ma['cmp']:.2f}")
         print(f"  └ {card['species']}：{card['why']}")
         for msg in e:
             print(f"  ✗ {msg}")
