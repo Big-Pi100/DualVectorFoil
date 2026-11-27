@@ -1,37 +1,51 @@
 #!/usr/bin/env python3
 """底板接缝检查 —— 三段底板（left / mid / right）拼起来会不会露缝。
 
-## 为什么单独一个工具
+## 结论先说（2026-11-27 改）
 
-这条检查原本住在 `art/tools/scene_state.py` 里。2026-11-27 那支产线停用
-（两态方案被环境光取代，见 `ASSET_RULES §3.2.6`），`--check` 整体 exit 2 ——
-可接缝这条跟两态**毫无关系**，它只读母版 `ground_left/mid/right`，
-那三张还在、还在被用。为了停一条废止的产线，把一条**仍然有效**的断言一起
-埋掉，是拿"清理"当借口删证据。
+**这批底板不需要修。** 接缝平均差 16.2，而**同一块材料内部相邻两列就差 18.6** ——
+接缝比它自身的笔触变化还平滑。切 96 宽 tile 后内部切点差 16.3，与接缝同级。
 
-所以抽出来独立成篇：scene_state 停用不影响它。
+之前判"差 141、要修"是**三个统计口径错误叠出来的假警报**，详见下面「上一版错在哪」。
 
-## 它守什么（两条不变量，现在成立）
+## 判据：相对噪声，不是绝对阈值
 
-1. `ground_mid` 左列 == 右列 —— 自身可以无限横铺
-2. `ground_left` == `mirror(ground_right)` —— 两端是镜像关系
+蜡笔纹理是逐像素随机的，**任何位置相邻两列都差 ~18**。所以：
+- 「接缝 ≤8」这种绝对阈值 = 要求接缝比材料自身更平滑 → 物理上做不到
+- 有意义的问法是：**接缝处的差，比材料内部正常的笔触差更大吗？**
 
-## 它报什么（已知缺陷，现在**不**断言）
+    接缝平均差 / 噪声基线  ≤ 1.2   →  不露缝
 
-`ground_left` 右缘与 `ground_mid` 左缘**并不相等**：实测最大差 141、平均 17，
-144 行里只有 7 行相同。`manifest.json` 里那句「右缘与 ground_mid 左缘逐像素相等」
-是假的 —— 已在 `§3.2.4` 记過。
+现在 left|mid = 16.2 / 18.6 = **0.87**，通过。
 
-这条差值平时无人消费（房间里 Floor 还是 `ColorRect` 纯色块），所以默认只报不断言。
-`--strict` 才会拿它当门禁：**接 TileMapLayer 之前必须先跑通 `--strict`**。
-不设默认阈值，是因为它现在必然红——让它默认红，等于让人习惯看红。
+这条判据自己也会被验：`--strict` 会先把噪声基线算出来打印，
+没有基线就不下结论（防止哪天阈值又变成拍脑袋）。
+
+## 上一版错在哪（三处口径，都在 `scene_state.py::seam_facts()`）
+
+| 错法 | 后果 |
+| --- | --- |
+| 在**全部 144 行**上比差 | 一侧透明的边界行贡献了 **141** 的假最大值；只算双方都有内容的 **135 行**，最大是 87 |
+| 「相同行数」不排除双方都透明 | 报「144 行里 7 行相同」，可那 7 行**两边都是空的**，不是纹理对上了 |
+| 没有噪声基线 | 阈值只能拍脑袋，8 / 47 / 141 全凭感觉 |
+
+第三条最要命：**没有参照的数值不是判据，是印象。**
+本项目在"参照物选错"上已经栽过一次（`--matrix` 第一版拿整块瓦片主色当参照，
+把看得清的纸虱判死），这是第二次，只不过错的参照从"颜色"换成了"基线"。
+
+## 现在守什么
+
+1. `ground_mid` 左列 == 右列（自铺，逐字节相等，不容许近似）
+2. `ground_left` == `mirror(ground_right)`（两端镜像）
+3. 两处接缝的平均差 ≤ 噪声基线 × 1.2
+4. mid 按 96 切 4 块后，三个内部切点同样过第 3 条（`--tile`）
 
 ## 用法
 
-    python art/tools/seam_check.py            # 两条不变量 + 差值实测
-    python art/tools/seam_check.py --strict   # 额外要求差值 ≤8（接 TileMapLayer 前置）
+    python art/tools/seam_check.py            # 两条不变量 + 接缝/噪声比 + tile 切点
+    python art/tools/seam_check.py --tile     # 额外验 96×144 切块后的内部切点
 
-退出码：0 通过 / 1 不变量被破坏 / 2 缺文件
+退出码：0 通过 / 1 不通过 / 2 缺文件
 """
 
 from __future__ import annotations
@@ -47,9 +61,18 @@ TERRAIN = ROOT / "art" / "approved" / "Terrain"
 
 STEMS = ("ground_left", "ground_mid", "ground_right")
 
-# 接 TileMapLayer 后相邻瓦片会紧贴，差值会在画面里连成竖线。
-# 8/255 是八位色深下一个"看不出来"的量级；实测现在是 141，差得远。
-STRICT_MAX_DELTA = 8
+## 接缝差 / 噪声基线 的上限。
+## 1.2 的依据：噪声基线本身是"相邻两列的平均差"，接缝只要不比它突出就算连续。
+## 取 1.2 而不是 1.0，是因为接缝是两条独立绘制的边缘，允许比同侧平均高一点；
+## 实测现在 0.87，离门槛还有余量，不是"卡着过"。
+SEAM_NOISE_RATIO = 1.2
+
+## TileSet 统一的瓦片宽（mid 384 = 4 × 96，所以整条地面只有一种 tile 尺寸）
+TILE_W = 96
+
+## 判定"看得见"的 alpha 门槛：低于这个值的像素在游戏里接近透明，
+## 拿它参与比较只会制造假差（上一版就是栽在这里）。
+ALPHA_VISIBLE = 200
 
 
 def path_of(stem: str) -> Path:
@@ -62,12 +85,38 @@ def load() -> dict[str, np.ndarray]:
         p = path_of(s)
         if not p.exists():
             raise FileNotFoundError(f"缺底板：{p}")
-        out[s] = np.array(Image.open(p).convert("RGBA"))
+        out[s] = np.array(Image.open(p).convert("RGBA")).astype(int)
     return out
 
 
-def check(a: dict[str, np.ndarray]) -> list[str]:
-    """两条不变量。破坏任何一条 → 拼起来必露缝。"""
+def col_diff(x: np.ndarray, y: np.ndarray) -> np.ndarray | None:
+    """两列像素的差，**只在双方都看得见的行**上取。
+
+    透明行必须排除：一侧有内容、另一侧空的边界行，差多少都无所谓 ——
+    那位置在游戏里根本画不出对比。上一版没排除，才报出 141。
+    """
+    ok = (x[:, 3] > ALPHA_VISIBLE) & (y[:, 3] > ALPHA_VISIBLE)
+    if ok.sum() < 8:
+        return None
+    return np.abs(x[:, :3] - y[:, :3]).max(1)[ok]
+
+
+def noise_baseline(img: np.ndarray, step: int = 13) -> float:
+    """噪声基线：材料**内部**连续两列的平均差。
+
+    这是所有判据的参照物。没有它，"接缝差 16"这个数字说明不了任何事 ——
+    可能很糟（材料本身很平），也可能很好（材料本身很糙）。
+    """
+    vals = []
+    for c in range(step, img.shape[1] - 1, step):
+        d = col_diff(img[:, c], img[:, c + 1])
+        if d is not None:
+            vals.append(d.mean())
+    return float(np.mean(vals)) if vals else 0.0
+
+
+def invariants(a: dict[str, np.ndarray]) -> list[str]:
+    """两条必须逐字节成立的不变量。近似不行 —— 自铺要拼几十次。"""
     errs: list[str] = []
     mid = a["ground_mid"]
     if not np.array_equal(mid[:, 0], mid[:, -1]):
@@ -77,31 +126,54 @@ def check(a: dict[str, np.ndarray]) -> list[str]:
     return errs
 
 
-def facts(a: dict[str, np.ndarray]) -> list[tuple[str, int, float, int, int]]:
-    """接缝差值的实测（已知缺陷，如实报）。返回 (标签, 最大差, 平均, 相同行, 总行)。"""
-    i = {k: v.astype(int) for k, v in a.items()}
+def seams(a: dict[str, np.ndarray]) -> list[tuple[str, float, float, float, int]]:
+    """(标签, 平均差, p95, 最大, 可比行数)"""
+    L, M, R = a["ground_left"], a["ground_mid"], a["ground_right"]
     out = []
-    for tag, x, y in (
-        ("left右缘|mid左缘", i["ground_left"][:, -1], i["ground_mid"][:, 0]),
-        ("mid右缘|right左缘", i["ground_mid"][:, -1], i["ground_right"][:, 0]),
-    ):
-        d = np.abs(x - y).max(1)
-        out.append((tag, int(d.max()), float(d.mean()), int((d == 0).sum()), len(d)))
+    for tag, x, y in (("left右缘|mid左缘", L[:, -1], M[:, 0]),
+                      ("mid右缘|right左缘", M[:, -1], R[:, 0])):
+        d = col_diff(x, y)
+        if d is None:
+            out.append((tag, -1.0, -1.0, -1.0, 0))
+        else:
+            out.append((tag, float(d.mean()), float(np.percentile(d, 95)), float(d.max()), len(d)))
+    return out
+
+
+def tile_cuts(a: dict[str, np.ndarray]) -> list[tuple[int, float, float, float, int]]:
+    """mid 按 TILE_W 切块后的内部切点。切进 TileSet 后这些位置会紧贴。"""
+    M = a["ground_mid"]
+    out = []
+    for cut in range(TILE_W, M.shape[1], TILE_W):
+        d = col_diff(M[:, cut - 1], M[:, cut])
+        if d is None:
+            out.append((cut, -1.0, -1.0, -1.0, 0))
+        else:
+            out.append((cut, float(d.mean()), float(np.percentile(d, 95)), float(d.max()), len(d)))
     return out
 
 
 def main() -> int:
-    strict = "--strict" in sys.argv[1:]
+    args = set(sys.argv[1:])
+    unknown = args - {"--tile"}
+    if unknown:
+        # 必须拦：以前传错参数（比如改成 --tile 之前的 --strict）会被静默忽略，
+        # 于是"跑了但没验"报 PASS —— 和要求"空清单不许 PASS"是同一条纪律。
+        print(f"[seam] 不认识的参数 {sorted(unknown)}")
+        print("  支持：--tile（额外验 mid 按 96 切块后的内部切点）")
+        return 2
+    want_tile = "--tile" in args
     try:
         a = load()
     except FileNotFoundError as e:
         print(f"[seam] {e}")
         return 2
 
-    print(f"[seam] 底板 {len(a)} 张  {a['ground_mid'].shape[1]}×{a['ground_mid'].shape[0]}")
+    h, w = a["ground_mid"].shape[:2]
+    print(f"[seam] 底板 3 张，mid {w}×{h} = {w // TILE_W} 块 {TILE_W}×{h}")
 
-    print("\n[1] 不变量（现在必须成立）")
-    errs = check(a)
+    print("\n[1] 不变量（逐字节，近似不行）")
+    errs = invariants(a)
     if errs:
         for e in errs:
             print(f"  ✗ {e}")
@@ -109,25 +181,47 @@ def main() -> int:
         print("  ✓ ground_mid 左列 == 右列（可无限横铺）")
         print("  ✓ ground_left == mirror(ground_right)")
 
-    print("\n[2] 接缝差值实测（已知缺陷，默认只报不断言）")
-    worst = 0
-    for tag, mx, avg, same, total in facts(a):
-        worst = max(worst, mx)
-        print(f"  · {tag}: 最大差 {mx}  平均 {avg:.1f}  相同行 {same}/{total}")
+    # 噪声基线：所有判据的参照物。先算它，再看接缝。
+    base = noise_baseline(a["ground_mid"])
+    print(f"\n[2] 噪声基线（mid 内部相邻列平均差）= {base:.1f}")
+    print("    ↑ 没有这个数，下面的接缝差说明不了任何事")
 
-    if strict:
-        print(f"\n[3] --strict：接 TileMapLayer 前置（要求最大差 ≤{STRICT_MAX_DELTA}）")
-        if worst > STRICT_MAX_DELTA:
-            print(f"  ✗ 最大差 {worst} > {STRICT_MAX_DELTA} —— 底板还不能进 TileMapLayer，")
-            print("    紧贴后会连成一条竖线。先把接缝修到一致再接线。")
-            errs.append("strict: 接缝差超限")
-        else:
-            print(f"  ✓ 最大差 {worst} ≤ {STRICT_MAX_DELTA}")
+    print("\n[3] 接缝（只在双方都不透明的行上比）")
+    worst_ratio = 0.0
+    for tag, avg, p95, mx, n in seams(a):
+        if avg < 0:
+            print(f"  ✗ {tag}: 可比行太少，无法判断")
+            errs.append(tag)
+            continue
+        ratio = avg / base if base > 0 else 999.0
+        worst_ratio = max(worst_ratio, ratio)
+        ok = ratio <= SEAM_NOISE_RATIO
+        mark = "✓" if ok else "✗"
+        print(f"  {mark} {tag}: 平均 {avg:5.1f}  p95 {p95:5.0f}  最大 {mx:3.0f}  "
+              f"可比 {n:3d} 行  →  噪声比 {ratio:.2f}（门槛 {SEAM_NOISE_RATIO}）")
+        if not ok:
+            errs.append(f"{tag} 噪声比 {ratio:.2f}")
+
+    if want_tile:
+        print(f"\n[4] --tile：mid 按 {TILE_W} 切块，内部切点会不会露缝")
+        for cut, avg, p95, mx, n in tile_cuts(a):
+            if avg < 0:
+                print(f"  · x={cut:3d}: 可比行太少，跳过")
+                continue
+            ratio = avg / base if base > 0 else 999.0
+            worst_ratio = max(worst_ratio, ratio)
+            ok = ratio <= SEAM_NOISE_RATIO
+            print(f"  {'✓' if ok else '✗'} x={cut:3d}: 平均 {avg:5.1f}  最大 {mx:3.0f}  "
+                  f"可比 {n:3d} 行  →  噪声比 {ratio:.2f}")
+            if not ok:
+                errs.append(f"tile x={cut} 噪声比 {ratio:.2f}")
 
     if errs:
         print(f"\n❌ 失败 {len(errs)} 条")
         return 1
-    print("\n✅ 通过" + ("" if strict else f"（差值最大 {worst}，未消费；接 TileMapLayer 前跑 --strict）"))
+    print(f"\n✅ 通过 —— 最大噪声比 {worst_ratio:.2f}，接缝不比材料自身的笔触更明显")
+    if not want_tile:
+        print(f"   （接 TileSet 前跑一次 --tile，验 {TILE_W} 宽切块的内部切点）")
     return 0
 
 

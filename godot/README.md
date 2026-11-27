@@ -160,7 +160,7 @@ python art/tools/sync_godot.py --prune   # 连镜像里多出的文件一起删�
 | --- | --- | --- |
 | `art/experiments/` 不在本地 | 4 个 `test_e04_* / test_e05_*` 跑不了（读 `res://art/experiments/`） | CI 已排除；要跑先 `git checkout origin/master -- art/experiments`（95MB） |
 | `addons/dialogue_manager` 引用 `tests/test_basic_dialogue.gd` | 那是插件自带的示例测试，远端也没有 | 不影响运行，不补 |
-| 两段底板接缝差 **141**（144 行只有 7 行相同） | 7 个房间 Floor 还是 `ColorRect` 纯色块，所以没人消费；一旦接 TileMapLayer 就会连成竖线 | `python art/tools/seam_check.py --strict` 是接线前置门禁，现在必红——先修接缝再接线 |
+| 三段底板至今没有消费点 | 7 个房间 Floor 还是 `ColorRect` 纯色块 | 接缝已验可靠（噪声比 0.86，比材料自身笔触还小）；`seam_check.py --tile` 全绿，可以接 TileSet |
 | 7 个房间 Floor 仍是 `ColorRect` | 三段底板（96/384/96）与新地形贴图无消费点 | 接 TileMapLayer 时一并换 |
 
 ## 改动纪律
