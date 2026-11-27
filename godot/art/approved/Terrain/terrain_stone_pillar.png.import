@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dipkubwey01tl"
-path="res://.godot/imported/terrain_stone_pillar.png-cfce6aa06164bc5056f9d6eaf3f1f834.ctex"
+path="res://.godot/imported/terrain_stone_pillar.png-0308240699d3d4fad2b0eba7e37ac2ab.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/Terrain/terrain_stone_pillar.png"
-dest_files=["res://.godot/imported/terrain_stone_pillar.png-cfce6aa06164bc5056f9d6eaf3f1f834.ctex"]
+source_file="res://art/approved/Terrain/terrain_stone_pillar.png"
+dest_files=["res://.godot/imported/terrain_stone_pillar.png-0308240699d3d4fad2b0eba7e37ac2ab.ctex"]
 
 [params]
 

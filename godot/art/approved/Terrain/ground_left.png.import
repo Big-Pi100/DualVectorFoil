@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bfjbxkibu8j1o"
-path="res://.godot/imported/ground_left.png-651196d39b385a0195f82f8fa389fe70.ctex"
+path="res://.godot/imported/ground_left.png-5219cedcf67c6876b41a9b250896f1e7.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/Terrain/ground_left.png"
-dest_files=["res://.godot/imported/ground_left.png-651196d39b385a0195f82f8fa389fe70.ctex"]
+source_file="res://art/approved/Terrain/ground_left.png"
+dest_files=["res://.godot/imported/ground_left.png-5219cedcf67c6876b41a9b250896f1e7.ctex"]
 
 [params]
 

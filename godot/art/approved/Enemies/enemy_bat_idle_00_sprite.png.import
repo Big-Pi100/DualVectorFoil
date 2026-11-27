@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://eg3vhtp87nnx"
-path="res://.godot/imported/enemy_bat_idle_00_sprite.png-110e7dd79a8d69ea902f7cfcdc27573b.ctex"
+path="res://.godot/imported/enemy_bat_idle_00_sprite.png-b1ff67aae6097568898cb8fcf7626d30.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/Enemies/enemy_bat_idle_00_sprite.png"
-dest_files=["res://.godot/imported/enemy_bat_idle_00_sprite.png-110e7dd79a8d69ea902f7cfcdc27573b.ctex"]
+source_file="res://art/approved/Enemies/enemy_bat_idle_00_sprite.png"
+dest_files=["res://.godot/imported/enemy_bat_idle_00_sprite.png-b1ff67aae6097568898cb8fcf7626d30.ctex"]
 
 [params]
 

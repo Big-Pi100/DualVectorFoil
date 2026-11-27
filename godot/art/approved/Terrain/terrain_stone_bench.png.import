@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://ybk6x0aat24i"
-path="res://.godot/imported/terrain_stone_bench.png-672f9b308523926437f9ac6ab5e6b0a4.ctex"
+path="res://.godot/imported/terrain_stone_bench.png-c8f580825b574349dc0ef654607147d8.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/Terrain/terrain_stone_bench.png"
-dest_files=["res://.godot/imported/terrain_stone_bench.png-672f9b308523926437f9ac6ab5e6b0a4.ctex"]
+source_file="res://art/approved/Terrain/terrain_stone_bench.png"
+dest_files=["res://.godot/imported/terrain_stone_bench.png-c8f580825b574349dc0ef654607147d8.ctex"]
 
 [params]
 

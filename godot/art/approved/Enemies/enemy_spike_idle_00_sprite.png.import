@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cgqmsotywcwbh"
-path="res://.godot/imported/enemy_spike_idle_00_sprite.png-7c6ea4e1427b12c918e6e8760896cfe5.ctex"
+path="res://.godot/imported/enemy_spike_idle_00_sprite.png-05588b2a91a06c0727808b284d14c6e4.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/Enemies/enemy_spike_idle_00_sprite.png"
-dest_files=["res://.godot/imported/enemy_spike_idle_00_sprite.png-7c6ea4e1427b12c918e6e8760896cfe5.ctex"]
+source_file="res://art/approved/Enemies/enemy_spike_idle_00_sprite.png"
+dest_files=["res://.godot/imported/enemy_spike_idle_00_sprite.png-05588b2a91a06c0727808b284d14c6e4.ctex"]
 
 [params]
 

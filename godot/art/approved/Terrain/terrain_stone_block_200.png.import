@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://d1idvedemrsuo"
-path="res://.godot/imported/terrain_stone_block_200.png-fe197cf30e8bd610bd079819f59ca0ef.ctex"
+path="res://.godot/imported/terrain_stone_block_200.png-df3bb1064da28fec4889fc91ee5788c4.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/Terrain/terrain_stone_block_200.png"
-dest_files=["res://.godot/imported/terrain_stone_block_200.png-fe197cf30e8bd610bd079819f59ca0ef.ctex"]
+source_file="res://art/approved/Terrain/terrain_stone_block_200.png"
+dest_files=["res://.godot/imported/terrain_stone_block_200.png-df3bb1064da28fec4889fc91ee5788c4.ctex"]
 
 [params]
 
