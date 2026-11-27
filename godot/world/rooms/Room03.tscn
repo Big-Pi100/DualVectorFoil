@@ -1,9 +1,10 @@
-[gd_scene load_steps=13 format=3]
+[gd_scene load_steps=19 format=3]
 
 ; Phase 3 生态区一：风车蜡笔草地
 ; 继承 BaseRoom 的入侵/净化/零惩罚送回契约；棉花花坛接入 bounce_marshmallow（加生命）。
 
 [ext_resource type="Script" path="res://world/rooms/BaseRoom.gd" id="1_room"]
+[ext_resource type="Shader" path="res://world/shaders/env_light.gdshader" id="94_env"]
 [ext_resource type="PackedScene" path="res://entities/player/Player.tscn" id="2_player"]
 [ext_resource type="PackedScene" path="res://ui/TouchHUD.tscn" id="3_hud"]
 [ext_resource type="PackedScene" path="res://world/interactables/SoilPlot.tscn" id="4_plot"]
@@ -34,6 +35,11 @@ shader_parameter/fiber_strength = 0.10
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_vista"]
 size = Vector2(140, 120)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_env"]
+shader = ExtResource("94_env")
+shader_parameter/night = 0.0
+shader_parameter/moon_tint = Color(0.42, 0.38, 0.78, 1)
 
 [node name="Room03" type="Node2D"]
 script = ExtResource("1_room")
@@ -176,6 +182,14 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
 material = SubResource("ShaderMaterial_paper")
+color = Color(1, 1, 1, 1)
+
+[node name="EnvLightRect" type="ColorRect" parent="PostProcessLayer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+material = SubResource("ShaderMaterial_env")
 color = Color(1, 1, 1, 1)
 
 [node name="Player" parent="." instance=ExtResource("2_player")]

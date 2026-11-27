@@ -15,6 +15,9 @@ const INVADER_SCENE: PackedScene = preload("res://world/enemies/Invader.tscn")
 
 @onready var player: Player = $Player
 @onready var filter_rect: ColorRect = $PostProcessLayer/DesaturateRect
+# 环境光层（紫月）。测试场景没有这个节点，所以用 get_node_or_null 而不是 $。
+# 它排在 DesaturateRect 之后：先变灰、再上色，紫月才照得上去。
+@onready var env_rect: ColorRect = get_node_or_null("PostProcessLayer/EnvLightRect") as ColorRect
 @onready var invaders_container: Node2D = $InvadersContainer
 
 var _purify_tween: Tween = null
@@ -79,6 +82,39 @@ func _setup_invasion_state() -> void:
 		# 只隐藏容器，绝不 queue_free 容器本身 —— 否则二次入侵时引用已释放节点会崩
 		invaders_container.visible = false
 
+	# 环境光跟着侵占状态走：被占 = 紫月，清完 = 日光。
+	# 这是「一份美术两套光照」的入口 —— 不需要给地面出 _dark / _ally 两张图。
+	_set_env_night(1.0 if is_invaded else 0.0)
+
+
+## 设置紫月强度。duration>0 时补间过去（净化用）。
+func _set_env_night(target: float, duration: float = 0.0) -> void:
+	if env_rect == null:
+		return
+	var mat: ShaderMaterial = env_rect.material as ShaderMaterial
+	if mat == null:
+		return
+	if duration <= 0.0:
+		mat.set_shader_parameter("night", target)
+		return
+	var from: float = float(mat.get_shader_parameter("night"))
+	var tw: Tween = create_tween()
+	tw.tween_method(func(v: float) -> void: mat.set_shader_parameter("night", v),
+		from, target, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+
+## 调试：F3 手动开关紫月，在实机里直接看两套光照的差别。
+## 正常玩法下 night 由侵占状态驱动，不需要按键。
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F3:
+		if env_rect == null:
+			return
+		var mat: ShaderMaterial = env_rect.material as ShaderMaterial
+		if mat == null:
+			return
+		var cur: float = float(mat.get_shader_parameter("night"))
+		_set_env_night(0.0 if cur > 0.5 else 1.0, 0.35)
+		get_viewport().set_input_as_handled()
+
 func _clear_invaders() -> void:
 	# 同步从场景树移除，保证 get_child_count() 立即归零
 	for child: Node in invaders_container.get_children():
@@ -138,3 +174,5 @@ func _play_purify_wipe() -> void:
 	_purify_tween.tween_callback(func() -> void:
 		mat.set_shader_parameter("desaturate_amount", 0.0)
 	)
+	# 紫月同时退去。两条 tween 各管一个 uniform，并行跑互不干扰。
+	_set_env_night(0.0, purify_tween_duration)
