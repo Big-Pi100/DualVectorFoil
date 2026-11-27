@@ -126,7 +126,8 @@ vec2 offset = vec2(
 ```
 
 `UV * 10.0` 让**相邻像素的 hash 完全不同**，结果是整张图沙沙响、边缘碎成雪花，
-不是"线条在抖"。实测（`godot/tests/boil_check.py`）：变化像素 54%、单点最大通道差 194。
+不是"线条在抖"。实测（旧骨架的 `boil_check.py`，现位于
+`legacy/godot_prototype_2026-11-27/tests/boil_check.py`）：变化像素 54%、单点最大通道差 194。
 
 我们改成**整帧统一偏移**（每 0.15s 一次，幅度 1 纹理像素）：变化像素 29.6%，
 平坦区差异 0.27、笔触边缘差异 3.95——差异完全跟着画面结构走。
@@ -192,10 +193,11 @@ boil_check   变化 29.64%  平均差 1.90  平坦区 0.27  边缘区 3.95  外�
 复跑：
 
 ```bash
+# 2026-11-27 注：这四条命令全部指向旧骨架，现位于 legacy/godot_prototype_2026-11-27/
 GODOT="E:/godot/Godot_v4.4.1-stable_win64_console.exe"
 "$GODOT" --headless --path godot --script res://tests/feel_smoke.gd
 "$GODOT" --headless --path godot --script res://tests/combat_smoke.gd
-"$GODOT" --path godot --script res://tests/boil_shot.gd && python godot/tests/boil_check.py
+"$GODOT" --path godot --script res://tests/boil_shot.gd && python legacy/godot_prototype_2026-11-27/tests/boil_check.py
 ```
 
 ---
@@ -206,7 +208,13 @@ GODOT="E:/godot/Godot_v4.4.1-stable_win64_console.exe"
 
 白哥要亲手试那套手感。光看"差 2.3 倍"这句话没有说服力 —— 那就把它做成**可以按一下就切过去的东西**。
 
-`godot/scripts/player.gd` 现在有两套预设，游戏内 `F1` / `F2` 热切换，HUD 显示当前数值和本次跳跃最高点：
+> **2026-11-27 注：下面这套 `F1`/`F2` 切换已不在现役工程里。** 它写在旧原型的
+> 旧骨架的 `scripts/player.gd`，随整份骨架移进了 `legacy/godot_prototype_2026-11-27/`
+> （见 `DEV_FLOW §6.1`）。并进来的完整工程用 `godot/entities/player/Player.gd`，
+> 参数是另一套（`jump_velocity -490` / `gravity_scale 1.35`），没有预设切换。
+> 本章保留的是**判断依据**，不是"现在按 F2 就能试"的操作说明。
+
+旧骨架的 `scripts/player.gd` 当时有两套预设，游戏内 `F1` / `F2` 热切换，HUD 显示当前数值和本次跳跃最高点：
 
 |项|`aos`（F1，定版）|`crayon`（F2，参考）|
 |---|---|---|

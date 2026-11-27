@@ -99,13 +99,13 @@
     "category": "Terrain",
     "source": "art/experiments/E04_GodotScale/assets/E02_terrain_0.png",
     "approved": "art/approved/Terrain/terrain_stone_block.png",
-    "note": "【不接入·留库备用】G2+G4"
+    "note": "【接入·构景】灯塔/书堆等（Sprite2D，不当可站立地面）；G2+G4"
   },
   "terrain_stone_pillar": {
     "category": "Terrain",
     "source": "art/experiments/E04_GodotScale/assets/E02_terrain_1.png",
     "approved": "art/approved/Terrain/terrain_stone_pillar.png",
-    "note": "【不接入·留库备用】G2+G4"
+    "note": "【接入·构景】风车塔身（Sprite2D，不当可站立地面）；G2+G4"
   },
   "terrain_grass_top": {
     "category": "Terrain",
@@ -213,13 +213,13 @@
     "category": "Terrain",
     "source": "art/approved/Terrain/terrain_grass_top.png",
     "approved": "art/approved/Terrain/terrain_grass_decor.png",
-    "note": "【不接入·留库备用】Phase2 gameplay-size grass strip (200x103) for floor decor + soil plot"
+    "note": "【接入·草皮点缀】Floor 装饰 / SoilPlot 土块（不当铺底瓦片）；Phase2 gameplay-size grass strip (200x103) for floor decor + soil plot"
   },
   "terrain_stone_bench": {
     "category": "Terrain",
     "source": "art/approved/Terrain/terrain_stone_block.png",
     "approved": "art/approved/Terrain/terrain_stone_bench.png",
-    "note": "【弃用·唯一弃件】Phase2 gameplay-size stone (61x52) for RestBench body；无两态（不进关卡）"
+    "note": "【接入·玩法】休息长凳凳体（RestBench.gd：更新休息点 + 回满血）；Phase2 gameplay-size stone (61x52) for RestBench body"
   },
   "item_star_sprite": {
     "category": "Items",
@@ -237,13 +237,13 @@
     "category": "Terrain",
     "source": "art/approved/Terrain/terrain_stone_block.png",
     "approved": "art/approved/Terrain/terrain_stone_block_200.png",
-    "note": "【不接入·留库备用】Phase3 gameplay-size stone block (200x165) derived from G2/G4-approved 1024 source; used by Room04 book pile + Room05 lighthouse. Fixed 1024-original-in-scene proportion bug (2026-11-26)."
+    "note": "【接入·构景】灯塔/书堆等（Sprite2D，不当可站立地面）；Phase3 gameplay-size stone block (200x165) derived from G2/G4-approved 1024 source; used by Room04 book pile + Room05 lighthouse. Fixed 1024-original-in-scene proportion bug (2026-11-26)."
   },
   "terrain_stone_pillar_200": {
     "category": "Terrain",
     "source": "art/approved/Terrain/terrain_stone_pillar.png",
     "approved": "art/approved/Terrain/terrain_stone_pillar_200.png",
-    "note": "【不接入·留库备用】Phase3 gameplay-size stone pillar (200x323) derived from G2/G4-approved 1024 source; used by Room03 windmill. Fixed 1024-original-in-scene proportion bug (2026-11-26)."
+    "note": "【接入·构景】风车叶片（Sprite2D，不当可站立地面）；Phase3 gameplay-size stone pillar (200x323) derived from G2/G4-approved 1024 source; used by Room03 windmill. Fixed 1024-original-in-scene proportion bug (2026-11-26)."
   },
   "ground_left": {
     "category": "Terrain",

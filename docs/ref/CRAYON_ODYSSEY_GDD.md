@@ -2,7 +2,12 @@
 
 > 2026-11-25 收到的第三方文档，作者不详，Godot 4.4.1 触屏优先。
 > **这是原文，不是本项目的设计**。判断见 [`OTHERS_GDD_REVIEW.md`](OTHERS_GDD_REVIEW.md)；
-> 其手感数值已逐字抄成可切换预设（游戏内按 `F2`），见 `godot/scripts/player.gd`。
+> 其手感数值已逐字抄成可切换预设（游戏内按 `F2`），当时写在旧骨架的 `scripts/player.gd`。
+>
+> **2026-11-27 起那份 `player.gd` 已移走**（旧原型骨架的 17 个 `.gd` 整体进了
+> `legacy/godot_prototype_2026-11-27/`，见 `DEV_FLOW §6.1`）。现在 `godot/entities/player/Player.gd`
+> 是另一套实现（`jump_velocity -490` / `gravity_scale 1.35` / 二段跳），**没有 F1/F2 切换**。
+> 要复现当时的手感对照，去看 legacy 里那份，别在新工程里找。
 >
 > 归档原因：数值的**出处**要能查。只留结论不留原文，半年后没人说得清 480/1320 是哪来的。
 

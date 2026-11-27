@@ -45,10 +45,14 @@ BY_DIR = {"Characters": "sprite", "Enemies": "sprite", "Terrain": "prop",
 # 「现在用不到」≠「该弃」。2026-11-26 白哥的决定：除石凳全留，
 # 因为「用不到只是现在，不代表一直用不到」——尤其地图要做 X/Y 双轴之后，
 # 原先被判「进不了关卡」的立体件，在纵向房里有重新出场的可能。
+#
+# 2026-11-27 更正：连石凳也不是弃件了。那天并入的完整 Godot 工程里
+# `RestBench.tscn` 就拿它当凳体，`RestBench.gd` 是活玩法（更新休息点 + 回满血）。
+# 所以现在 **S_DROP 是 0 张** —— 这个状态保留，用来标以后真该淘汰的东西。
 S_WIRED = "wired"        # 已接入
 S_READY = "ready"        # 现在就有玩法钩子，可直接接线
 S_SPARE = "spare"        # 留库备用：暂时没用，但保留
-S_DROP = "drop"          # 弃用（本期只有石凳一张）
+S_DROP = "drop"          # 弃用（当前 0 张；保留这个状态位以待后用）
 
 LABEL = {S_WIRED: "已接入", S_READY: "可接线", S_SPARE: "留库备用", S_DROP: "弃用"}
 CATNAME = {"Characters": "角色", "Enemies": "敌人", "Items": "道具",
@@ -88,13 +92,15 @@ DECISION = {
     "ground_mid":     (S_READY, "底板中段 384×144，回文，可无限拼"),
     "ground_right":   (S_READY, "底板右端 96×144"),
     "terrain_grass_top":       (S_SPARE, "三段底板的源。必须留；运行时一张不读"),
-    "terrain_stone_block":     (S_SPARE, "立体石块母版。竖向叠层、背景岩体都可能用到"),
-    "terrain_stone_block_200": (S_SPARE, "石块摆件。已撤出场景，但纵向房可当悬崖/岩柱"),
-    "terrain_stone_pillar":    (S_SPARE, "立体石柱母版，同上"),
-    "terrain_stone_pillar_200": (S_SPARE, "石柱摆件。纵向房里天然是「撑住天花板」的构件"),
-    "terrain_stone_bench":     (S_DROP, "唯一弃件：石凳。横向房被撤，纵向房也用不上它——"
-                                       "它既不承重也不成景，占 6KB 但占一份维护注意力"),
-    "terrain_grass_decor":     (S_SPARE, "草丛摆件。前景/背景点缀"),
+    "terrain_stone_block":     (S_WIRED, "灯塔塔身 / 书堆（Room04、Room05，Sprite2D 构景）"),
+    "terrain_stone_block_200": (S_WIRED, "灯塔顶 / 书签（Room04、Room05，Sprite2D 构景）"),
+    "terrain_stone_pillar":    (S_WIRED, "风车塔身（Room03，Sprite2D 构景）"),
+    "terrain_stone_pillar_200": (S_WIRED, "风车叶片（Room03，Sprite2D 构景）"),
+    "terrain_stone_bench":     (S_READY, "休息长凳的凳体。2026-11-27 更正：曾被判「唯一弃件」"
+                                       "（依据是「横向房被撤、纵向房用不上」），但同日并入的完整工程里"
+                                       "RestBench.tscn 正拿它当凳体、RestBench.gd 是活玩法（更新休息点"
+                                       "+ 回满血）。判定已过时，改回可接线"),
+    "terrain_grass_decor":     (S_WIRED, "草皮点缀 / SoilPlot 土块（Room01-05、SafeHouse）"),
 
     # ── UI ───────────────────────────────────────────────────────
     "ui_hud_frame_00":  (S_SPARE, "HUD 现在是纯代码绘制。换图的话这张要做九宫格"),

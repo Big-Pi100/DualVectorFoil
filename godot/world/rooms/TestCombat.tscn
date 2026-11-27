@@ -1,0 +1,67 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="PackedScene" path="res://entities/player/Player.tscn" id="1_player"]
+[ext_resource type="PackedScene" path="res://ui/TouchHUD.tscn" id="2_hud"]
+[ext_resource type="Script" path="res://core/components/Hurtbox.gd" id="3_hurtbox"]
+[ext_resource type="Script" path="res://world/rooms/TestCombat.gd" id="4_room"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_floor"]
+size = Vector2(1200, 40)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_oneday"]
+size = Vector2(220, 16)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_dummy"]
+size = Vector2(36, 60)
+
+[node name="TestCombat" type="Node2D"]
+script = ExtResource("4_room")
+
+[node name="Floor" type="StaticBody2D" parent="."]
+position = Vector2(640, 620)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Floor"]
+shape = SubResource("RectangleShape2D_floor")
+
+[node name="Visual" type="ColorRect" parent="Floor"]
+offset_left = -600.0
+offset_top = -20.0
+offset_right = 600.0
+offset_bottom = 20.0
+color = Color(0.93, 0.9, 0.78, 1.0)
+
+[node name="OneWayPlatform" type="StaticBody2D" parent="."]
+groups = ["one_way_platform"]
+collision_layer = 2
+collision_mask = 0
+position = Vector2(640, 470)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="OneWayPlatform"]
+shape = SubResource("RectangleShape2D_oneday")
+one_way_collision = true
+
+[node name="Visual" type="ColorRect" parent="OneWayPlatform"]
+offset_left = -110.0
+offset_top = -8.0
+offset_right = 110.0
+offset_bottom = 8.0
+color = Color(0.82, 0.86, 0.68, 1.0)
+
+[node name="Dummy" type="Area2D" parent="."]
+script = ExtResource("3_hurtbox")
+position = Vector2(980, 570)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Dummy"]
+shape = SubResource("RectangleShape2D_dummy")
+
+[node name="Visual" type="ColorRect" parent="Dummy"]
+offset_left = -18.0
+offset_top = -30.0
+offset_right = 18.0
+offset_bottom = 30.0
+color = Color(0.9, 0.55, 0.45, 1.0)
+
+[node name="Player" parent="." instance=ExtResource("1_player")]
+position = Vector2(300, 400)
+
+[node name="TouchHUD" parent="." instance=ExtResource("2_hud")]

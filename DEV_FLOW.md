@@ -152,11 +152,15 @@ python art/tools/slice_ground.py --dry-run  # 重新实测三条接缝（不落�
 ```
 
 `F2` 是《色彩旅人》的参考数值（满跳 85.2 px），**不是候选方案**。
-看到 `player.gd` 里有 480 / 1320 不要以为要换 —— 那是给人按键对比用的，
+看到 legacy 里的 `player.gd` 有 480 / 1320 不要以为要换 —— 那是给人按键对比用的，
 理由见 `docs/ref/OTHERS_GDD_REVIEW.md` 第六节。
+（2026-11-27 起现役主角是 `godot/entities/player/Player.gd`，另一套参数、无 F1/F2 切换。）
 
-改 shader / 渲染设置（过滤、拉伸）加跑 `godot/tests/boil_shot.gd` + `godot/tests/boil_check.py`：
-判据是**平坦区差异 < 1.0、边缘区差异 > 1.5**。只看"有没有变化"会把白噪声判成通过。
+改 shader / 渲染设置（过滤、拉伸）跑 shader 相关测试：
+现役是 `godot/tests/test_shader_integration.gd`（无头可跑，CI 也在跑）。
+旧骨架的 `boil_shot.gd` + `boil_check.py`（出两帧再比对，判据**平坦区差异 < 1.0、边缘区差异 > 1.5**）
+已随骨架移进 `legacy/godot_prototype_2026-11-27/tests/`；要看逐像素判据时去那里，
+平时以 `test_shader_integration` 为准。
 
 **改 `project.godot` 的 `default_texture_filter` 要特别小心**：nearest 适合像素画，
 蜡笔是连续色调必须 linear；换回去笔触会出锯齿，而且沸腾线的亚像素位移会被切碎。
@@ -204,16 +208,31 @@ python art/tools/slice_ground.py --dry-run  # 重新实测三条接缝（不落�
 **已做的处置（2026-11-27）**：`git remote add origin` → `git fetch` → 把本地 69 个提交推到
 **`origin/local-main`**。**远端 `master` 一个字节没动。**
 
-**还没定的**：哪条当主线。两种走法，别混着来：
+**白哥选了 B（本地为准），2026-11-27 已执行。** 两种走法记在这里，是因为以后还会有人问"为什么不反过来"：
 
-- **A（推荐）远端工程为准**：`DualVectorFoil/master` 的 Godot 工程是主线，本地这条线贡献
-  `art/` + `docs/` + `art/tools/`，以 PR 把美术并进去。好处是 CI 不用改；代价是本地 20 多份
-  md 的"单一真源"要跟着搬。
-- **B 本地为准**：把远端工程搬进本地 `godot/`，替换 17 文件的骨架；CI 的 `--path .`
-  要改成 `--path godot`，`export_presets.cfg` 也跟着挪。好处是文档不散；代价是 CI + 铺平结构要重做。
+- **B（已选）本地为准**：远端工程搬进本地 `godot/`，替换 17 文件的骨架。
+  好处是文档、美术、产线都不散；代价是 CI 和目录结构要在本地这一侧重做。
+- A（未选）远端工程为准：那边的铺平结构当主线，本地美术以 PR 并进去。
+  好处是 CI 不用改；代价是 20 多份 md 的"单一真源"要跟着搬。
 
-**禁令**：方向定下来之前，**不许 `git push --force` 到 master** —— 无论推哪边，
-都会把另一边 9 个或 69 个提交从远端抹掉。要覆盖前先在这里写下选择与理由。
+### 落地清单（B 方案实做了什么）
+
+| 动作 | 细节 |
+| --- | --- |
+| 旧骨架移出 | `godot/{core,scripts,scenes,world,tests,project.godot,README.md}` → `legacy/godot_prototype_2026-11-27/`（存档，不删） |
+| 工程并入 | 远端 `core entities world ui dialogue addons tests project.godot export_presets.cfg` → `godot/` |
+| 资产镜像改名 | `godot/assets/art/` → `godot/art/approved/`（与工程内 `res://art/approved/` 同层同名） |
+| 不搬 | 远端 `art/`（旧快照，且 `art/experiments` 95MB 本地已清）、`AGENTS.md`/`ART_GUIDE.md`/`GDD.md`/`.gitignore` |
+| CI 适配 | 三份 workflow 加 `defaults.run.working-directory: godot`；`upload-artifact` 的 path 加 `godot/` 前缀；测试门禁排除 GPU 与实验依赖两类，阈值 19 |
+| 同步脚本 | `sync_godot.py` 的 DST → `godot/art/approved` |
+| 留下的例外 | `godot/data/{world_map,rooms}.json` 移回（`tools/worldmap/*.py` 直接写这个路径，`04 §8` 定为权威数据） |
+
+**回滚点**：`git tag pre-godot-merge-2026-11-27`（迁移前一刻的完整状态）。
+
+**禁令**：不要对 `DualVectorFoil/master` 做 `git push --force` —— 那 9 个提交是另一条线
+唯一的存档。要覆盖前先在这里写下理由。工程并入后，本地 `godot/` 是唯一开发主线，
+但**结构刻意与远端保持一致**（同样是 `core/ entities/ world/ ui/ dialogue/ addons/ tests/`
+平铺在工程根），这样将来从那边取更新时不会处处冲突。
 
 ---
 

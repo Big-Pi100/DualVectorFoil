@@ -1,0 +1,98 @@
+# Android 出包：ubuntu runner（1x 计费）+ 官方 Godot 4.7.2 + debug 签名 APK
+#
+# 说明：debug keystore 由 Godot 首次导出时自动生成，不需要提交密钥进仓库。
+#       正式上架所需 release keystore 只放 GitHub Secrets（见下方 upload 分支）。
+name: Build Android (debug APK)
+
+on:
+  workflow_dispatch:
+    inputs:
+      export_format:
+        description: '产物格式（apk=可直接装机验证 / aab=上架 Google Play）'
+        type: choice
+        options: [apk, aab]
+        default: apk
+
+env:
+  GODOT_VERSION: "4.7.2-stable"
+  TEMPLATE_DIR: "4.7.2.stable"
+
+jobs:
+  build:
+    name: 导出 Android + 体检
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    # 工程在 godot/ 子目录（DEV_FLOW §6.1）。working-directory 让 --path . / build/ 全部自动对，
+    # 只有 upload-artifact 的 path 是相对 workspace 的，要单独加前缀。
+    defaults:
+      run:
+        working-directory: godot
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: 环境校验（JDK + Android SDK，先失败别等 10 分钟）
+        run: |
+          set -euo pipefail
+          java -version 2>&1 | head -2 || { echo "🔴 缺 JDK"; exit 1; }
+          echo "ANDROID_HOME=${ANDROID_HOME:-<unset>}"
+          [ -d "${ANDROID_HOME:-/nonexistent}/platforms" ] || { echo "🔴 缺 Android SDK platforms"; exit 1; }
+          ls "${ANDROID_HOME}/build-tools" | head -5
+          echo "✅ JDK + Android SDK 齐备"
+
+      - name: 安装 Godot 4.7.2 + 导出模板
+        run: |
+          set -euo pipefail
+          BASE="https://github.com/godotengine/godot-builds/releases/download/${GODOT_VERSION}"
+          curl -fL --retry 3 -o /tmp/godot.zip "${BASE}/Godot_v${GODOT_VERSION}_linux.x86_64.zip"
+          unzip -q /tmp/godot.zip -d /tmp/godot
+          sudo install -m 755 "/tmp/godot/Godot_v${GODOT_VERSION}_linux.x86_64" /usr/local/bin/godot
+          curl -fL --retry 3 -o /tmp/tpl.tpz "${BASE}/Godot_v${GODOT_VERSION}_export_templates.tpz"
+          mkdir -p "$HOME/.local/share/godot/export_templates/${TEMPLATE_DIR}"
+          unzip -q /tmp/tpl.tpz -d /tmp/tpl
+          cp /tmp/tpl/templates/* "$HOME/.local/share/godot/export_templates/${TEMPLATE_DIR}/"
+          echo "Godot: $(godot --version)"
+
+      - name: 导入资产
+        run: godot --headless --path . --import
+
+      - name: 导出 Android（debug，自动 debug keystore）
+        run: |
+          set -euo pipefail
+          mkdir -p build/android
+          FORMAT="${{ inputs.export_format }}"
+          if [ "$FORMAT" = "aab" ]; then
+            OUT="build/android/dual_vector_foil.aab"
+          else
+            OUT="build/android/dual_vector_foil.apk"
+          fi
+          echo "导出目标: $OUT"
+          godot --headless --path . --export-debug "Android" "$OUT"
+
+      - name: 产物体检（断言包存在 + 含 classes.dex + 大小合理）
+        run: |
+          set -euo pipefail
+          FORMAT="${{ inputs.export_format }}"
+          if [ "$FORMAT" = "aab" ]; then OUT=build/android/dual_vector_foil.aab; else OUT=build/android/dual_vector_foil.apk; fi
+          fail() { echo "🔴 $1"; ls -la build/android || true; exit 1; }
+          test -s "$OUT" || fail "未产出 $OUT（导出命令返回 0 但无产物）"
+          SIZE=$(stat -c%s "$OUT")
+          [ "$SIZE" -gt 1000000 ] || fail "包仅 $SIZE 字节，疑似异常产物"
+          # 真机可安装的 APK 必须含 classes.dex；AAB 是 bundle，结构不同只查 zip 完整性
+          unzip -t "$OUT" >/dev/null || fail "$OUT 不是合法 zip 容器"
+          if [ "$FORMAT" = "apk" ]; then
+            unzip -l "$OUT" | grep -q "classes.dex" || fail "APK 里没有 classes.dex"
+          fi
+          echo "✅ Android 产物: $OUT ($((SIZE/1024/1024))MB)"
+          du -sh build/android
+
+      - name: 上传产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: dvf-android-${{ inputs.export_format }}
+          path: |
+            godot/build/android/*.apk
+            godot/build/android/*.aab
+          if-no-files-found: error
+          retention-days: 14
+
+# touched: retrigger workflow registration

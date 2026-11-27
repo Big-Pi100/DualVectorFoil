@@ -1,0 +1,114 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://ui/TravelJournal.gd" id="1_journal"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_paper"]
+bg_color = Color(0.96, 0.91, 0.75, 0.98)
+border_width_left = 8
+border_width_top = 8
+border_width_right = 8
+border_width_bottom = 8
+border_color = Color(0.55, 0.38, 0.2, 1)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+content_margin_left = 32.0
+content_margin_top = 28.0
+content_margin_right = 32.0
+content_margin_bottom = 28.0
+
+[node name="TravelJournal" type="CanvasLayer"]
+layer = 90
+process_mode = 3
+script = ExtResource("1_journal")
+
+[node name="OpenTab" type="Button" parent="."]
+offset_left = 20.0
+offset_top = 18.0
+offset_right = 108.0
+offset_bottom = 66.0
+theme_override_font_sizes/font_size = 24
+text = "手账"
+
+[node name="JournalRoot" type="Control" parent="."]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dim" type="ColorRect" parent="JournalRoot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.1, 0.08, 0.06, 0.45)
+
+[node name="Paper" type="PanelContainer" parent="JournalRoot"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -520.0
+offset_top = -300.0
+offset_right = 520.0
+offset_bottom = 300.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_paper")
+
+[node name="Columns" type="HBoxContainer" parent="JournalRoot/Paper"]
+layout_mode = 2
+custom_minimum_size = Vector2(960, 520)
+theme_override_constants/separation = 36
+
+[node name="LeftPage" type="VBoxContainer" parent="JournalRoot/Paper/Columns"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 14
+
+[node name="PageTitle" type="Label" parent="JournalRoot/Paper/Columns/LeftPage"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.35, 0.2, 0.1, 1)
+theme_override_font_sizes/font_size = 30
+text = "旅行画卷 · 走过的画页"
+
+[node name="RoomList" type="VBoxContainer" parent="JournalRoot/Paper/Columns/LeftPage"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="RightPage" type="VBoxContainer" parent="JournalRoot/Paper/Columns"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 14
+
+[node name="StatsLabel" type="Label" parent="JournalRoot/Paper/Columns/RightPage"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.35, 0.2, 0.1, 1)
+theme_override_font_sizes/font_size = 22
+text = "已探索 0 页 · 步数 0"
+
+[node name="PlotTitle" type="Label" parent="JournalRoot/Paper/Columns/RightPage"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.35, 0.2, 0.1, 1)
+theme_override_font_sizes/font_size = 30
+text = "花坛 · 成熟度与战力转化"
+
+[node name="PlotList" type="VBoxContainer" parent="JournalRoot/Paper/Columns/RightPage"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="CloseButton" type="Button" parent="JournalRoot/Paper/Columns/RightPage"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 52)
+theme_override_font_sizes/font_size = 24
+text = "合上手账"

@@ -1,0 +1,356 @@
+{
+  "player_idle_00": {
+    "category": "Characters",
+    "source": "art/experiments/E04_GodotScale/assets/E02_player_0.png",
+    "approved": "art/approved/Characters/player_idle_00.png",
+    "note": "front/idle, G2+G4"
+  },
+  "player_side_00": {
+    "category": "Characters",
+    "source": "art/experiments/E04_GodotScale/assets/E02_player_1.png",
+    "approved": "art/approved/Characters/player_side_00.png",
+    "note": "side view, G2+G4"
+  },
+  "player_run_00": {
+    "category": "Characters",
+    "source": "art/experiments/E04_GodotScale/assets/E02_player_2.png",
+    "approved": "art/approved/Characters/player_run_00.png",
+    "note": "run, G2+G4"
+  },
+  "player_back_00": {
+    "category": "Characters",
+    "source": "art/experiments/G5_Production/transparent/player_back.png",
+    "approved": "art/approved/Characters/player_back_00.png",
+    "note": "G5 new"
+  },
+  "player_jump_00": {
+    "category": "Characters",
+    "source": "art/experiments/G5_Production/transparent/player_jump.png",
+    "approved": "art/approved/Characters/player_jump_00.png",
+    "note": "G5 new"
+  },
+  "player_attack_00": {
+    "category": "Characters",
+    "source": "art/experiments/G5_Production/transparent/player_attack.png",
+    "approved": "art/approved/Characters/player_attack_00.png",
+    "note": "G5 new"
+  },
+  "player_hurt_00": {
+    "category": "Characters",
+    "source": "art/experiments/G5_Production/transparent/player_hurt.png",
+    "approved": "art/approved/Characters/player_hurt_00.png",
+    "note": "G5 new"
+  },
+  "player_climb_00": {
+    "category": "Characters",
+    "source": "art/experiments/G5_Production/transparent/player_climb.png",
+    "approved": "art/approved/Characters/player_climb_00.png",
+    "note": "G5 new; F13 rework x2 - final v3: scenery-free climb pose regenerated WITH cleaned character reference to prevent drift (2026-11-26)"
+  },
+  "player_attack_00_sprite": {
+    "category": "Characters",
+    "source": "art/experiments/E05_G5/sprites/player_attack_std.png",
+    "approved": "art/approved/Characters/player_attack_00_sprite.png",
+    "note": "G5 normalized frame 340x340 foot-anchor"
+  },
+  "player_back_00_sprite": {
+    "category": "Characters",
+    "source": "art/experiments/E05_G5/sprites/player_back_std.png",
+    "approved": "art/approved/Characters/player_back_00_sprite.png",
+    "note": "G5 normalized frame 340x340 foot-anchor"
+  },
+  "player_climb_00_sprite": {
+    "category": "Characters",
+    "source": "art/experiments/E05_G5/sprites/player_climb_std.png",
+    "approved": "art/approved/Characters/player_climb_00_sprite.png",
+    "note": "G5 normalized frame 340x340 foot-anchor; regenerated from F13 v3 (reference-locked, no drift)"
+  },
+  "player_hurt_00_sprite": {
+    "category": "Characters",
+    "source": "art/experiments/E05_G5/sprites/player_hurt_std.png",
+    "approved": "art/approved/Characters/player_hurt_00_sprite.png",
+    "note": "G5 normalized frame 340x340 foot-anchor"
+  },
+  "player_jump_00_sprite": {
+    "category": "Characters",
+    "source": "art/experiments/E05_G5/sprites/player_jump_std.png",
+    "approved": "art/approved/Characters/player_jump_00_sprite.png",
+    "note": "G5 normalized frame 340x340 foot-anchor"
+  },
+  "enemy_slime_idle_00": {
+    "category": "Enemies",
+    "source": "art/experiments/E04_GodotScale/assets/E02_enemy_0.png",
+    "approved": "art/approved/Enemies/enemy_slime_idle_00.png",
+    "note": "G2+G4"
+  },
+  "enemy_spike_idle_00": {
+    "category": "Enemies",
+    "source": "art/experiments/E04_GodotScale/assets/E02_enemy_1.png",
+    "approved": "art/approved/Enemies/enemy_spike_idle_00.png",
+    "note": "G2+G4"
+  },
+  "enemy_bat_idle_00": {
+    "category": "Enemies",
+    "source": "art/experiments/E04_GodotScale/assets/E02_enemy_2.png",
+    "approved": "art/approved/Enemies/enemy_bat_idle_00.png",
+    "note": "G2+G4"
+  },
+  "terrain_stone_block": {
+    "category": "Terrain",
+    "source": "art/experiments/E04_GodotScale/assets/E02_terrain_0.png",
+    "approved": "art/approved/Terrain/terrain_stone_block.png",
+    "note": "【接入·构景】灯塔/书堆等（Sprite2D，不当可站立地面）；G2+G4"
+  },
+  "terrain_stone_pillar": {
+    "category": "Terrain",
+    "source": "art/experiments/E04_GodotScale/assets/E02_terrain_1.png",
+    "approved": "art/approved/Terrain/terrain_stone_pillar.png",
+    "note": "【接入·构景】风车塔身（Sprite2D，不当可站立地面）；G2+G4"
+  },
+  "terrain_grass_top": {
+    "category": "Terrain",
+    "source": "art/experiments/E04_GodotScale/assets/E02_terrain_2.png",
+    "approved": "art/approved/Terrain/terrain_grass_top.png",
+    "note": "G2+G4"
+  },
+  "item_lantern_00": {
+    "category": "Items",
+    "source": "art/experiments/E04_GodotScale/assets/E02_item_0.png",
+    "approved": "art/approved/Items/item_lantern_00.png",
+    "note": "G2+G4"
+  },
+  "item_key_00": {
+    "category": "Items",
+    "source": "art/experiments/E04_GodotScale/assets/E02_item_1.png",
+    "approved": "art/approved/Items/item_key_00.png",
+    "note": "G2+G4"
+  },
+  "item_star_00": {
+    "category": "Items",
+    "source": "art/experiments/E04_GodotScale/assets/E02_item_2.png",
+    "approved": "art/approved/Items/item_star_00.png",
+    "note": "G2+G4"
+  },
+  "fx_hit_00": {
+    "category": "Effects",
+    "source": "art/experiments/G5_Production/transparent/fx_hit.png",
+    "approved": "art/approved/Effects/fx_hit_00.png",
+    "note": "G5 new, tightened bbox"
+  },
+  "fx_jump_puff_00": {
+    "category": "Effects",
+    "source": "art/experiments/G5_Production/transparent/fx_jump_puff.png",
+    "approved": "art/approved/Effects/fx_jump_puff_00.png",
+    "note": "G5 new, tightened bbox"
+  },
+  "fx_purify_00": {
+    "category": "Effects",
+    "source": "art/experiments/G5_Production/transparent/fx_purify.png",
+    "approved": "art/approved/Effects/fx_purify_00.png",
+    "note": "G5 new, tightened bbox"
+  },
+  "fx_harvest_00": {
+    "category": "Effects",
+    "source": "art/experiments/G5_Production/transparent/fx_harvest.png",
+    "approved": "art/approved/Effects/fx_harvest_00.png",
+    "note": "G5 new, tightened bbox"
+  },
+  "ui_hud_frame_00": {
+    "category": "UI",
+    "source": "art/experiments/G5_Production/transparent/ui_hud_frame.png",
+    "approved": "art/approved/UI/ui_hud_frame_00.png",
+    "note": "G5 new"
+  },
+  "ui_heart_icon_00": {
+    "category": "UI",
+    "source": "art/experiments/G5_Production/transparent/ui_heart_icon.png",
+    "approved": "art/approved/UI/ui_heart_icon_00.png",
+    "note": "G5 new"
+  },
+  "ui_button_base_00": {
+    "category": "UI",
+    "source": "art/experiments/G5_Production/transparent/ui_button_base.png",
+    "approved": "art/approved/UI/ui_button_base_00.png",
+    "note": "G5 new"
+  },
+  "player_idle_00_sprite": {
+    "category": "Characters",
+    "source": "art/approved/Characters/player_idle_00.png",
+    "approved": "art/approved/Characters/player_idle_00_sprite.png",
+    "note": "Phase2 normalized frame 340x340 foot-anchor for AnimatedSprite2D; derived from G2/G4-approved source"
+  },
+  "player_run_00_sprite": {
+    "category": "Characters",
+    "source": "art/approved/Characters/player_run_00.png",
+    "approved": "art/approved/Characters/player_run_00_sprite.png",
+    "note": "Phase2 normalized frame 340x340 foot-anchor for AnimatedSprite2D; derived from G2/G4-approved source"
+  },
+  "player_side_00_sprite": {
+    "category": "Characters",
+    "source": "art/approved/Characters/player_side_00.png",
+    "approved": "art/approved/Characters/player_side_00_sprite.png",
+    "note": "Phase2 normalized frame 340x340 foot-anchor for AnimatedSprite2D; derived from G2/G4-approved source"
+  },
+  "enemy_slime_idle_00_sprite": {
+    "category": "Enemies",
+    "source": "art/approved/Enemies/enemy_slime_idle_00.png",
+    "approved": "art/approved/Enemies/enemy_slime_idle_00_sprite.png",
+    "note": "Phase2 normalized frame 128x128 for InvaderVisual; 48px game height"
+  },
+  "enemy_spike_idle_00_sprite": {
+    "category": "Enemies",
+    "source": "art/approved/Enemies/enemy_spike_idle_00.png",
+    "approved": "art/approved/Enemies/enemy_spike_idle_00_sprite.png",
+    "note": "Phase2 normalized frame 128x128 for InvaderVisual; 48px game height"
+  },
+  "enemy_bat_idle_00_sprite": {
+    "category": "Enemies",
+    "source": "art/approved/Enemies/enemy_bat_idle_00.png",
+    "approved": "art/approved/Enemies/enemy_bat_idle_00_sprite.png",
+    "note": "Phase2 normalized frame 128x128 for InvaderVisual; 48px game height"
+  },
+  "terrain_grass_decor": {
+    "category": "Terrain",
+    "source": "art/approved/Terrain/terrain_grass_top.png",
+    "approved": "art/approved/Terrain/terrain_grass_decor.png",
+    "note": "【接入·草皮点缀】Floor 装饰 / SoilPlot 土块（不当铺底瓦片）；Phase2 gameplay-size grass strip (200x103) for floor decor + soil plot"
+  },
+  "terrain_stone_bench": {
+    "category": "Terrain",
+    "source": "art/approved/Terrain/terrain_stone_block.png",
+    "approved": "art/approved/Terrain/terrain_stone_bench.png",
+    "note": "【接入·玩法】休息长凳凳体（RestBench.gd：更新休息点 + 回满血）；Phase2 gameplay-size stone (61x52) for RestBench body"
+  },
+  "item_star_sprite": {
+    "category": "Items",
+    "source": "art/approved/Items/item_star_00.png",
+    "approved": "art/approved/Items/item_star_sprite.png",
+    "note": "Phase2 gameplay-size star (48x48) ready for future item pickup"
+  },
+  "origami_bird_idle_00": {
+    "category": "Characters",
+    "source": "art/experiments/E02_Item/origami_bird/raw/Create_original_2D_game_artwor_2026-11-26T08-44-34.png",
+    "approved": "art/approved/Characters/origami_bird_idle_00.png",
+    "note": "Origami bird NPC (Xiao Zhe); 3 independent samples, #2 chosen by user (white-crowned crouching bird with scarf ribbon); 128x128 frame, 48px game height; extracted P1-P11, cropped bbox+12% (F12), Godot gate PASS"
+  },
+  "terrain_stone_block_200": {
+    "category": "Terrain",
+    "source": "art/approved/Terrain/terrain_stone_block.png",
+    "approved": "art/approved/Terrain/terrain_stone_block_200.png",
+    "note": "【接入·构景】灯塔/书堆等（Sprite2D，不当可站立地面）；Phase3 gameplay-size stone block (200x165) derived from G2/G4-approved 1024 source; used by Room04 book pile + Room05 lighthouse. Fixed 1024-original-in-scene proportion bug (2026-11-26)."
+  },
+  "terrain_stone_pillar_200": {
+    "category": "Terrain",
+    "source": "art/approved/Terrain/terrain_stone_pillar.png",
+    "approved": "art/approved/Terrain/terrain_stone_pillar_200.png",
+    "note": "【接入·构景】风车叶片（Sprite2D，不当可站立地面）；Phase3 gameplay-size stone pillar (200x323) derived from G2/G4-approved 1024 source; used by Room03 windmill. Fixed 1024-original-in-scene proportion bug (2026-11-26)."
+  },
+  "ground_left": {
+    "category": "Terrain",
+    "source": "art/approved/Terrain/terrain_grass_top.png",
+    "approved": "art/approved/Terrain/ground_left.png",
+    "note": "derived: 底板左端 96x120，右缘与 ground_mid 左缘逐像素相等"
+  },
+  "ground_mid": {
+    "category": "Terrain",
+    "source": "art/approved/Terrain/terrain_grass_top.png",
+    "approved": "art/approved/Terrain/ground_mid.png",
+    "note": "derived: 底板中间 192x120 = M96 + mirror(M)96，自身首尾同边可无限重复"
+  },
+  "ground_right": {
+    "category": "Terrain",
+    "source": "art/approved/Terrain/terrain_grass_top.png",
+    "approved": "art/approved/Terrain/ground_right.png",
+    "note": "derived: 底板右端 96x120 = mirror(ground_left)，左缘与 mid 右缘逐像素相等"
+  },
+  "enemy_slime_ally_00_sprite": {
+    "category": "Enemies",
+    "source": "art/tools/ally_from_gen.py",
+    "approved": "art/approved/Enemies/enemy_slime_ally_00_sprite.png",
+    "note": "原住民态「小精灵」：生图重画（只改眼睛）→ 色相归位到 ally 色带；轮廓 IoU≥0.958，色系见 ASSET_RULES §3.1.3，目标色见 duo_state.PALETTES"
+  },
+  "enemy_bat_ally_00_sprite": {
+    "category": "Enemies",
+    "source": "art/tools/ally_from_gen.py",
+    "approved": "art/approved/Enemies/enemy_bat_ally_00_sprite.png",
+    "note": "原住民态「粉翼蝠」：生图重画（只改眼睛）→ 色相归位到 ally 色带；轮廓 IoU≥0.958，色系见 ASSET_RULES §3.1.3，目标色见 duo_state.PALETTES"
+  },
+  "enemy_spike_ally_00_sprite": {
+    "category": "Enemies",
+    "source": "art/tools/ally_from_gen.py",
+    "approved": "art/approved/Enemies/enemy_spike_ally_00_sprite.png",
+    "note": "原住民态「绒刺球」：生图重画（只改眼睛）→ 色相归位到 ally 色带；轮廓 IoU≥0.958，色系见 ASSET_RULES §3.1.3，目标色见 duo_state.PALETTES"
+  },
+  "enemy_lice_idle_00_sprite": {
+    "category": "Enemies",
+    "source": "ImageGen（暗黑态）",
+    "approved": "art/approved/Enemies/enemy_lice_idle_00_sprite.png",
+    "note": "暗黑态「纸屑群」（物种：纸虱）：生图 → 洋红泛洪抠图 → ally_from_gen.py --dark 按画布约定放置（内容高 48 / 脚底 y=87 / 居中）；色相落暗带 215-322，基调 V 0.50-0.85、对比度 ≥0.40"
+  },
+  "enemy_lice_ally_00_sprite": {
+    "category": "Enemies",
+    "source": "art/tools/ally_from_gen.py",
+    "approved": "art/approved/Enemies/enemy_lice_ally_00_sprite.png",
+    "note": "原住民态「纸虱」：生图重画（只改眼睛）→ 色相归位到 ally 色带；轮廓 IoU≥0.95，色系见 ASSET_RULES §3.1.3，目标色见 ally_from_gen.TARGET_HUE"
+  },
+  "enemy_ink_idle_00_sprite": {
+    "category": "Enemies",
+    "source": "ImageGen（暗黑态）",
+    "approved": "art/approved/Enemies/enemy_ink_idle_00_sprite.png",
+    "note": "暗黑态「墨渍」（物种：露珠虫）：生图 → 洋红泛洪抠图 → ally_from_gen.py --dark 按画布约定放置（内容高 48 / 脚底 y=87 / 居中）；色相落暗带 215-322，基调 V 0.50-0.85、对比度 ≥0.40"
+  },
+  "enemy_ink_ally_00_sprite": {
+    "category": "Enemies",
+    "source": "art/tools/ally_from_gen.py",
+    "approved": "art/approved/Enemies/enemy_ink_ally_00_sprite.png",
+    "note": "原住民态「露珠虫」：生图重画（只改眼睛）→ 色相归位到 ally 色带；轮廓 IoU≥0.95，色系见 ASSET_RULES §3.1.3，目标色见 ally_from_gen.TARGET_HUE"
+  },
+  "terrain_grass_top_dark": {
+    "category": "Terrain",
+    "source": "art/tools/scene_state.py",
+    "approved": "art/approved/Terrain/terrain_grass_top_dark.png",
+    "note": "场景堵塞态：同几何换色系（alpha 逐像素同 terrain_grass_top）；色温/材质/饱和/明度见 ASSET_RULES §3.2；色卡见 scene_state.py SCENE"
+  },
+  "terrain_grass_top_ally": {
+    "category": "Terrain",
+    "source": "art/tools/scene_state.py",
+    "approved": "art/approved/Terrain/terrain_grass_top_ally.png",
+    "note": "场景恢复态：同几何换色系（alpha 逐像素同 terrain_grass_top）；色温/材质/饱和/明度见 ASSET_RULES §3.2；色卡见 scene_state.py SCENE"
+  },
+  "ground_left_dark": {
+    "category": "Terrain",
+    "source": "art/tools/scene_state.py",
+    "approved": "art/approved/Terrain/ground_left_dark.png",
+    "note": "场景堵塞态：同几何换色系（alpha 逐像素同 ground_left）；色温/材质/饱和/明度见 ASSET_RULES §3.2；色卡见 scene_state.py SCENE"
+  },
+  "ground_left_ally": {
+    "category": "Terrain",
+    "source": "art/tools/scene_state.py",
+    "approved": "art/approved/Terrain/ground_left_ally.png",
+    "note": "场景恢复态：同几何换色系（alpha 逐像素同 ground_left）；色温/材质/饱和/明度见 ASSET_RULES §3.2；色卡见 scene_state.py SCENE"
+  },
+  "ground_mid_dark": {
+    "category": "Terrain",
+    "source": "art/tools/scene_state.py",
+    "approved": "art/approved/Terrain/ground_mid_dark.png",
+    "note": "场景堵塞态：同几何换色系（alpha 逐像素同 ground_mid）；色温/材质/饱和/明度见 ASSET_RULES §3.2；色卡见 scene_state.py SCENE"
+  },
+  "ground_mid_ally": {
+    "category": "Terrain",
+    "source": "art/tools/scene_state.py",
+    "approved": "art/approved/Terrain/ground_mid_ally.png",
+    "note": "场景恢复态：同几何换色系（alpha 逐像素同 ground_mid）；色温/材质/饱和/明度见 ASSET_RULES §3.2；色卡见 scene_state.py SCENE"
+  },
+  "ground_right_dark": {
+    "category": "Terrain",
+    "source": "art/tools/scene_state.py",
+    "approved": "art/approved/Terrain/ground_right_dark.png",
+    "note": "场景堵塞态：同几何换色系（alpha 逐像素同 ground_right）；色温/材质/饱和/明度见 ASSET_RULES §3.2；色卡见 scene_state.py SCENE"
+  },
+  "ground_right_ally": {
+    "category": "Terrain",
+    "source": "art/tools/scene_state.py",
+    "approved": "art/approved/Terrain/ground_right_ally.png",
+    "note": "场景恢复态：同几何换色系（alpha 逐像素同 ground_right）；色温/材质/饱和/明度见 ASSET_RULES §3.2；色卡见 scene_state.py SCENE"
+  }
+}

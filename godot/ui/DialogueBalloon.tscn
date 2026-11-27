@@ -1,0 +1,90 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://ui/DialogueBalloon.gd" id="1_balloon"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_paper"]
+bg_color = Color(0.97, 0.93, 0.78, 0.97)
+border_width_left = 6
+border_width_top = 6
+border_width_right = 6
+border_width_bottom = 6
+border_color = Color(0.45, 0.28, 0.14, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+content_margin_left = 28.0
+content_margin_top = 20.0
+content_margin_right = 28.0
+content_margin_bottom = 20.0
+
+[node name="DialogueBalloon" type="CanvasLayer"]
+layer = 96
+process_mode = 3
+script = ExtResource("1_balloon")
+
+[node name="RootControl" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="RootControl"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 120.0
+offset_top = -380.0
+offset_right = -120.0
+offset_bottom = -40.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_paper")
+
+[node name="VBox" type="VBoxContainer" parent="RootControl/Panel"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Speaker" type="Label" parent="RootControl/Panel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.35, 0.18, 0.08, 1)
+theme_override_font_sizes/font_size = 28
+text = "旁白"
+
+[node name="Text" type="RichTextLabel" parent="RootControl/Panel/VBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 90)
+theme_override_colors/default_color = Color(0.25, 0.18, 0.12, 1)
+theme_override_font_sizes/normal_font_size = 26
+bbcode_enabled = true
+scroll_active = false
+fit_content = true
+
+[node name="Choices" type="VBoxContainer" parent="RootControl/Panel/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TapHint" type="Label" parent="RootControl/Panel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.35, 0.2, 1)
+theme_override_font_sizes/font_size = 18
+text = "点击画面继续 · 按 U 继续"
+
+[node name="SkipButton" type="Button" parent="RootControl"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -140.0
+offset_top = -52.0
+offset_right = -24.0
+offset_bottom = -8.0
+theme_override_font_sizes/font_size = 18
+text = "跳过"

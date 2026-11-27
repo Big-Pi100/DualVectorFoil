@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""art/approved/  →  godot/assets/art/  的只读镜像同步。
+"""art/approved/  →  godot/art/approved/  的只读镜像同步。
 
 为什么是「复制」不是「软链」
 ----------------------------
 Godot 只能从 `res://`（= `godot/`）里读资源。软链在 Windows 上要开发者模式，
-在导出包里还会断。所以 `godot/assets/art/` 是一份**逐字节副本**，
-方向永远是 `art/approved/` → `godot/assets/art/`，反向永不成立。
+在导出包里还会断。所以 `godot/art/approved/` 是一份**逐字节副本**，
+方向永远是 `art/approved/` → `godot/art/approved/`，反向永不成立。
 
 单向的好处：`art/approved/` 是唯一真源（art/README §1 定的），
 Godot 侧就算被手改，`--check` 也能一眼抓出来。
@@ -16,7 +16,7 @@ Godot 侧就算被手改，`--check` 也能一眼抓出来。
 
 `--prune` 默认关闭：删文件是不可逆的，要人手敲。
 
-每次同步都会重写 `godot/assets/art/SYNC_STAMP.txt`，记录源 commit、时间、
+每次同步都会重写 `godot/art/approved/SYNC_STAMP.txt`，记录源 commit、时间、
 文件数与总字节。Godot 侧看到 STAMP 里的 commit 和 `git rev-parse HEAD` 对不上，
 就说明美术重出了但没 sync —— 这是给「忘了同步」留的捕手。
 """
@@ -34,7 +34,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "art" / "approved"
-DST = ROOT / "godot" / "assets" / "art"
+DST = ROOT / "godot" / "art" / "approved"
 STAMP = DST / "SYNC_STAMP.txt"
 
 # 只同步这两类，别的（.json 之外的临时文件）不碰
@@ -147,7 +147,7 @@ def main() -> int:
         return 1
 
     STAMP.write_text(
-        "art/approved → godot/assets/art 的单向镜像。不要手改本目录。\n"
+        "art/approved → godot/art/approved 的单向镜像。不要手改本目录。\n"
         f"source_commit = {_git_rev()}\n"
         f"synced_at     = {time.strftime('%Y-%m-%d %H:%M:%S')}\n"
         f"files         = {len(src)}\n"

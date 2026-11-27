@@ -25,7 +25,7 @@
 | `tools/extract_magenta.py` | **ACTIVE** | 洋红底抠图，含 P9 实测底色 / P1 连通域 / P4 despill / P8 水印 / P10 采样避水印 / P11 最近邻扩散 |
 | `tools/slice_ground.py` | **ACTIVE** | 把 `terrain_grass_top` 切成「左端+中间+右端」三段，镜像构造保证三条接缝逐像素相等；自带接缝/回文/收口/无洞断言 |
 | `tools/asset_rules_check.py` | **ACTIVE** | 按 role 复检全库：manifest 覆盖、role 合法、tile 三段全套判据、摆件不进关卡 |
-| `tools/sync_godot.py` | **ACTIVE** | `approved/` → `godot/assets/art/` 单向镜像（sha256 + SYNC_STAMP） |
+| `tools/sync_godot.py` | **ACTIVE** | `approved/` → `godot/art/approved/` 单向镜像（sha256 + SYNC_STAMP） |
 | `tools/contact_sheet.py` | **ACTIVE** | 出 `reports/ASSET_SHEET.html`：44 张缩略图 + 尺寸 + 接入状态，可勾选取舍。**只给人看**，不做判据 |
 | `tools/asset_audit.py` | ACTIVE | 资产体检（尺寸 / 真 alpha / 死引用 / 有无消费点） |
 | `tools/build_sheet_magenta.py` | LEGACY | 旧精灵表构建（洋红底 + 纯绿分割线 → 160 网格）。新资产走 `approved/` 标准化帧，不再需要 |
@@ -68,22 +68,34 @@
 **① 主角换了（2026-11-26 已落地）。** 母版主角是「棕发 + 红围巾 + 米白上衣黄星 +
 蓝短裤 + 蓝挎包」，本项目旧 31 帧是「大胡子 + 白 T」。已按「完全复用」以母版为准。
 
-**代码侧已切断旧帧**：`godot/assets/hero|tiles|bg` 三个旧目录已删，Godot 只读
-`godot/assets/art/`（`approved/` 的单向镜像）。旧 31 帧仍完整留在 `art/hero/` 作历史证据，
-回滚时从那里取。守卫：`godot/tests/asset_wiring.gd`（旧路径清零 + ANIM 全可加载）。
+**代码侧已切断旧帧**：`hero|tiles|bg` 三个旧目录早已删，Godot 只读
+`godot/art/approved/`（`approved/` 的单向镜像）。旧 31 帧仍完整留在 `art/hero/` 作历史证据，
+回滚时从那里取。守卫：`python art/tools/sync_godot.py --check`（镜像与真源逐字节比对）。
 
-**② 地形拆成两半：能拼的只有底板三段，摆件一个都不进关卡。**
+> **2026-11-27 路径变更**：镜像是 `godot/art/approved/`，不是 `godot/assets/art/`。
+> 因为并进来的完整 Godot 工程按 `res://art/approved/...` 写引用（`DEV_FLOW §6.1`），
+> 两边保持同名同层，才不会出现"真源叫 approved、工程里少一层"的错位。
+> 顺带：旧骨架的 `tests/asset_wiring.gd` 已随骨架移进
+> `legacy/godot_prototype_2026-11-27/`，镜像新鲜度改由 `sync_godot.py --check` 守。
+
+**② 地形拆成两半：能铺的只有底板三段；摆件能摆，但不能当地面。**
 
 - **底板**：`ground_left` / `ground_mid` / `ground_right`（96 / 384 / 96 × 144），
   按 `宽 = 96×2 + 384×N` 拼，三条接缝逐像素相等。地面和平台都用这一套。
-- **摆件**（`terrain_stone_block` / `pillar` / `bench` / `grass_decor`）：带顶面的 2.5D 物件，
-  **不接入** —— 横版平视下会把透视带进来，而且不能铺。详见 `ASSET_RULES §4`。
-  其中**石凳（`terrain_stone_bench`）是唯一弃用件**，其余三件按 2026-11-26 决定留库备用
-  （`contact_sheet.py` 的 `DECISION`：`S_SPARE` / `S_DROP`）。
-  **留库备用 ≠ 出两态**：`scene_state.py` 的两态产线只收地面件（`BASE_STEMS`），
-  摆件一张都没有 `_dark` / `_ally` —— 它们没进关卡，也就没有"堵塞态/恢复态"可换。
-  哪天真要拿石块当背景岩体，再把它加进 `BASE_STEMS` 并在这里写明理由；`--check`
-  的 `stray_variants()` 会挡住"没加进清单却偷偷出了两态文件"的情况。
+- **摆件**（`terrain_stone_block` / `pillar` / `bench` / `grass_decor`）：带顶面的 2.5D 物件。
+  **允许**当背景岩体 / 灯塔 / 风车 / 凳体 / 草皮点缀，**禁止**当可站立表面或进 tilemap
+  —— 顶面朝观众，角色站上去透视对不上，而且宽度不是 48 的整数倍，拼不上网格。
+  工程里实有 15 处用法，逐条登记在 `asset_rules_check.py` 的 `PROP_USAGE_OK`。
+
+> **2026-11-27 更正**：这里原本写"摆件不接入关卡、石凳是唯一弃件"。
+> 那句话在完整工程并进来当天就被推翻了 —— `Room03` 的风车、`Room05` 的灯塔、
+> `Room04` 的书堆、`RestBench.tscn` 的凳体都在用它们，`RestBench.gd` 还是活玩法。
+> 现在 **无弃件（`S_DROP` 计数为 0）**，`DECISION` 已同步。
+
+**摆件暂不出两态**：`scene_state.py` 只收地面件（`BASE_STEMS`），摆件一张 `_dark` / `_ally` 都没有。
+清区后地暖了、塔还是冷的，会不会突兀 —— **还没定**，三条走法写在 `ASSET_RULES §4` 的「悬而未决」。
+真要出，把 stem 加回 `BASE_STEMS` 即可（产线现成）；`--check` 的 `stray_variants()`
+会挡住"没加进清单却偷偷出了两态文件"的情况。
 
 摆件为什么不能凑合着铺：一块石头一张图，横向重复会出现同一个收口反复；
 且顶面朝观众，角色站上去像站在斜面上。要铺就必须另做可平铺件，没有捷径。

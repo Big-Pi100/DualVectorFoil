@@ -1,0 +1,99 @@
+# Web 出包：ubuntu runner（1x 计费）+ 官方 Godot 4.7.2 + 产物体检
+#
+# 设计沿用 CoEvo build-web.yml 的纪律：
+#   · workflow_dispatch 手动触发 —— 出包管道不自动跑
+#   · 钉死工具版本（GODOT_VERSION）—— 浮动版本会让「本地绿 CI 红」成常态
+#   · 体检断言的是产物本身，不是命令退出码 —— 拒绝「绿但没包」的假绿
+name: Build Web
+
+on:
+  workflow_dispatch:
+
+env:
+  GODOT_VERSION: "4.7.2-stable"
+  TEMPLATE_DIR: "4.7.2.stable"
+
+jobs:
+  build:
+    name: 导出 Web + 体检
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    # 工程在 godot/ 子目录（仓库根是文档 + art/ + godot/，见 DEV_FLOW §6.1）。
+    # 用 working-directory 而不是把每条命令都改成 --path godot：
+    #   --path .、ls tests/、build/、python 里读 export_presets.cfg 全都自动对，
+    #   只有 upload-artifact 的 path 是相对 workspace 的，必须单独加前缀。
+    defaults:
+      run:
+        working-directory: godot
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: 安装 Godot 4.7.2 + 导出模板（官方 release，版本钉死）
+        run: |
+          set -euo pipefail
+          BASE="https://github.com/godotengine/godot-builds/releases/download/${GODOT_VERSION}"
+          curl -fL --retry 3 -o /tmp/godot.zip "${BASE}/Godot_v${GODOT_VERSION}_linux.x86_64.zip"
+          unzip -q /tmp/godot.zip -d /tmp/godot
+          sudo install -m 755 "/tmp/godot/Godot_v${GODOT_VERSION}_linux.x86_64" /usr/local/bin/godot
+          curl -fL --retry 3 -o /tmp/tpl.tpz "${BASE}/Godot_v${GODOT_VERSION}_export_templates.tpz"
+          mkdir -p "$HOME/.local/share/godot/export_templates/${TEMPLATE_DIR}"
+          unzip -q /tmp/tpl.tpz -d /tmp/tpl
+          cp /tmp/tpl/templates/* "$HOME/.local/share/godot/export_templates/${TEMPLATE_DIR}/"
+          echo "Godot: $(godot --version)"
+          echo "模板数: $(ls "$HOME/.local/share/godot/export_templates/${TEMPLATE_DIR}/" | wc -l)"
+
+      - name: 导入资产（fresh checkout 无 .godot 缓存）
+        run: godot --headless --path . --import
+
+      - name: 全量测试门禁（19 套断言，失败即不出包）
+        run: |
+          set -euo pipefail
+          PASS=0; FAIL=0
+          # 排除两类，理由不同：
+          #   render_capability —— 依赖真实 GPU，headless 是 dummy 渲染器，本来就跑不了
+          #   test_e04_* / test_e05_* —— 历史实验回归（G4/G5 门禁），读 res://art/experiments/。
+          #     那个目录 95MB，本地 2026-11-27 已清理（art/experiments 不存在，见 ART_INVENTORY）。
+          #     要跑它们：git checkout origin/master -- art/experiments && 把两条 grep 放开。
+          for f in $(ls tests/test_*.gd | grep -vE "render_capability|test_e04_|test_e05_"); do
+            if timeout 60 godot --headless --path . --script "res://$f" >/tmp/test.log 2>&1; then
+              PASS=$((PASS+1))
+            else
+              echo "🔴 测试失败: $f"
+              grep -iE "SCRIPT ERROR|Parse Error|\[FAIL\]" /tmp/test.log | head -8
+              FAIL=$((FAIL+1))
+            fi
+          done
+          echo "测试结果: PASS=$PASS FAIL=$FAIL"
+          [ "$FAIL" -eq 0 ] || exit 1
+          [ "$PASS" -ge 19 ] || { echo "🔴 测试套数异常（$PASS < 19），疑似测试没跑全"; exit 1; }
+
+      - name: 导出 Web
+        run: |
+          set -euo pipefail
+          mkdir -p build/web
+          godot --headless --path . --export-release "Web" build/web/index.html
+
+      - name: 产物体检（断言文件存在 + 大小合理）
+        run: |
+          set -euo pipefail
+          OUT=build/web
+          fail() { echo "🔴 $1"; echo "产物清单:"; ls -la "$OUT" | head -30; exit 1; }
+          test -f "$OUT/index.html"  || fail "缺 index.html"
+          test -f "$OUT/index.wasm"  || fail "缺 index.wasm（导出未完成）"
+          test -s "$OUT/index.pck"   || fail "缺 index.pck（游戏资源未打包）"
+          WASM=$(stat -c%s "$OUT/index.wasm")
+          PCK=$(stat -c%s "$OUT/index.pck")
+          [ "$WASM" -gt 1000000 ] || fail "index.wasm 仅 $WASM 字节，疑似异常产物"
+          [ "$PCK"  -gt 1000000 ] || fail "index.pck 仅 $PCK 字节，疑似资源没进包"
+          echo "✅ Web 产物: wasm=$((WASM/1024/1024))MB pck=$((PCK/1024/1024))MB"
+          echo "--- 产物概览 ---"; du -sh "$OUT"; ls -la "$OUT" | head -15
+
+      - name: 上传产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: dvf-web
+          path: godot/build/web
+          if-no-files-found: error
+          retention-days: 14
+
+# touched: retrigger workflow registration

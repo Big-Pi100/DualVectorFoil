@@ -1,0 +1,140 @@
+# iOS 出包：macOS runner（私有仓库 10x 计费）+ Godot 4.7.2 + 可选签名
+#
+# 沿用 CoEvo ios-archive.yml 的两条核心纪律：
+#   ① 只 workflow_dispatch —— 贵且不可回退的管道，人工触发
+#   ② 前置校验 secrets —— 5 秒内报缺，别等 10 分钟后才失败
+#
+# 两种模式：
+#   signed=false（默认）：导出未签名 IPA，用于本地重签 / 企业内测 / 先验证产物结构
+#   signed=true ：需要 4 个 Apple secrets，Godot 导出预设会注入 Team ID + 签名身份
+#                 ⚠️ 真机直装需 ad-hoc/development 描述文件；app-store 只能走 TestFlight
+name: Build iOS
+
+on:
+  workflow_dispatch:
+    inputs:
+      signed:
+        description: '是否用 Apple Developer 凭据签名（未勾则出未签名 IPA）'
+        type: boolean
+        default: false
+
+env:
+  GODOT_VERSION: "4.7.2-stable"
+  TEMPLATE_DIR: "4.7.2.stable"
+
+jobs:
+  build:
+    name: 导出 iOS + 体检
+    runs-on: macos-15
+    timeout-minutes: 60
+    # 工程在 godot/ 子目录（DEV_FLOW §6.1）。注入签名那段 Python 读的是
+    # 相对路径 export_presets.cfg，靠这个 working-directory 才对得上。
+    # upload-artifact 的 path 是相对 workspace 的，要单独加前缀。
+    defaults:
+      run:
+        working-directory: godot
+    steps:
+      - uses: actions/checkout@v5
+
+      # ── 前置校验（无论是否签名都先确认 Xcode 可用）──────────────────────
+      - name: 校验 Xcode 与签名 Secrets
+        env:
+          SIGNED: ${{ inputs.signed }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          echo "=== 镜像里的 Xcode ==="
+          LATEST=$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V | tail -1)
+          [ -n "$LATEST" ] || { echo "🔴 镜像里找不到 Xcode.app"; exit 1; }
+          sudo xcode-select -s "$LATEST"
+          xcodebuild -version
+          echo "SDK: $(xcrun --sdk iphoneos --show-sdk-version)"
+
+          if [ "$SIGNED" = "true" ]; then
+            missing=""
+            [ -n "$ASC_KEY_ID" ]    || missing="$missing ASC_KEY_ID"
+            [ -n "$ASC_ISSUER_ID" ] || missing="$missing ASC_ISSUER_ID"
+            [ -n "$ASC_KEY_P8" ]    || missing="$missing ASC_KEY_P8"
+            [ -n "$APPLE_TEAM_ID" ] || missing="$missing APPLE_TEAM_ID"
+            [ -z "$missing" ] || { echo "🔴 签名模式缺少 Secrets：$missing"; exit 1; }
+            case "$ASC_KEY_P8" in
+              *"BEGIN PRIVATE KEY"*) ;;
+              *) echo "🔴 ASC_KEY_P8 需含完整 .p8 文本（BEGIN/END 行）"; exit 1 ;;
+            esac
+            echo "✅ 4 个 Apple Secrets 齐全"
+          else
+            echo "ℹ️ 未签名模式：跳过 Secrets 校验（产物需本地重签才能上真机）"
+          fi
+
+      - name: 安装 Godot 4.7.2 + 导出模板（macOS universal）
+        run: |
+          set -euo pipefail
+          BASE="https://github.com/godotengine/godot-builds/releases/download/${GODOT_VERSION}"
+          curl -fL --retry 3 -o /tmp/godot.zip "${BASE}/Godot_v${GODOT_VERSION}_macos.universal.zip"
+          unzip -q /tmp/godot.zip -d /tmp/godot
+          GODOT_APP=$(find /tmp/godot -maxdepth 2 -name "Godot*.app" | head -1)
+          [ -n "$GODOT_APP" ] || { echo "🔴 解压后找不到 Godot.app"; exit 1; }
+          GODOT_BIN="$GODOT_APP/Contents/MacOS/Godot"
+          chmod +x "$GODOT_BIN"
+          echo "$GODOT_BIN" > /tmp/godot_bin_path
+          curl -fL --retry 3 -o /tmp/tpl.tpz "${BASE}/Godot_v${GODOT_VERSION}_export_templates.tpz"
+          mkdir -p "$HOME/.local/share/godot/export_templates/${TEMPLATE_DIR}"
+          unzip -q /tmp/tpl.tpz -d /tmp/tpl
+          cp /tmp/tpl/templates/* "$HOME/.local/share/godot/export_templates/${TEMPLATE_DIR}/"
+          "$GODOT_BIN" --version
+
+      - name: 导入资产
+        run: |
+          GODOT_BIN=$(cat /tmp/godot_bin_path)
+          "$GODOT_BIN" --headless --path . --import
+
+      - name: 注入签名配置（仅 signed=true）
+        env:
+          SIGNED: ${{ inputs.signed }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          [ "$SIGNED" = "true" ] || { echo "跳过签名配置"; exit 0; }
+          # Godot 导出预设是 INI 格式，按 key 精确替换（不用宽泛 sed 猜行）
+          python3 - <<'PY'
+          import os
+          p = "export_presets.cfg"
+          team = os.environ["APPLE_TEAM_ID"]
+          s = open(p, encoding="utf-8").read()
+          s = s.replace('application/app_store_team_id=""',
+                        f'application/app_store_team_id="{team}"')
+          s = s.replace('application/signed=false', 'application/signed=true')
+          open(p, "w", encoding="utf-8").write(s)
+          print("已注入 Team ID 与 signed=true")
+          PY
+
+      - name: 导出 iOS
+        run: |
+          set -euo pipefail
+          GODOT_BIN=$(cat /tmp/godot_bin_path)
+          mkdir -p build/ios
+          "$GODOT_BIN" --headless --path . --export-release "iOS" build/ios/dual_vector_foil.ipa
+
+      - name: 产物体检（IPA 是 zip 容器：查 Payload/*.app + Info.plist）
+        run: |
+          set -euo pipefail
+          OUT=build/ios/dual_vector_foil.ipa
+          fail() { echo "🔴 $1"; ls -la build/ios || true; exit 1; }
+          test -s "$OUT" || fail "未产出 IPA"
+          SIZE=$(stat -f%z "$OUT")
+          [ "$SIZE" -gt 1000000 ] || fail "IPA 仅 $SIZE 字节，疑似异常产物"
+          unzip -t "$OUT" >/dev/null || fail "IPA 不是合法 zip 容器"
+          unzip -l "$OUT" | grep -qE "Payload/[^/]+\.app/Info\.plist" || fail "IPA 里没有 Payload/*.app/Info.plist"
+          echo "✅ iOS 产物: $OUT ($((SIZE/1024/1024))MB)"
+          du -sh build/ios
+
+      - name: 上传产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: dvf-ios
+          path: godot/build/ios/*.ipa
+          if-no-files-found: error
+          retention-days: 14

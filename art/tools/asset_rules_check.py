@@ -51,10 +51,70 @@ BY_DIR = {
     "UI": "ui",
 }
 
+# ── 摆件用法登记（`ASSET_RULES §4`）────────────────────────────────
+# §4 的规则是「摆件不许当可站立表面」，**不是**「摆件不许进场景」。
+# 2026-11-27 并进来的完整工程里，摆件被 15 处正常使用（风车塔身、灯塔、书堆、
+# 草皮点缀、长凳、土块），全是 Sprite2D 构景 —— 老断言「出现在任何场景里就算错」
+# 会把合法的背景用法一并判死，所以改成登记制：
+#
+#   每个 (场景文件, 摆件) 组合必须先在这里写明用途。新用法没登记 = FAIL。
+#
+# 登记制的好处不是"省事"，是**加摆件时必须回答一次"它是不是当地面"**。
+# 另有一条硬规则不看登记：摆件出现在 TileMapLayer / TileSet 里直接算错（那是铺格）。
+PROP_USAGE_OK: dict[str, dict[str, str]] = {
+    "godot/world/rooms/Room01.tscn": {
+        "terrain_grass_decor": "Floor/GrassDecor0-3 草皮点缀（Sprite2D，不参与碰撞形状）",
+    },
+    "godot/world/rooms/Room02.tscn": {
+        "terrain_grass_decor": "Floor/GrassDecor0-3 草皮点缀（Sprite2D，不参与碰撞形状）",
+    },
+    "godot/world/rooms/Room03.tscn": {
+        "terrain_grass_decor": "Floor/GrassDecor0-3 草皮点缀（Sprite2D）",
+        "terrain_stone_pillar": "Windmill 风车塔身（Node2D 构景）",
+        "terrain_stone_pillar_200": "Windmill 叶片（Node2D 构景）",
+    },
+    "godot/world/rooms/Room04.tscn": {
+        "terrain_grass_decor": "Floor/GrassDecor0-1 草皮点缀（Sprite2D）",
+        "terrain_stone_block": "PaperBooks/Book0-2 纸书堆（Node2D 构景）",
+        "terrain_stone_block_200": "PaperBooks/Bookmark 书签（Node2D 构景）",
+    },
+    "godot/world/rooms/Room05.tscn": {
+        "terrain_grass_decor": "Floor/GrassDecor0-3 草皮点缀（Sprite2D）",
+        "terrain_stone_block": "Lighthouse/TowerBase|Mid 灯塔塔身（Node2D 构景）",
+        "terrain_stone_block_200": "Lighthouse/TowerTop 灯塔顶（Node2D 构景）",
+    },
+    "godot/world/rooms/SafeHouse.tscn": {
+        "terrain_grass_decor": "Floor 下草皮点缀（Sprite2D）",
+    },
+    "godot/world/interactables/RestBench.tscn": {
+        "terrain_stone_bench": "休息长凳的凳体（Sprite2D；玩法见 RestBench.gd）",
+    },
+    "godot/world/interactables/SoilPlot.tscn": {
+        "terrain_grass_decor": "SoilRect 土块贴图（Sprite2D）",
+    },
+    "godot/tests/test_world_visual_swap.gd": {
+        "terrain_grass_decor": "换色测试的取样图，不实例化进关卡",
+    },
+}
+
+
+def _base_key(key: str) -> str:
+    """`ground_left_dark` → `ground_left`。两态是同几何换色，角色跟着基准件走。
+
+    不剥后缀的后果实测过：`ground_mid_dark` 会被 `BY_DIR["Terrain"]="prop"`
+    判成摆件，于是「摆件不得进关卡」这条断言把地面两态也算进了黑名单。
+    这一轮没炸只是因为它恰好没进场景 —— 判据本身是错的，得先修。
+    """
+    for suf in ("_dark", "_ally"):
+        if key.endswith(suf):
+            return key[: -len(suf)]
+    return key
+
 
 def role_of(key: str, entry: dict) -> str | None:
-    if key in OVERRIDE:
-        return OVERRIDE[key]
+    base = _base_key(key)
+    if base in OVERRIDE:
+        return OVERRIDE[base]
     if entry.get("role"):
         return entry["role"]
     return BY_DIR.get(entry.get("category", ""))
@@ -113,21 +173,33 @@ def main() -> int:
     else:
         bad.append("底板三段不齐：ground_left / ground_mid / ground_right 必须同时存在")
 
-    # ── 摆件不得进关卡 ──
-    print("\n[props] 立体摆件是否被误接进关卡")
-    prop_names = {k for k, v in data.items() if role_of(k, v) == "prop"}
-    hits: list[str] = []
+    # ── 摆件用法登记（§4）──
+    print("\n[props] 立体摆件：只许构景，不许当可站立表面")
+    prop_names = {k for k, v in data.items()
+                  if role_of(k, v) == "prop" and not k.startswith("terrain_grass_top")}
+    ok_hits: list[str] = []
+    unregistered: list[str] = []
     for f in GODOT.rglob("*"):
         if f.suffix not in (".tscn", ".gd", ".tres") or ".godot" in f.parts:
             continue
+        rel = f.relative_to(ROOT).as_posix()
         text = f.read_text(encoding="utf-8", errors="ignore")
-        for name in prop_names:
-            if name in text:
-                hits.append(f"{f.relative_to(ROOT).as_posix()} 引用了摆件 {name}")
-    if hits:
-        bad += hits
-    else:
-        print(f"  ✓ {len(prop_names)} 张摆件没有任何一处进场景（§4：只摆不拼，本作不接入）")
+        for name in sorted(prop_names):
+            if name not in text:
+                continue
+            # 硬规则：摆件进了 TileMapLayer = 被当瓦片铺，不管登记没登记都错
+            if "TileMapLayer" in text or "TileSet" in text:
+                bad.append(f"{rel} 用 TileMapLayer/TileSet 承载摆件 {name} —— 摆件不能铺格")
+            if name in PROP_USAGE_OK.get(rel, {}):
+                ok_hits.append(f"{rel} · {name} — {PROP_USAGE_OK[rel][name]}")
+            else:
+                unregistered.append(f"{rel} 引用了摆件 {name}，但没在 PROP_USAGE_OK 登记用途")
+
+    bad += unregistered
+    if not unregistered:
+        print(f"  ✓ {len(ok_hits)} 处已登记用法，全部是 Sprite2D 构景")
+        for line in ok_hits:
+            print(f"    · {line}")
 
     print("\n[role] 分布")
     for role in sorted(by_role):
