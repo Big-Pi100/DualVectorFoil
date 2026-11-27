@@ -1,20 +1,21 @@
-[gd_scene load_steps=19 format=3]
-
-; Phase 3 生态区一：风车蜡笔草地
-; 继承 BaseRoom 的入侵/净化/零惩罚送回契约；棉花花坛接入 bounce_marshmallow（加生命）。
+[gd_scene format=4]
 
 [ext_resource type="Script" path="res://world/rooms/BaseRoom.gd" id="1_room"]
-[ext_resource type="Shader" path="res://world/shaders/env_light.gdshader" id="94_env"]
+[ext_resource type="TileSet" path="res://world/tiles/ground_tileset.tres" id="2_0ldq0"]
 [ext_resource type="PackedScene" path="res://entities/player/Player.tscn" id="2_player"]
 [ext_resource type="PackedScene" path="res://ui/TouchHUD.tscn" id="3_hud"]
 [ext_resource type="PackedScene" path="res://world/interactables/SoilPlot.tscn" id="4_plot"]
 [ext_resource type="Script" path="res://world/interactables/RoomDoor.gd" id="5_door"]
 [ext_resource type="Shader" path="res://world/shaders/desaturate_wipe.gdshader" id="6_shader"]
-[ext_resource type="Texture2D" path="res://art/approved/Terrain/terrain_grass_decor.png" id="99_grass"]
-[ext_resource type="Texture2D" path="res://art/approved/Terrain/terrain_stone_pillar_200.png" id="98_pillar"]
-[ext_resource type="Texture2D" path="res://art/approved/Items/item_star_sprite.png" id="97_star"]
-[ext_resource type="Shader" path="res://world/shaders/paper_grain.gdshader" id="96_paper"]
+[ext_resource type="Script" path="res://world/interactables/SoilPlot.gd" id="7_d7wci"]
+[ext_resource type="Script" path="res://entities/player/Player.gd" id="13_d7lc6"]
+[ext_resource type="Script" path="res://ui/TouchHUD.gd" id="15_nusrf"]
+[ext_resource type="Shader" path="res://world/shaders/env_light.gdshader" id="94_env"]
 [ext_resource type="Script" path="res://world/interactables/VistaZone.gd" id="95_vista"]
+[ext_resource type="Shader" path="res://world/shaders/paper_grain.gdshader" id="96_paper"]
+[ext_resource type="Texture2D" path="res://art/approved/Items/item_star_sprite.png" id="97_star"]
+[ext_resource type="Texture2D" path="res://art/approved/Terrain/terrain_stone_pillar_200.png" id="98_pillar"]
+[ext_resource type="Texture2D" path="res://art/approved/Terrain/terrain_grass_decor.png" id="99_grass"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_floor"]
 size = Vector2(1200, 40)
@@ -31,193 +32,188 @@ shader_parameter/wipe_radius = 0.0
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_paper"]
 shader = ExtResource("96_paper")
 shader_parameter/grain_strength = 0.14
-shader_parameter/fiber_strength = 0.10
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_vista"]
-size = Vector2(140, 120)
+shader_parameter/fiber_strength = 0.1
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_env"]
 shader = ExtResource("94_env")
 shader_parameter/night = 0.0
 shader_parameter/moon_tint = Color(0.42, 0.38, 0.78, 1)
 
-[node name="Room03" type="Node2D"]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_vista"]
+size = Vector2(140, 120)
+
+[node name="Room03" type="Node2D" unique_id=905641268]
 script = ExtResource("1_room")
 room_id = "room_03"
-invader_count = 3
 
-[node name="SpawnFromLeft" type="Marker2D" parent="."]
+[node name="SpawnFromLeft" type="Marker2D" parent="." unique_id=923116325]
 position = Vector2(180, 560)
 
-[node name="SpawnFromRight" type="Marker2D" parent="."]
+[node name="SpawnFromRight" type="Marker2D" parent="." unique_id=1671278834]
 position = Vector2(1040, 560)
 
-[node name="Floor" type="StaticBody2D" parent="."]
+[node name="Floor" type="StaticBody2D" parent="." unique_id=1009422211]
 position = Vector2(640, 620)
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Floor"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Floor" unique_id=169090955]
 shape = SubResource("RectangleShape2D_floor")
 
-[node name="Visual" type="ColorRect" parent="Floor"]
+[node name="Visual" type="ColorRect" parent="Floor" unique_id=1761254935]
 offset_left = -600.0
 offset_top = -20.0
 offset_right = 600.0
 offset_bottom = 20.0
-color = Color(0.93, 0.88, 0.66, 1.0)
+color = Color(0.93, 0.88, 0.66, 1)
 
-[node name="GrassDecor0" type="Sprite2D" parent="Floor"]
+[node name="GroundTiles" type="TileMapLayer" parent="Floor" unique_id=1084578442]
+position = Vector2(-640, -20)
+tile_map_data = PackedByteArray("AAAAAAAAAQAAAAAAAAABAAAAAQABAAAAAAACAAAAAQACAAAAAAADAAAAAQADAAAAAAAEAAAAAQAAAAAAAAAFAAAAAQABAAAAAAAGAAAAAQACAAAAAAAHAAAAAQADAAAAAAAIAAAAAQAAAAAAAAAJAAAAAQABAAAAAAAKAAAAAQACAAAAAAALAAAAAQADAAAAAAAMAAAAAQAAAAAAAAANAAAAAQABAAAAAAA=")
+tile_set = ExtResource("2_0ldq0")
+
+[node name="GrassDecor0" type="Sprite2D" parent="Floor" unique_id=1921149557]
 position = Vector2(-420, -14)
-texture = ExtResource("99_grass")
 scale = Vector2(0.85, 0.85)
+texture = ExtResource("99_grass")
 
-[node name="GrassDecor1" type="Sprite2D" parent="Floor"]
+[node name="GrassDecor1" type="Sprite2D" parent="Floor" unique_id=1506366555]
 position = Vector2(-140, -14)
-texture = ExtResource("99_grass")
 scale = Vector2(0.85, 0.85)
+texture = ExtResource("99_grass")
 
-[node name="GrassDecor2" type="Sprite2D" parent="Floor"]
+[node name="GrassDecor2" type="Sprite2D" parent="Floor" unique_id=1363828855]
 position = Vector2(140, -14)
-texture = ExtResource("99_grass")
 scale = Vector2(0.85, 0.85)
+texture = ExtResource("99_grass")
 
-[node name="GrassDecor3" type="Sprite2D" parent="Floor"]
+[node name="GrassDecor3" type="Sprite2D" parent="Floor" unique_id=1205887770]
 position = Vector2(420, -14)
-texture = ExtResource("99_grass")
 scale = Vector2(0.85, 0.85)
+texture = ExtResource("99_grass")
 
-; 风车地标：石柱做塔身，星星做风车叶片（已批准资产拼装，不改材质风格）
-[node name="Windmill" type="Node2D" parent="."]
+[node name="Windmill" type="Node2D" parent="." unique_id=1369715672]
 position = Vector2(880, 380)
 
-; 200px 标准版石柱（主体 200×323）；scale 1.2 → 240×388，塔底贴地 y=600
-[node name="Tower" type="Sprite2D" parent="Windmill"]
-texture = ExtResource("98_pillar")
-scale = Vector2(1.2, 1.2)
+[node name="Tower" type="Sprite2D" parent="Windmill" unique_id=39374775]
 position = Vector2(0, 26)
+scale = Vector2(1.2, 1.2)
+texture = ExtResource("98_pillar")
 
-[node name="Blade0" type="Sprite2D" parent="Windmill"]
-texture = ExtResource("97_star")
+[node name="Blade0" type="Sprite2D" parent="Windmill" unique_id=340429331]
 position = Vector2(0, -168)
 scale = Vector2(1.4, 1.4)
-
-[node name="Blade1" type="Sprite2D" parent="Windmill"]
 texture = ExtResource("97_star")
+
+[node name="Blade1" type="Sprite2D" parent="Windmill" unique_id=1131975713]
 position = Vector2(58, -128)
 scale = Vector2(1.1, 1.1)
-
-[node name="Blade2" type="Sprite2D" parent="Windmill"]
 texture = ExtResource("97_star")
+
+[node name="Blade2" type="Sprite2D" parent="Windmill" unique_id=1287123244]
 position = Vector2(-58, -128)
 scale = Vector2(1.1, 1.1)
+texture = ExtResource("97_star")
 
-[node name="WindmillLabel" type="Label" parent="Windmill"]
+[node name="WindmillLabel" type="Label" parent="Windmill" unique_id=1624373865]
 offset_left = -120.0
 offset_top = -90.0
 offset_right = 120.0
 offset_bottom = -60.0
-theme_override_colors/font_color = Color(0.35, 0.2, 0.1, 1.0)
 theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.35, 0.2, 0.1, 1)
 text = "风车蜡笔草地"
 horizontal_alignment = 1
 
-[node name="SoilPlot" parent="." instance=ExtResource("4_plot")]
+[node name="SoilPlot" type="Area2D" parent="." unique_id=37014809 instance=ExtResource("4_plot")]
 position = Vector2(360, 578)
+script = ExtResource("7_d7wci")
 plot_id = "room_03_plot_01"
 room_id = "room_03"
 default_seed_id = "bounce_marshmallow"
 
-[node name="DoorToRoom02" type="Area2D" parent="."]
+[node name="DoorToRoom02" type="Area2D" parent="." unique_id=1353415120]
 position = Vector2(90, 540)
 script = ExtResource("5_door")
 target_scene_path = "res://world/rooms/Room02.tscn"
 target_spawn_name = "SpawnFromRight"
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="DoorToRoom02"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="DoorToRoom02" unique_id=1744295153]
 shape = SubResource("RectangleShape2D_door")
 
-[node name="Label" type="Label" parent="DoorToRoom02"]
+[node name="Label" type="Label" parent="DoorToRoom02" unique_id=1228917205]
 offset_left = -60.0
 offset_top = -100.0
 offset_right = 60.0
 offset_bottom = -70.0
-theme_override_colors/font_color = Color(0.35, 0.2, 0.1, 1.0)
 theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.35, 0.2, 0.1, 1)
 text = "← 画页二"
 horizontal_alignment = 1
 
-[node name="DoorToRoom04" type="Area2D" parent="."]
+[node name="DoorToRoom04" type="Area2D" parent="." unique_id=781725968]
 position = Vector2(1180, 540)
 script = ExtResource("5_door")
 target_scene_path = "res://world/rooms/Room04.tscn"
-target_spawn_name = "SpawnFromLeft"
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="DoorToRoom04"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="DoorToRoom04" unique_id=1369839595]
 shape = SubResource("RectangleShape2D_door")
 
-[node name="Label" type="Label" parent="DoorToRoom04"]
+[node name="Label" type="Label" parent="DoorToRoom04" unique_id=1335286471]
 offset_left = -60.0
 offset_top = -100.0
 offset_right = 60.0
 offset_bottom = -70.0
-theme_override_colors/font_color = Color(0.35, 0.2, 0.1, 1.0)
 theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.35, 0.2, 0.1, 1)
 text = "→ 折纸图书馆"
 horizontal_alignment = 1
 
-[node name="InvadersContainer" type="Node2D" parent="."]
+[node name="InvadersContainer" type="Node2D" parent="." unique_id=13184629]
 
-[node name="PostProcessLayer" type="CanvasLayer" parent="."]
+[node name="PostProcessLayer" type="CanvasLayer" parent="." unique_id=1708220696]
 
-[node name="DesaturateRect" type="ColorRect" parent="PostProcessLayer"]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-mouse_filter = 2
+[node name="DesaturateRect" type="ColorRect" parent="PostProcessLayer" unique_id=770836186]
 material = SubResource("ShaderMaterial_desat")
-color = Color(1, 1, 1, 1)
-
-[node name="PaperGrainRect" type="ColorRect" parent="PostProcessLayer"]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
+
+[node name="PaperGrainRect" type="ColorRect" parent="PostProcessLayer" unique_id=1864801950]
 material = SubResource("ShaderMaterial_paper")
-color = Color(1, 1, 1, 1)
-
-[node name="EnvLightRect" type="ColorRect" parent="PostProcessLayer"]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
+
+[node name="EnvLightRect" type="ColorRect" parent="PostProcessLayer" unique_id=1932409686]
 material = SubResource("ShaderMaterial_env")
-color = Color(1, 1, 1, 1)
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
 
-[node name="Player" parent="." instance=ExtResource("2_player")]
+[node name="Player" type="CharacterBody2D" parent="." unique_id=317666816 instance=ExtResource("2_player")]
 position = Vector2(220, 560)
+collision_mask = 3
+script = ExtResource("13_d7lc6")
 
-[node name="TouchHUD" parent="." instance=ExtResource("3_hud")]
+[node name="TouchHUD" type="CanvasLayer" parent="." unique_id=238570561 instance=ExtResource("3_hud")]
+script = ExtResource("15_nusrf")
 
-[node name="VistaPoint" type="Area2D" parent="."]
+[node name="VistaPoint" type="Area2D" parent="." unique_id=1380112893]
 position = Vector2(620, 560)
 script = ExtResource("95_vista")
 vista_title = "风车下的金色草浪"
-vista_anim = "back"
-target_zoom = 0.72
-zoom_duration = 1.1
-hud_fade_duration = 0.35
-dwell_time = 0.45
-collision_layer = 1
-collision_mask = 1
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="VistaPoint"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="VistaPoint" unique_id=1236972577]
 shape = SubResource("RectangleShape2D_vista")
 
-[node name="Label" type="Label" parent="VistaPoint"]
+[node name="Label" type="Label" parent="VistaPoint" unique_id=1526206246]
 offset_left = -70.0
 offset_top = -95.0
 offset_right = 70.0
 offset_bottom = -65.0
-theme_override_colors/font_color = Color(0.35, 0.2, 0.1, 1.0)
 theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.35, 0.2, 0.1, 1)
 text = "驻足 · 眺望风车"
 horizontal_alignment = 1

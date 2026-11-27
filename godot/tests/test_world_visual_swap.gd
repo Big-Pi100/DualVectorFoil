@@ -28,12 +28,17 @@ func _load_tex(path: String) -> Texture2D:
 	return load(path) as Texture2D
 
 func _test_rooms() -> void:
-	print("--- 三房间地板草皮装饰 ---")
+	print("--- 六个房间地板：地形贴图 + 草皮装饰 ---")
 	var grass: Texture2D = _load_tex("res://art/approved/Terrain/terrain_grass_decor.png")
 	_check(grass != null, "草皮装饰纹理加载")
+	var ts: TileSet = load("res://world/tiles/ground_tileset.tres") as TileSet
+	_check(ts != null, "地面 TileSet 加载")
 	var scenes: Array[String] = [
 		"res://world/rooms/Room01.tscn",
 		"res://world/rooms/Room02.tscn",
+		"res://world/rooms/Room03.tscn",
+		"res://world/rooms/Room04.tscn",
+		"res://world/rooms/Room05.tscn",
 		"res://world/rooms/SafeHouse.tscn",
 	]
 	for p: String in scenes:
@@ -44,19 +49,41 @@ func _test_rooms() -> void:
 		var room: Node2D = ps.instantiate() as Node2D
 		root.add_child(room)
 		await _frames(2)
-		var floor: Node2D = room.get_node_or_null("Floor") as Node2D
-		_check(floor != null and floor.get_node_or_null("CollisionShape2D") != null,
+		var floor_node: Node2D = room.get_node_or_null("Floor") as Node2D
+		_check(floor_node != null and floor_node.get_node_or_null("CollisionShape2D") != null,
 			"%s 地板碰撞体保留" % p.get_file())
-		var visual: ColorRect = floor.get_node_or_null("Visual") as ColorRect
+
+		# 底色 ColorRect 保留：它是兜底，也是"摘掉 TileMapLayer 就退回色块"的退路
+		var visual: ColorRect = floor_node.get_node_or_null("Visual") as ColorRect
 		_check(visual != null, "%s 地板底色 ColorRect 保留" % p.get_file())
+
+		# 真地形层：这是 2026-11-27 新接的。它排在 Visual 之后才会盖住底色。
+		var tiles: TileMapLayer = floor_node.get_node_or_null("GroundTiles") as TileMapLayer
+		_check(tiles != null, "%s 有 GroundTiles 图层" % p.get_file())
+		if tiles != null:
+			_check(tiles.tile_set != null, "%s 图层挂了 TileSet" % p.get_file())
+			_check(tiles.get_used_cells().size() == 14,
+				"%s 铺了 14 块瓦片（实际 %d）" % [p.get_file(), tiles.get_used_cells().size()])
+			# 几何：tile(0,0) 左上角必须落在全局 (0, 600) —— 即碰撞顶。
+			# 写错会让地形整条上下错位，而画面只是"看着有点怪"，不会有任何报错。
+			_check(tiles.position == Vector2(-640, -20),
+				"%s 图层偏移 %s（应为 -640,-20 ⇒ 地形顶对齐碰撞顶 y=600）"
+					% [p.get_file(), tiles.position])
+			var layer_idx: int = tiles.get_index()
+			var vis_idx: int = visual.get_index() if visual != null else -1
+			_check(layer_idx > vis_idx, "%s 地形画在底色之上（%d > %d）"
+				% [p.get_file(), layer_idx, vis_idx])
+
 		var decor_count: int = 0
 		var tex_ok: bool = true
-		for child: Node in floor.get_children():
+		for child: Node in floor_node.get_children():
 			if child is Sprite2D and child.name.begins_with("GrassDecor"):
 				decor_count += 1
 				if (child as Sprite2D).texture == null:
 					tex_ok = false
-		_check(decor_count == 4, "%s 草皮装饰 4 块（实际 %d）" % [p.get_file(), decor_count])
+		# 不钉死"必须 4 块"：Room04 本来就只摆了 2 块（原布局差异，不是漏了）。
+		# 块数是布局细节，测试该守的是"装饰在、贴图有效"。
+		_check(decor_count >= 1, "%s 有草皮装饰（%d 块）" % [p.get_file(), decor_count])
 		_check(tex_ok, "%s 草皮装饰纹理均非空" % p.get_file())
 		room.free()
 		await _frames(1)

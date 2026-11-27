@@ -1,0 +1,29 @@
+[gd_resource type="TileSet" format=3]
+
+[ext_resource type="Texture2D" path="res://art/approved/Terrain/ground_left.png" id="1_gpoke"]
+[ext_resource type="Texture2D" path="res://art/approved/Terrain/ground_mid.png" id="2_x8bfa"]
+[ext_resource type="Texture2D" path="res://art/approved/Terrain/ground_right.png" id="3_6jbkh"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_hlexc"]
+texture = ExtResource("1_gpoke")
+texture_region_size = Vector2i(96, 144)
+0:0/0 = 0
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_w2mkl"]
+texture = ExtResource("2_x8bfa")
+texture_region_size = Vector2i(96, 144)
+0:0/0 = 0
+1:0/0 = 0
+2:0/0 = 0
+3:0/0 = 0
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_flx8b"]
+texture = ExtResource("3_6jbkh")
+texture_region_size = Vector2i(96, 144)
+0:0/0 = 0
+
+[resource]
+tile_size = Vector2i(96, 144)
+sources/0 = SubResource("TileSetAtlasSource_hlexc")
+sources/1 = SubResource("TileSetAtlasSource_w2mkl")
+sources/2 = SubResource("TileSetAtlasSource_flx8b")
