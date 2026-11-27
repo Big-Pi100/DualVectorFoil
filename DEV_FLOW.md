@@ -187,6 +187,34 @@ python art/tools/slice_ground.py --dry-run  # 重新实测三条接缝（不落�
   有时序抖动，**确认无用再 restore**，别顺手带进提交。
 - 别用 `--amend` 改历史，出问题加新提交说明。
 
+### 6.1 远端仓库：仓库早就有了，但本地这条历史是**另一条线**（2026-11-27 查清）
+
+**仓库不是没建，是本地从没配 remote。** 当时的实际情况：
+
+| | 远端 `Big-Pi100/DualVectorFoil` | 本地 `game-soulkeep` |
+| --- | --- | --- |
+| 建/起于 | 2026-11-26 09:33（public，95MB） | 2026-11-25 |
+| 提交数 | 9（停在 11-26 10:33） | **69**（到 11-27 13:xx） |
+| 顶层结构 | **Godot 工程平铺在根**：`project.godot` `core/` `entities/` `world/` `ui/` `dialogue/` `addons/` `tests/` | 文档 + `art/` + `docs/` + `src/` + `godot/`（子目录） |
+| 工程规模 | 230+ 代码文件、`addons/dialogue_manager`（118 文件）、`tests/` 48 个 | `godot/` **17 个 `.gd`**，原型骨架 |
+| 独有 | `.github/workflows/build-{web,android,ios}.yml`（三平台导包，`--path .` 假设工程在根）、`export_presets.cfg` | 今天的全部美术（5 敌人两态、场景两态、产线脚本）、20+ 份 md、`art/tools/` |
+
+两边是 **unrelated histories**（没有任何共同提交），内容**互补**：本地有美术与文档，远端有完整工程与 CI。
+
+**已做的处置（2026-11-27）**：`git remote add origin` → `git fetch` → 把本地 69 个提交推到
+**`origin/local-main`**。**远端 `master` 一个字节没动。**
+
+**还没定的**：哪条当主线。两种走法，别混着来：
+
+- **A（推荐）远端工程为准**：`DualVectorFoil/master` 的 Godot 工程是主线，本地这条线贡献
+  `art/` + `docs/` + `art/tools/`，以 PR 把美术并进去。好处是 CI 不用改；代价是本地 20 多份
+  md 的"单一真源"要跟着搬。
+- **B 本地为准**：把远端工程搬进本地 `godot/`，替换 17 文件的骨架；CI 的 `--path .`
+  要改成 `--path godot`，`export_presets.cfg` 也跟着挪。好处是文档不散；代价是 CI + 铺平结构要重做。
+
+**禁令**：方向定下来之前，**不许 `git push --force` 到 master** —— 无论推哪边，
+都会把另一边 9 个或 69 个提交从远端抹掉。要覆盖前先在这里写下选择与理由。
+
 ---
 
 ## 7. 收工检查单（逐条打勾）
