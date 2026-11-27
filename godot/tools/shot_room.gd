@@ -69,7 +69,11 @@ func _initialize() -> void:
 			var flag: Array = ws.get("invaded_rooms") as Array
 			if rid != null and str(rid) != "" and not flag.has(str(rid)):
 				flag.append(str(rid))
-			scene.call("_setup_invasion_state")
+			# 拼装关（Level01.tscn）的根节点是裸 Node2D，没有这个方法。
+			# 硬 call 会抛 "Invalid call" 并当场中断 _initialize，一张图都存不出来 ——
+			# 而 overview 模式强制 invade=true，所以「拍拼装关全景」这条路是必炸的。
+			if scene.has_method("_setup_invasion_state"):
+				scene.call("_setup_invasion_state")
 
 	# 可选 `at=<x>`：把人放到指定横坐标再拍。
 	# 用途是"玩家站在闸门前到底看到什么" —— 整间房的俯瞰图看不出锁灯和拉杆够不够醒目。
