@@ -96,18 +96,12 @@ PROP_USAGE_OK: dict[str, dict[str, str]] = {
     },
     "godot/world/rooms/Room03.tscn": {
         "terrain_grass_decor": "Floor/GrassDecor0-3 草皮点缀（Sprite2D）",
-        "terrain_stone_pillar": "Windmill 风车塔身（Node2D 构景）",
-        "terrain_stone_pillar_200": "Windmill 叶片（Node2D 构景）",
     },
     "godot/world/rooms/Room04.tscn": {
         "terrain_grass_decor": "Floor/GrassDecor0-1 草皮点缀（Sprite2D）",
-        "terrain_stone_block": "PaperBooks/Book0-2 纸书堆（Node2D 构景）",
-        "terrain_stone_block_200": "PaperBooks/Bookmark 书签（Node2D 构景）",
     },
     "godot/world/rooms/Room05.tscn": {
         "terrain_grass_decor": "Floor/GrassDecor0-3 草皮点缀（Sprite2D）",
-        "terrain_stone_block": "Lighthouse/TowerBase|Mid 灯塔塔身（Node2D 构景）",
-        "terrain_stone_block_200": "Lighthouse/TowerTop 灯塔顶（Node2D 构景）",
     },
     "godot/world/rooms/SafeHouse.tscn": {
         "terrain_grass_decor": "Floor 下草皮点缀（Sprite2D）",
@@ -120,6 +114,22 @@ PROP_USAGE_OK: dict[str, dict[str, str]] = {
     },
     "godot/tests/test_world_visual_swap.gd": {
         "terrain_grass_decor": "换色测试的取样图，不实例化进关卡",
+    },
+}
+
+
+# 占位：场景里确实在用，但用的是"拿通用石构件拼一个地标"，不是设计过的资产。
+# 它们曾经被登记成 PROP_USAGE_OK（"已接入"），等于把占位洗成了合规 —— 这是错的。
+# 占位必须报错而不是登记：留着的意义就是"这是一个待办"，绿了就会被忘掉。
+PROP_PLACEHOLDER: dict[str, dict[str, str]] = {
+    "godot/world/rooms/Room03.tscn": {
+        "terrain_stone_pillar_200": "风车：Tower 竖一块石柱，Blade0-2 拿 item_star_sprite 当叶片",
+    },
+    "godot/world/rooms/Room04.tscn": {
+        "terrain_stone_block_200": "纸书堆：Book0-2 + Bookmark 都是同一张立方石缩放/旋转",
+    },
+    "godot/world/rooms/Room05.tscn": {
+        "terrain_stone_block_200": "灯塔：TowerBase/Mid/Top 是同一张立方石叠三次，灯室用星星图代替",
     },
 }
 
@@ -205,6 +215,7 @@ def main() -> int:
                   if role_of(k, v) == "prop" and not k.startswith("terrain_grass_top")}
     ok_hits: list[str] = []
     unregistered: list[str] = []
+    placeholders: list[str] = []
     for f in GODOT.rglob("*"):
         if f.suffix not in (".tscn", ".gd", ".tres") or ".godot" in f.parts:
             continue
@@ -223,10 +234,17 @@ def main() -> int:
                 bad.append(f"{rel} 用 TileSet 承载摆件 {name} —— 摆件不能铺格")
             if name in PROP_USAGE_OK.get(rel, {}):
                 ok_hits.append(f"{rel} · {name} — {PROP_USAGE_OK[rel][name]}")
+            elif name in PROP_PLACEHOLDER.get(rel, {}):
+                placeholders.append(
+                    f"{rel} 用 {name} 拼地标（占位，待专用图）：{PROP_PLACEHOLDER[rel][name]}")
             else:
                 unregistered.append(f"{rel} 引用了摆件 {name}，但没在 PROP_USAGE_OK 登记用途")
 
-    bad += unregistered
+    bad += unregistered + placeholders
+    if placeholders:
+        print(f"  🔴 {len(placeholders)} 处占位地标（不是合规用法，是待办）：")
+        for line in placeholders:
+            print(f"    · {line}")
     if not unregistered:
         print(f"  ✓ {len(ok_hits)} 处已登记用法，全部是 Sprite2D 构景")
         for line in ok_hits:

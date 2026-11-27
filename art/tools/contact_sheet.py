@@ -92,10 +92,18 @@ DECISION = {
     "ground_mid":     (S_READY, "底板中段 384×144，回文，可无限拼"),
     "ground_right":   (S_READY, "底板右端 96×144"),
     "terrain_grass_top":       (S_SPARE, "三段底板的源。必须留；运行时一张不读"),
-    "terrain_stone_block":     (S_WIRED, "灯塔塔身 / 书堆（Room04、Room05，Sprite2D 构景）"),
-    "terrain_stone_block_200": (S_WIRED, "灯塔顶 / 书签（Room04、Room05，Sprite2D 构景）"),
-    "terrain_stone_pillar":    (S_WIRED, "风车塔身（Room03，Sprite2D 构景）"),
-    "terrain_stone_pillar_200": (S_WIRED, "风车叶片（Room03，Sprite2D 构景）"),
+    # 2026-11-27 晚：这四个曾被改成 S_WIRED（理由写着"灯塔塔身/风车"），那是把
+    # **占位** 写成了 **已接入** —— 场景里确实在用，但用的方式是拿立方石/石柱拼出
+    # 灯塔、书堆、风车。判定跟着代码走，而不是代码跟着判定走。
+    # 现在恢复 11-26 的原判：石块弃用（2.5D 顶面 + 200 宽非 48 网格，只能单件当背景岩体，
+    # 不能拼地标）；石柱留库（单件撑顶仍合法，但风车待专用图）。
+    # 三处占位用法登记在 asset_rules_check.py 的 PROP_PLACEHOLDER，跑一次就红。
+    "terrain_stone_block":     (S_DROP, "立方石 200×165。2.5D 顶面朝观众、宽 200 非 48 整数倍，"
+                                        "只能单件当背景岩体；曾拿它拼灯塔/书堆，已判占位待换"),
+    "terrain_stone_block_200": (S_DROP, "从上张缩出的平台件，同样带 2.5D 顶面。弃用"),
+    "terrain_stone_pillar":    (S_SPARE, "石柱 200×323。竖向房单件撑顶可用；"
+                                         "Room03 风车是占位，专用图到位前不算已接入"),
+    "terrain_stone_pillar_200": (S_SPARE, "石柱缩件。同上，风车叶片是占位"),
     "terrain_stone_bench":     (S_READY, "休息长凳的凳体。2026-11-27 更正：曾被判「唯一弃件」"
                                        "（依据是「横向房被撤、纵向房用不上」），但同日并入的完整工程里"
                                        "RestBench.tscn 正拿它当凳体、RestBench.gd 是活玩法（更新休息点"
