@@ -229,10 +229,16 @@ python art/tools/slice_ground.py --dry-run  # 重新实测三条接缝（不落�
 
 **回滚点**：`git tag pre-godot-merge-2026-11-27`（迁移前一刻的完整状态）。
 
-**禁令**：不要对 `DualVectorFoil/master` 做 `git push --force` —— 那 9 个提交是另一条线
-唯一的存档。要覆盖前先在这里写下理由。工程并入后，本地 `godot/` 是唯一开发主线，
-但**结构刻意与远端保持一致**（同样是 `core/ entities/ world/ ui/ dialogue/ addons/ tests/`
-平铺在工程根），这样将来从那边取更新时不会处处冲突。
+**远端分支现在长这样**（2026-11-27 14:0x）：
+
+| 分支 | 指向 | 是什么 |
+| --- | --- | --- |
+| `master` | `3d287d7` | **主线**，本地这条 70 个提交（含工程并入） |
+| `archive/remote-master-2026-11-26` | `ec05f48` | 原来那 9 个提交的存档。**别删** —— 它是另一条线唯一的记录 |
+| `local-main` | `3d287d7` | 并入当时推的镜像分支，与 master 同点，可留着当检查点 |
+
+master 是用 `--force-with-lease` 切过去的，切之前先建了 `archive/` 分支，所以旧历史一条没丢。
+**以后不要再 force push master**：方向已经定了，再覆盖只会制造第二个"两条历史"。
 
 ---
 
