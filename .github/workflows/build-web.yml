@@ -45,7 +45,7 @@ jobs:
       - name: 导入资产（fresh checkout 无 .godot 缓存）
         run: godot --headless --path . --import
 
-      - name: 全量测试门禁（19 套断言，失败即不出包）
+      - name: 全量测试门禁（20 套断言，失败即不出包）
         run: |
           set -euo pipefail
           PASS=0; FAIL=0
@@ -65,7 +65,7 @@ jobs:
           done
           echo "测试结果: PASS=$PASS FAIL=$FAIL"
           [ "$FAIL" -eq 0 ] || exit 1
-          [ "$PASS" -ge 19 ] || { echo "🔴 测试套数异常（$PASS < 19），疑似测试没跑全"; exit 1; }
+          [ "$PASS" -ge 20 ] || { echo "🔴 测试套数异常（$PASS < 20），疑似测试没跑全"; exit 1; }
 
       - name: 导出 Web
         run: |
