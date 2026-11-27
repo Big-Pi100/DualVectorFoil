@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -35,6 +36,31 @@ MANIFEST = APPROVED / "manifest.json"
 GODOT = ROOT / "godot"
 
 ROLES = {"tile_cap", "tile_mid", "sprite", "prop", "fx", "item", "ui"}
+
+
+def tile_assets(rel: str, depth: int = 0) -> set[str]:
+    """该文件**经由 TileSet** 真正铺成瓦片的贴图 stem 集合。
+
+    为什么不能直接看文本里有没有 `TileMapLayer`：房间接上地面图层之后，
+    每个 `.tscn` 都含这个词，于是"摆件不许铺格"退化成"房间里有摆件就违规"，
+    把 15 处合法的 Sprite2D 构景全判死（2026-11-27 实测的假阳性）。
+    真正的判据只有一条：**这张图是否被某个 TileSet 资源引用**。
+    """
+    if depth > 3:
+        return set()
+    p = ROOT / rel
+    if not p.exists():
+        return set()
+    text = p.read_text(encoding="utf-8", errors="ignore")
+    is_tileset = '[gd_resource type="TileSet"' in text
+    out: set[str] = set()
+    for m in re.finditer(r'\[ext_resource type="([^"]+)"[^\]]*?path="res://([^"]+)"', text):
+        typ, path = m.group(1), m.group(2)
+        if typ == "Texture2D" and is_tileset:
+            out.add(Path(path).stem)
+        elif typ == "TileSet":
+            out |= tile_assets("godot/" + path, depth + 1)
+    return out
 
 # 角色推断：显式覆盖优先，其次按目录
 OVERRIDE = {
@@ -184,12 +210,17 @@ def main() -> int:
             continue
         rel = f.relative_to(ROOT).as_posix()
         text = f.read_text(encoding="utf-8", errors="ignore")
+        tiled = tile_assets(rel)
         for name in sorted(prop_names):
-            if name not in text:
+            # 词边界，不是子串：`terrain_stone_block` 是 `terrain_stone_block_200` 的前缀，
+            # 用 `in text` 会让每个引用 _200 的文件都"顺带"引用无后缀那张。
+            if not re.search(rf"(?<![\w-]){re.escape(name)}(?![\w-])", text):
                 continue
-            # 硬规则：摆件进了 TileMapLayer = 被当瓦片铺，不管登记没登记都错
-            if "TileMapLayer" in text or "TileSet" in text:
-                bad.append(f"{rel} 用 TileMapLayer/TileSet 承载摆件 {name} —— 摆件不能铺格")
+            # 硬规则：摆件**真的**进了 TileSet 才是"被当瓦片铺"。
+            # 不能看文件里有没有 "TileMapLayer" 这个词 —— 房间有了地面图层之后，
+            # 每个 .tscn 都含这个词，于是所有摆件全被判违规（2026-11-27 的假阳性）。
+            if name in tiled:
+                bad.append(f"{rel} 用 TileSet 承载摆件 {name} —— 摆件不能铺格")
             if name in PROP_USAGE_OK.get(rel, {}):
                 ok_hits.append(f"{rel} · {name} — {PROP_USAGE_OK[rel][name]}")
             else:
