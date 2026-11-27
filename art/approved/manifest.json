@@ -265,20 +265,20 @@
   },
   "enemy_slime_ally_00_sprite": {
     "category": "Enemies",
-    "source": "art/tools/duo_state.py",
+    "source": "art/tools/ally_from_gen.py",
     "approved": "art/approved/Enemies/enemy_slime_ally_00_sprite.png",
-    "note": "原住民态：idle 版换色系（生成物，勿手改）；alpha 逐像素同 dark 版；目标色见 duo_state.py PALETTES[slime]"
+    "note": "原住民态「小精灵」：生图重画（只改眼睛）→ 色相归位到 ally 色带；轮廓 IoU≥0.958，色系见 ASSET_RULES §3.1.3，目标色见 duo_state.PALETTES"
   },
   "enemy_bat_ally_00_sprite": {
     "category": "Enemies",
-    "source": "art/tools/duo_state.py",
+    "source": "art/tools/ally_from_gen.py",
     "approved": "art/approved/Enemies/enemy_bat_ally_00_sprite.png",
-    "note": "原住民态：idle 版换色系（生成物，勿手改）；alpha 逐像素同 dark 版；目标色见 duo_state.py PALETTES[bat]"
+    "note": "原住民态「粉翼蝠」：生图重画（只改眼睛）→ 色相归位到 ally 色带；轮廓 IoU≥0.958，色系见 ASSET_RULES §3.1.3，目标色见 duo_state.PALETTES"
   },
   "enemy_spike_ally_00_sprite": {
     "category": "Enemies",
-    "source": "art/tools/duo_state.py",
+    "source": "art/tools/ally_from_gen.py",
     "approved": "art/approved/Enemies/enemy_spike_ally_00_sprite.png",
-    "note": "原住民态：idle 版换色系（生成物，勿手改）；alpha 逐像素同 dark 版；目标色见 duo_state.py PALETTES[spike]"
+    "note": "原住民态「绒刺球」：生图重画（只改眼睛）→ 色相归位到 ally 色带；轮廓 IoU≥0.958，色系见 ASSET_RULES §3.1.3，目标色见 duo_state.PALETTES"
   }
 }

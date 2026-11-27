@@ -74,8 +74,9 @@ RGB 全变、alpha 一个字节不动 ⇒ 轮廓逐像素一致 ⇒ 是同一只
 
 ## 用法
 
-    python art/tools/duo_state.py            # 生成 ally 版到 art/approved/Enemies/
-    python art/tools/duo_state.py --check    # 只验：已生成的是否满足全部断言
+    python art/tools/duo_state.py            # 生成到 art/out/duo/hue/（**不碰 approved**）
+    python art/tools/duo_state.py --approve  # 确认要上换色版时才写进 approved
+    python art/tools/duo_state.py --check    # 只验 approved 里的 ally 是否满足全部断言
     python art/tools/duo_state.py --sheet    # 额外输出对比图到 art/out/duo/_sheet.png
     python art/tools/duo_state.py --probe    # 打印每只敌人的色相直方图（调色卡用）
 
@@ -92,7 +93,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 
 ART = Path(__file__).resolve().parents[1]
 ROOT = ART.parent
@@ -107,6 +108,27 @@ MIN_HUE_SHIFT = 60.0      # 主体色相至少挪 60°（30° 内人眼判为"�
 MIN_SAT_KEEP = 0.85       # 饱和不许比原来低过 15%
 MIN_CMP_KEEP = 0.85       # 明度对比度不许比原来低过 15%
 SAT_GATE = 0.08           # S 低于此视为无彩色（白高光/黑描边），不参与换色
+
+# ── 两套色系（2026-11-27 白哥定：「把两个状态各自的色系定下来，做明显的风格区分」）──
+#
+# 风格区分不能靠"亮一点/暗一点"：slime 的暗黑态本来 V 就 0.71（淡紫，不暗），
+# spike 两态 V 都是 0.73。明度和饱和都分不开。**能分开的只有色相。**
+#
+#   暗黑态 = 紫靛带 H215-322 —— 三只实测 220 / 250 / 312，全在带内。
+#            这是「黑色素沉积」的色相指纹：无论原物种什么颜色，被改写后一律发紫。
+#   解放态 = 四条自然色带 —— 每只挑一条，且不许重复（这棵树有很多种居民，
+#            全挤在同一个色才叫没有风格）。
+#
+# 两条带相邻但**不重叠**（水蓝带上限 212 < 暗带下限 215），所以判定互不打架。
+DARK_HUE_BAND = (215.0, 322.0)
+ALLY_HUE_BANDS = [
+    (20.0, 62.0),    # 暖金 / 蜜 —— 火、秋叶、花粉
+    (88.0, 175.0),   # 嫩绿 / 薄荷 —— 草、芽、叶
+    (180.0, 212.0),  # 水蓝 / 天蓝 —— 水、露、晨雾
+    (325.0, 355.0),  # 樱粉 / 玫 —— 花、果、腮
+]
+ALLY_MIN_SAT = 0.40       # 解放态饱和下限：低于这个数读作"灰"，v2 是 0.14
+ALLY_MIN_V = 0.60         # 解放态明度下限：原住民是活物，不许做成暗部
 
 # ── 色卡 ────────────────────────────────────────────────────────────
 # zones: (dark_lo, dark_hi, target_h, sat_k, v_add)
@@ -252,39 +274,69 @@ def _erode(mask: np.ndarray, it: int = 1) -> np.ndarray:
 
 # ── 指标（断言和报表共用同一套算法，不搞两套口径） ──────────────────
 def metrics(im: Image.Image) -> dict:
+    """一次算齐色相/饱和/明度。色相只看**中心区域的滑窗众数**（见下）。"""
     a = np.array(im.convert("RGBA"))
     vis = a[..., 3] > 16
-    px = a[..., :3][vis] / 255.0
-    if len(px) == 0:
-        return dict(hue=0.0, sat=0.0, vlo=0.0, vhi=0.0, cmp=0.0, n=0)
+    if not vis.any():
+        return dict(hue=0.0, sat=0.0, vlo=0.0, vhi=0.0, vavg=0.0, cmp=0.0, n=0)
 
-    hsv = np.array([colorsys.rgb_to_hsv(*r) for r in px])
-    h, s, v = hsv[:, 0] * 360.0, hsv[:, 1], hsv[:, 2]
+    h2, s2, v2 = _to_hsv(a[..., :3])
 
-    # 主体色相 = **占比最大的 10° 桶**，不是全体加权平均。
-    #
-    # 为什么要这么抠：bat 的主体是 H250-270（深紫蓝），但紫高光（H300-352，15%）
-    # 和金黄眼（H30-60，9%）的色相离得很远，全体平均后被拉到 285°。
-    # 拿 285° 当"主体色相"去要求 ≥60° 位移，等于给了一个本来就没达标的目标
-    # —— 参数被这个偏差带着走，最后 59.1° 卡在门槛外。（2026-11-27 踩过）
-    chrom = s >= SAT_GATE
-    if chrom.any():
-        hc, sc = h[chrom], s[chrom]
-        bins = np.floor(hc / 10.0).astype(int) % 36
-        cnt = np.bincount(bins, weights=sc, minlength=36)
-        center = cnt.argmax() * 10.0 + 5.0
-        near = np.abs(((hc - center + 180.0) % 360.0) - 180.0) <= 20.0
-        if not near.any():          # 极小的 sprite 里色相散得太开，退回整桶
-            near = np.ones_like(hc, bool)
-        ang = np.deg2rad(hc[near])
-        w = sc[near]
-        hue = np.rad2deg(np.arctan2((np.sin(ang) * w).sum(), (np.cos(ang) * w).sum())) % 360
-        sat = float((sc[near] * w).sum() / w.sum())
+    # 主体色相 = **中心区域 + 60° 滑窗 + 按像素数**（三条都是踩出来的）
+    # 1. 只看中心：刺球外圈全是橙刺、蝙蝠脚是橙的。按全图算会被刺带走 ——
+    #    spike 的 ally 被判成 20°，Δ色相算出 164° 这种荒唐值。
+    # 2. 滑窗不用单桶：bat 的紫横跨 240-330，单桶最大值只有 26%，会被相邻桶分票。
+    # 3. 不按饱和度加权：bat 的橙脚更饱和，加权后反而赢过紫的身体。
+    #    （更早一次是"全体加权平均被紫高光+黄眼拉到 285°，Δ 只算出 59.1° 卡在门槛外"。）
+    hh, ww = h2.shape
+    # 位置权重：越靠中心越高（高斯）。为什么不用"中心矩形"——
+    # spike 球体的中心恰好是最亮的浅绿（饱和低），而饱和高的是外围橙刺；
+    # 切矩形会把身体切掉、只剩刺。高斯加权是平滑的折中：
+    # 身体在中心拿到高权重，刺/脚在外围权重低，谁也不至于被整块切走。
+    gy, gx = np.mgrid[0:hh, 0:ww]
+    wgt = np.exp(-(((gy - hh / 2) / (hh * 0.34)) ** 2
+                   + ((gx - ww / 2) / (ww * 0.34)) ** 2))
+    wsel = vis & (s2 > SAT_GATE) & (v2 > 0.18)
+    if wsel.sum() >= 20:
+        hv, sv, wv = h2[wsel], s2[wsel], wgt[wsel]
+        best_c, best_w = 0.0, -1.0
+        for c in range(0, 360, 10):
+            m_ = np.abs(((hv - c + 180.0) % 360.0) - 180.0) <= 30
+            w_ = float(wv[m_].sum())
+            if w_ > best_w:
+                best_c, best_w = float(c), w_
+        near = np.abs(((hv - best_c + 180.0) % 360.0) - 180.0) <= 30
+        ang = np.deg2rad(hv[near])
+        hue = float(np.rad2deg(np.arctan2(np.sin(ang).mean(), np.cos(ang).mean())) % 360)
+        sat = float((sv[near] * wv[near]).sum() / max(wv[near].sum(), 1e-6))
     else:
         hue, sat = 0.0, 0.0
 
-    lo, hi = float(np.percentile(v, 5)), float(np.percentile(v, 95))
-    return dict(hue=float(hue), sat=sat, vlo=lo, vhi=hi, cmp=hi - lo, n=int(vis.sum()))
+    vv = v2[vis]
+    lo, hi = float(np.percentile(vv, 5)), float(np.percentile(vv, 95))
+    return dict(hue=hue, sat=sat, vlo=lo, vhi=hi, vavg=float(vv.mean()),
+                cmp=hi - lo, n=int(vis.sum()))
+
+
+def _in_band(h: float, band: tuple[float, float]) -> bool:
+    return band[0] <= h <= band[1]
+
+
+def outline_iou(a_img: Image.Image, b_img: Image.Image, n: int = 128) -> float:
+    """两版轮廓的交并比。换色版恒为 1.0（alpha 逐像素同），生成版实测 ~0.96。"""
+    def m(img):
+        al = np.array(img.convert("RGBA"))[..., 3] > 40
+        ys, xs = np.nonzero(al)
+        if not len(ys):
+            return np.zeros((n, n), bool)
+        sub = al[ys.min():ys.max() + 1, xs.min():xs.max() + 1]
+        return np.array(Image.fromarray((sub * 255).astype(np.uint8))
+                        .resize((n, n), Image.LANCZOS)) > 128
+    a, b = m(a_img), m(b_img)
+    return float((a & b).sum() / max((a | b).sum(), 1))
+
+
+MIN_IOU = 0.95    # 生成版轮廓下限。宁可松这一档，也不要为了 alpha 一致放弃「可爱」
 
 
 def _hue_delta(a: float, b: float) -> float:
@@ -302,13 +354,17 @@ def verify(dark: Image.Image, ally: Image.Image, name: str) -> list[str]:
         return [f"{name}: 尺寸变了 {d.shape} → {a.shape} —— 不是同一个造型"]
 
     ad, aa = d[..., 3], a[..., 3]
-    if not np.array_equal(ad, aa):
+    same_outline = bool(np.array_equal(ad, aa))
+    # 轮廓判据分两档：换色版 alpha 逐像素同（IoU = 1.0）；生成版允许 ≤5% 差异。
+    # 为什么放这一档：凶感来自眼型（斜杏/竖瞳/两瞳对视），那是形状不是 RGB，
+    # 换色永远做不到「可爱」。2026-11-27 白哥：「扣不了就生成也可以」。
+    if not same_outline:
+        iou = outline_iou(dark, ally)
         diff = int((ad != aa).sum())
-        errs.append(f"{name}: alpha 有 {diff} 个像素不同 —— 轮廓被动了，等于重画了一只")
-
-    edge = (ad > 0) & (ad < 255)
-    if edge.any() and not np.array_equal(ad[edge], aa[edge]):
-        errs.append(f"{name}: 半透明边缘 {int(edge.sum())} px 的 alpha 被改 —— 边缘会发毛")
+        if iou < MIN_IOU:
+            errs.append(
+                f"{name}: 轮廓 IoU {iou:.3f} < {MIN_IOU}（alpha 差 {diff} px）"
+                " —— 变形超出『同一只』的范围")
 
     md, ma = metrics(dark), metrics(ally)
 
@@ -319,19 +375,43 @@ def verify(dark: Image.Image, ally: Image.Image, name: str) -> list[str]:
             f"{name}: 色相只挪了 {dh:.1f}°（要求 ≥{MIN_HUE_SHIFT:.0f}°）"
             f" {md['hue']:.0f}°→{ma['hue']:.0f}° —— 这是褪色不是换色系")
 
-    # ② 饱和不许塌
-    if md["sat"] > SAT_GATE and ma["sat"] < md["sat"] * MIN_SAT_KEEP:
+    # ② 饱和不许塌 —— 只对**换色版**要求"不低于原图的 85%"。
+    # 生成版是重画的，色系来自目标带而不是继承 dark，所以改用绝对下限 ALLY_MIN_SAT
+    # （下面 ④ 里那条），否则 spike 的亮蓝(0.65)会把薄荷绿(0.52)判成"砍了饱和"。
+    if same_outline and md["sat"] > SAT_GATE and ma["sat"] < md["sat"] * MIN_SAT_KEEP:
         errs.append(
             f"{name}: 饱和被砍 {ma['sat'] / md['sat'] * 100:.0f}%"
             f"（{md['sat']:.2f}→{ma['sat']:.2f}，下限 {MIN_SAT_KEEP * 100:.0f}%）"
             " —— 又走回'蒙白纱'那条路")
 
     # ③ 明度对比度不许塌（v2 就是死在这条上）
-    if md["cmp"] > 0 and ma["cmp"] < md["cmp"] * MIN_CMP_KEEP:
+    if same_outline and md["cmp"] > 0 and ma["cmp"] < md["cmp"] * MIN_CMP_KEEP:
         errs.append(
             f"{name}: 明度对比度从 {md['cmp']:.2f} 塌到 {ma['cmp']:.2f}"
             f"（保留 {ma['cmp'] / md['cmp'] * 100:.0f}%，下限 {MIN_CMP_KEEP * 100:.0f}%）"
             " —— 蜡笔笔触会被洗平")
+
+    # ④ 两态各自的色系（风格区分的硬判据，不是"看着不一样就行"）
+    if not _in_band(md["hue"], DARK_HUE_BAND):
+        errs.append(
+            f"{name}: 暗黑态主体色相 {md['hue']:.0f}° 不在紫靛带 "
+            f"{DARK_HUE_BAND[0]:.0f}-{DARK_HUE_BAND[1]:.0f}° —— 被改写的东西一律发紫，"
+            "生图时就该把这个色相按住")
+
+    hit_band = next((b for b in ALLY_HUE_BANDS if _in_band(ma["hue"], b)), None)
+    if hit_band is None:
+        bands = " / ".join(f"{b[0]:.0f}-{b[1]:.0f}°" for b in ALLY_HUE_BANDS)
+        errs.append(
+            f"{name}: 解放态主体色相 {ma['hue']:.0f}° 不在任何自然色带（{bands}）"
+            " —— 原住民必须是自然色，不是'淡一点的紫'")
+
+    if ma["sat"] < ALLY_MIN_SAT:
+        errs.append(
+            f"{name}: 解放态饱和 {ma['sat']:.2f} 低于下限 {ALLY_MIN_SAT} —— 读作灰，不是活物")
+
+    if ma["vavg"] < ALLY_MIN_V:
+        errs.append(
+            f"{name}: 解放态整体明度 {ma['vavg']:.2f} 低于下限 {ALLY_MIN_V} —— 原住民不许压暗")
 
     return errs
 
@@ -412,11 +492,77 @@ def probe(srcs: list[tuple[str, Path]]) -> None:
                   f"   S{ss[sel].mean():.2f}  V{vv[sel].mean():.2f}  Vmax{vv[sel].max():.2f}")
 
 
+def _font(sz: int):
+    for p in (r"C:\Windows\Fonts\msyh.ttc", r"C:\Windows\Fonts\arial.ttf",
+              "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"):
+        try:
+            return ImageFont.truetype(p, sz)
+        except Exception:
+            pass
+    return ImageFont.load_default()
+
+
+def _hsv_rgb(h: float, s: float, v: float) -> tuple[int, int, int]:
+    r, g, b = colorsys.hsv_to_rgb((h % 360) / 360.0, s, v)
+    return int(r * 255), int(g * 255), int(b * 255)
+
+
+def palette_sheet(rows) -> Path:
+    """两套色系总览：色相带 + 每只的实际主色 + 实测数字。
+
+    这张图就是「色系定下来了」的凭据 —— 后续新增敌人照着带往里放，
+    不用再问"到底该多亮多鲜"。上下两块不重叠，一眼看得出风格区分在哪。
+    """
+    W, H = 960, 520
+    im = Image.new("RGB", (W, H), (250, 246, 236))
+    d = ImageDraw.Draw(im)
+    f_t, f_m, f_s = _font(20), _font(15), _font(13)
+
+    bar_x, bar_w, bar_h = 152, 430, 30
+
+    def block(y0: int, title: str, sub: str, bands, rows_of, which: int):
+        d.text((28, y0), title, font=f_t, fill=(40, 34, 30))
+        d.text((28, y0 + 26), sub, font=f_s, fill=(120, 110, 100))
+
+        by = y0 + 46
+        for x in range(bar_w):                       # 360° 色相条
+            d.line([(bar_x + x, by), (bar_x + x, by + bar_h)],
+                   fill=_hsv_rgb(x / bar_w * 360, 0.85, 0.95))
+        for lo, hi in bands:                          # 该态允许的色带
+            x1 = bar_x + int(lo / 360 * bar_w)
+            x2 = bar_x + int(hi / 360 * bar_w)
+            d.rectangle([x1, by - 5, x2, by + bar_h + 5], outline=(30, 26, 24), width=2)
+        for x, lab in ((0, "0"), (90, "90"), (180, "180"), (270, "270"), (359, "360")):
+            d.text((bar_x + x / 360 * bar_w - 8, by + bar_h + 8), lab, font=f_s,
+                   fill=(140, 130, 120))
+
+        for i, (key, _d, _a, card, _e) in enumerate(rows_of):
+            md = metrics(_d if which == 1 else _a)
+            ry = by + 62 + i * 26
+            col = _hsv_rgb(md["hue"], max(md["sat"], 0.18), min(max(md["vavg"], 0.45), 0.95))
+            d.ellipse([28, ry, 44, ry + 16], fill=col, outline=(60, 52, 46))
+            d.text((52, ry - 1),
+                   f"{card['species']:<8s} H{md['hue']:5.0f}°  S{md['sat']:.2f}  V{md['vavg']:.2f}",
+                   font=f_m, fill=(40, 34, 30))
+
+    block(26, "DARK  ·  暗黑态（被改写）",
+          "紫靛带 H215-322 —— 不管原物种什么颜色，被注入黑色素后一律发紫",
+          [DARK_HUE_BAND], rows, 1)
+    block(276, "ALLY  ·  解放态（本来的样子）",
+          "四条自然色带，每只占一条不重复 —— 这棵树有很多种居民",
+          ALLY_HUE_BANDS, rows, 2)
+
+    d.line([(28, 262), (W - 28, 262)], fill=(210, 200, 188))
+    p = SHEET_DIR / "_palette.png"
+    im.save(p)
+    return p
+
+
 def main() -> int:
     args = set(sys.argv[1:])
-    unknown = args - {"--check", "--sheet", "--probe"}
+    unknown = args - {"--check", "--sheet", "--probe", "--palette", "--approve"}
     if unknown:
-        print(f"不认识的参数 {sorted(unknown)}；只支持 --check / --sheet / --probe")
+        print(f"不认识的参数 {sorted(unknown)}；支持 --check / --sheet / --probe / --palette / --approve")
         return 2
 
     ENEMY_DIR.mkdir(parents=True, exist_ok=True)
@@ -440,8 +586,19 @@ def main() -> int:
                 continue
             ally = Image.open(dst).convert("RGBA")
         else:
+            # 默认只出候选，**不覆盖 approved**。
+            # 2026-11-27 踩过：守卫循环里 `python duo_state.py`（无参数）跑了一次，
+            # 把生成版 ally 覆盖回了换色版，而 --check 随后报 PASS（换色版本身是合法的）。
+            # 结果"检查通过"其实检查的是被自己覆盖掉的另一个文件。
             ally = transform(dark, card)
-            ally.save(dst)
+            if "--approve" in args:
+                dst.parent.mkdir(parents=True, exist_ok=True)
+                ally.save(dst)
+                print(f"  approve → {dst.name}")
+            else:
+                cand = SHEET_DIR / "hue"
+                cand.mkdir(parents=True, exist_ok=True)
+                ally.save(cand / dst.name)
         e = verify(dark, ally, key)
         errs += e
         rows.append((key, dark, ally, card, e))
@@ -456,6 +613,10 @@ def main() -> int:
         print(f"  └ {card['species']}：{card['why']}")
         for msg in e:
             print(f"  ✗ {msg}")
+
+    if "--palette" in args and rows:
+        p = palette_sheet(rows)
+        print(f"\n  两套色系 → {p}（上 DARK / 下 ALLY）")
 
     if "--sheet" in args and rows:
         pad, w = 8, 128
@@ -472,7 +633,7 @@ def main() -> int:
         for e in errs:
             print("FAIL  " + e)
         return 1
-    print(f"PASS  {len(rows)} 个敌人：色系真变、饱和与对比度未塌、alpha 逐像素一致")
+    print(f"PASS  {len(rows)} 个敌人：色系真变、落在两套色带内、轮廓是同一只")
     return 0
 
 
