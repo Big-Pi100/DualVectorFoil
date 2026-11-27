@@ -25,6 +25,30 @@ E:\IdentityCard\game-soulkeep\godot\
 原骨架那份 README 记录了 11-25 → 11-26 的手感标定推演（`P_JUMP_V 991` 的来由、F1/F2 两套预设实测对照），
 **结论在 `FEEL_TABLE.md`，推演过程在那份 README 里**，需要溯因时去 `legacy/` 看。
 
+## 第一次打开：在 Godot 编辑器里导入
+
+**别选仓库根目录**。根目录 `E:\IdentityCard\game-soulkeep\` 没有 `project.godot`，
+选它会提示「项目文件不存在」——它是个美术 + 文档 + 工程的混合仓库，引擎只认 `godot/` 这一层。
+
+1. 双击 `E:\godot\Godot_v4.7.2-stable_win64.exe`，进项目管理器
+2. 点右侧 **「导入」**（Import），文件对话框里定位到
+   `E:\IdentityCard\game-soulkeep\godot\project.godot` → 选中 → **「导入并编辑」**
+   （等价操作：把这个 `project.godot` 直接拖进项目管理器窗口）
+3. 首次导入会编译 60 张图 + 扫描脚本，进度条走完约十几秒。**没有报错就是正常**，
+   有几行 `WARNING` 关于 UID 变化的可以忽略——那是 `.import` 元数据在改用新路径。
+4. 打开后按 **F5**，主场景是 `SafeHouse`（`project.godot` 的 `run/main_scene`）。
+
+命令行等价于第 2–3 步（不用开界面，跑完 `.godot/` 缓存就齐了）：
+
+```bash
+"E:/godot/Godot_v4.7.2-stable_win64_console.exe" --headless \
+  --path "E:/IdentityCard/game-soulkeep/godot" --import
+```
+
+**打开后如果贴图全是白的**：说明 `.import` 里的 `source_file` 还指着旧路径
+（原工程是 `res://assets/art/...`，本仓库是 `res://art/approved/...`）。
+跑一次上面的 `--import` 会自动修正——这批修正必须提交，否则队友和 CI 拿到的是坏元数据。
+
 ## 跑
 
 ```bash
@@ -40,8 +64,17 @@ cd godot && for f in $(ls tests/test_*.gd | grep -vE "render_capability|test_e04
 done
 ```
 
-**本机没装 Godot 时**：本地验证只剩静态检查（引用扫描 + `sync_godot.py --check`），
-真正的跑通要靠 CI（`.github/workflows/build-web.yml` 会先 `--import` 再跑 19 套断言，全绿才出包）。
+2026-11-27 在本机 4.7.2-stable 实测：`--import` 通过，19 套断言 **PASS=19 FAIL=0**。
+没装 Godot 时本地验证只剩静态检查（引用扫描 + `sync_godot.py --check`），跑通要靠 CI
+（`.github/workflows/build-*.yml` 会先 `--import` 再跑同一批断言，全绿才出包）。
+
+**编辑器里能做什么、不能做什么**：
+
+| 可以 | 不要 |
+| --- | --- |
+| 改 `.tscn` / `.gd`、调 `env_light.gdshader` 参数、按 F3 看两套光照 | 手动改 `art/approved/` 下的文件（那是镜像，下次 `sync_godot.py` 覆盖） |
+| 在 `tests/` 加新断言（CI 用 `ls tests/test_*.gd` 捡，加进去就会跑） | 在 Godot 里重命名/移动 `art/approved/` 里的图（真源在根 `art/approved/`，两边会脱节） |
+| 新建场景、加节点 | 重构目录结构（下次从远端取更新会合不动） |
 
 ## 结构
 
@@ -104,7 +137,8 @@ python art/tools/sync_godot.py --prune   # 连镜像里多出的文件一起删�
 | --- | --- | --- |
 | `art/experiments/` 不在本地 | 4 个 `test_e04_* / test_e05_*` 跑不了（读 `res://art/experiments/`） | CI 已排除；要跑先 `git checkout origin/master -- art/experiments`（95MB） |
 | `addons/dialogue_manager` 引用 `tests/test_basic_dialogue.gd` | 那是插件自带的示例测试，远端也没有 | 不影响运行，不补 |
-| 本机没有 Godot | 本地无法 `--import` / 跑测试 | 靠 CI 验证 |
+| 旧 `_dark` / `_ally` 两态图仍在 `art/approved/Terrain/`（8 张） | 环境光方案下**没有消费点**，仅作回退 | 实机验收两套光照后移 `art/_legacy/` |
+| 7 个房间 Floor 仍是 `ColorRect` | 三段底板（96/384/96）与新地形贴图无消费点 | 接 TileMapLayer 时一并换 |
 
 ## 改动纪律
 

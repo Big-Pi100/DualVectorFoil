@@ -269,6 +269,14 @@ def compare():
     rows = []
     for stem in ("ground_mid", "terrain_grass_top"):
         rgb, al = load(stem)
+        orig = rgb.shape[:2]
+        # 按内容裁掉透明区，否则 1024×1024 的草皮会把整张图撑大四倍
+        ys = np.where((al[..., 0] > 0.02).any(1))[0]
+        xs = np.where((al[..., 0] > 0.02).any(0))[0]
+        if len(ys) and len(xs):
+            box = (slice(max(0, ys.min() - 4), ys.max() + 5),
+                   slice(max(0, xs.min() - 4), xs.max() + 5))
+            rgb, al = rgb[box], al[box]
         tiles = [_label(np.concatenate([rgb, al], -1), "原图")]
         g = apply_env(rgb, night=1.0)
         tiles.append(_label(np.concatenate([g, al], -1), "shader 夜景"))
@@ -276,6 +284,8 @@ def compare():
             p = TERRAIN / f"{stem}{tag}.png"
             if p.exists():
                 o = np.asarray(Image.open(p).convert("RGBA"), np.float32) / 255.0
+                if o.shape[:2] == orig:
+                    o = o[box]
                 tiles.append(_label(o, f"旧 {tag}"))
         rows.append(np.concatenate(tiles, 1))
     W = max(r.shape[1] for r in rows)
