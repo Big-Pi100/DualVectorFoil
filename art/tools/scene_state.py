@@ -83,12 +83,37 @@ OUT = ART / "out" / "scene"
 # 于是「已判定不接入」的 `terrain_stone_block` 又长出了 `_dark` / `_ally`
 # 两态并注册进 manifest —— 文档说不接入、磁盘上却有两态资产，两边对不上。
 # 现在由 `stray_variants()` 兜底：approved 里出现不属于地面的两态文件就报错。
-BASE_STEMS = [
-    "terrain_grass_top",   # 草皮母版（ground_* 由它裁切）
-    "ground_left",
-    "ground_mid",
-    "ground_right",
-]
+#
+# ============================================================================
+# DEPRECATED（2026-11-27）：本工具产出的两态图已被环境光 shader 取代。
+# ============================================================================
+# 白哥看过实机紫月效果后给的结论是「紫月够紫，不用改了」——方案验收通过。
+# 8 张 `_dark` / `_ally` 已移到 `art/_legacy/scene_two_state_2026-11-27/`
+# （含 `_WHY_MOVED.md`，写明为什么移、留着有什么价值、怎么回退）。
+#
+# 取代者：`godot/world/shaders/env_light.gdshader` + `art/tools/env_light.py`
+# 契约：`art/ASSET_RULES.md §3.2.6`
+#
+# **为什么 BASE_STEMS 清空而不是留着**：清单里留 4 个 stem，`--check` 就会去验
+# 4 个已不存在的基准件 → 报「缺基准件」；把检查改成"跳过缺失"更糟，那是把
+# 失败伪装成通过。清空 + DEPRECATED 拦截，是唯一诚实的写法。
+#
+# **为什么 --check 在空清单时必须 exit 2**：`for stem in BASE_STEMS` 遍历空列表
+# → 一条断言都不跑 → `errs` 为空 → 打印 PASS。这是"空集合上做全称判断永远为真"，
+# 本项目已经踩过三次（5 种敌人磁盘只有 3 种、空矩阵假通过、BASE_STEMS 漏野文件）。
+# 一个静静报 PASS 的废止工具，比没有这个工具更危险。
+#
+# 回退办法见 `art/_legacy/scene_two_state_2026-11-27/_WHY_MOVED.md`：
+# 把图 checkout 回去，然后把下面这个开关改回 False。
+DEPRECATED = True
+DEPRECATED_WHY = "两态方案已被 env_light 环境光取代（ASSET_RULES §3.2.6，2026-11-27 验收通过）"
+
+BASE_STEMS: list[str] = []
+# 废止前的清单（回退时恢复这一段，并把 DEPRECATED 改为 False）：
+#     "terrain_grass_top",   # 草皮母版（ground_* 由它裁切）
+#     "ground_left",
+#     "ground_mid",
+#     "ground_right",
 
 # ---------------------------------------------------------------- 两套场景色系
 
@@ -603,6 +628,15 @@ def main() -> int:
     if unknown:
         print(f"不认识的参数 {sorted(unknown)}")
         print("支持 --check / --approve / --matrix / --palette / --sheet / --probe")
+        return 2
+
+    # 停用拦截必须放在最前面：BASE_STEMS 已清空，继续往下走会"遍历 0 个件 → 0 个错
+    # → 打印 PASS"，把废止伪装成健康。exit 2 而不是 0，是为了不骗任何脚本/CI。
+    if DEPRECATED:
+        print(f"[scene_state] 已停用：{DEPRECATED_WHY}")
+        print("  替代品：python art/tools/env_light.py --check")
+        print("  8 张两态图已移到 art/_legacy/scene_two_state_2026-11-27/")
+        print("  真要回退：把图 checkout 回来，再把 scene_state.py 的 DEPRECATED 改为 False")
         return 2
 
     missing = [s for s in BASE_STEMS if not base_path(s).exists()]
