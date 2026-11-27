@@ -433,10 +433,23 @@ MVP 敌人 5 种，自然色带 4 条 —— 一开始写的是"每只占一条�
 `manifest.json` 里那句"右缘与 ground_mid 左缘逐像素相等"是**假的**。
 
 真正成立的两条不变量是：`ground_mid` 左列 == 右列（自铺）、`ground_left` == `mirror(ground_right)`。
-`scene_state.py --check` 只守这两条，并**每次把上面的差值打出来**，不假装它不存在。
+**`art/tools/seam_check.py`** 守这两条，并每次把上面的差值打出来，不假装它不存在。
 换色是逐像素纯函数，所以接缝不会因换色而变坏 —— 但它本来就不对。
 
+> **2026-11-27 之后**：这条检查原来在 `scene_state.py --check` 里。那支产线已停用
+> （两态方案被环境光取代，见 `§3.2.6`），但接缝跟两态**毫无关系** ——
+> 它只读母版 `ground_left/mid/right`，那三张还在用。为了停一条废止的产线
+> 而埋掉一条仍然有效的断言，是拿"清理"当借口删证据，所以抽成了独立工具。
+>
+> `seam_check.py --strict` 是**接 TileMapLayer 的前置门禁**：要求接缝最大差 ≤8。
+> 现在实测 141，跑 `--strict` 会红 —— 这是对的，它挡住的是"以为底板能直接接进瓦片层"
+> 这个幻觉。默认不加这道门禁，是因为它必然红；让一个检查默认红，等于训练人忽略红。
+
 #### 3.2.5 用法
+
+> **⚠️ 2026-11-27：以下命令已停用**（`DEPRECATED = True`，`--check` 主动 exit 2）。
+> 两态方案被 `§3.2.6` 的环境光 shader 取代，8 张两态图已移到 `art/_legacy/`。
+> **接缝那两条不变量没有跟着停用**，已抽到 `art/tools/seam_check.py`（见上）。
 
 ```bash
 python art/tools/scene_state.py             # 候选 → art/out/scene/states/（不碰 approved）
@@ -445,6 +458,11 @@ python art/tools/scene_state.py --check     # 六条断言 + 接缝（含已知�
 python art/tools/scene_state.py --matrix    # 20 组演员×场景
 python art/tools/scene_state.py --palette   # 两套场景色系总览
 python art/tools/scene_state.py --sheet     # 四组合实机合成（场景两态 × 演员两态）
+
+# 现在该跑这个
+python art/tools/env_light.py --check       # 环境光六条断言（现行）
+python art/tools/seam_check.py              # 底板接缝不变量 + 差值实测
+python art/tools/seam_check.py --strict     # 接 TileMapLayer 前置门禁
 ```
 
 `*_200` 是 R4 整数缩放的派生物，**不单独出两态** —— 从基准件重新派生即可，
@@ -577,11 +595,44 @@ prototype（`src/game.js`）目前还引用基准件，接场景两态切换时�
 **反向验证过**：把 `Room03.tscn` 的 `EnvLightRect` 改名 → `FAIL Room03.tscn EnvLightRect 挂了材质`，
 还原后 20 套全绿。断言不是写了就算数，得看见它红过一次。
 
-##### 旧的 8 张两态怎么办
+##### 验收与定稿（2026-11-27）
 
-暂留作回退（`ground_*_dark/ally`、`terrain_grass_top_dark/ally`），
-实机验收后再决定是否移入 `_legacy/`。**在移除之前，`scene_state.py --check` 仍然有效**，
-两条方案不冲突。
+白哥在实机打开工程、进被侵占的房间按 `F3` 看过两套光照，结论是
+
+> 「紫月够**紫**，不用改了。」
+
+所以下面这组参数**定稿**，不再做审美微调；要改先说明改的是哪条断言、测什么数据。
+
+| 参数 | 定稿值 | 它管什么 | 调它会破坏哪条断言 |
+| --- | --- | --- | --- |
+| `night` | 侵占 1.0 / 清完 0.0 | 总混合权重 | 不参与调参，由侵占状态驱动 |
+| `moon_tint` | `(0.42, 0.38, 0.78)` | 目标色相（紫） | 调偏就不再是"紫月" |
+| `tint_pull` | `0.90` | 色相拉向月光的比例 | 调低 → 断言 4（土草色相差 ≥22°）变宽裕，但断言 3b 与"读得出是月夜"变差 |
+| `veg_protect` | `0.55` | 植被保留原色相 | 调低 → 草变紫，"读不出是草"；调高 → 断言 4 收紧 |
+| `sat_scale` / `sat_add` | `0.42` / `0.04` | 饱和重定 | 调高 → 断言 3（背景饱和 ≤0.30）FAIL |
+| `val_mul` / `val_add` | `0.90` / `-0.10` | 明度 | 压过头 → 断言 2（对比度 ≥85%）。**注意乘法会压缩差值** |
+| `contrast_boost` | `1.30` | 对比度补偿 | 调回 1.0 → 断言 2 FAIL（实测剩 78%）；调到 1.38 → 拐点后过曝 |
+| `lift` | `0.0` | 整体提/压 | 保持 0，靠 `val_add` 压暗 |
+
+##### 旧的 8 张两态图：已归档（2026-11-27）
+
+验收一过，回退理由就消失了。8 张 `ground_*_dark/ally` + `terrain_grass_top_dark/ally`
+已移到 **`art/_legacy/scene_two_state_2026-11-27/`**，附 `_WHY_MOVED.md`。
+
+- `manifest.json` 同步删掉 8 条（不留"指向不存在文件的登记"）
+- `godot/art/approved/` 镜像用 `sync_godot.py --prune` 清掉，8 个孤儿 `.import` 一并删除
+- **`scene_state.py` 就地停用**：`BASE_STEMS` 清空、`DEPRECATED = True`，
+  `--check` 主动 `exit 2` 并打印替代品路径
+- **接缝那两条不变量没有跟着停用** —— 它跟两态无关，只读母版，已抽成
+  `art/tools/seam_check.py`（`§3.2.4`）。停用一支产线不该连带埋掉另一条有效的断言
+
+最后那条是这次特意加的：`BASE_STEMS` 一旦为空，`for stem in BASE_STEMS` 就一条断言都不跑，
+`errs` 为空、打印 PASS —— **一个静静报 PASS 的废止工具比没有更危险**。
+本项目在"空集合上做全称判断永远为真"这件事上已经踩过三次，这是第四次设防。
+
+**注意**：这 8 张不是垃圾，是 `§3.2.2`（乘法褪色）与 `§3.2.1 断言 3`（绿砖）的**原始证据**。
+换方案没有推翻旧结论，只是把实现层换了 —— 所以 `§3.2.1–3.2.5` 标的是"推演记录"，不是"作废"。
+
 
 
 ## 4. 立体摆件：不许当"脚下的地面"，但可以当背景与竖直构件

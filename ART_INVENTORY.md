@@ -35,7 +35,7 @@
 | 敌人 | **5 张 × 2 态 = 10 张**（史莱姆 / 蝙蝠 / 刺球 / 纸虱 / 墨滴虫） | 128×128 帧，游戏内高 48 | 生图 → 洋红泛洪抠图 → `ally_from_gen.py --dark` 按画布约定放置 | ✅ 齐了（11-27，与 `02 §5.3` 五色对应） |
 | 敌人·原住民态 | **5 张**（`*_ally`，同造型换色/换眼） | 同上；换色版 alpha 逐像素同，生图版轮廓 IoU≥0.95 | `duo_state.py`（换色）/ `ally_from_gen.py`（生图） | ✅ 已跑通（11-27） |
 | 场景光照 | **1 个 shader**（`godot/world/shaders/env_light.gdshader`，9 uniform）+ `env_light.py` 校验端 | ground 件不出两套图；被侵占→紫月、清完→日光 | `env_light.py --check`（六条） | ✅ 已接进 6 个房间（11-27 晚改，`ASSET_RULES §3.2.6`） |
-| 地形·两态（旧，待弃） | **4 个地面件 × 2 态 = 8 张**（`*_dark` / `*_ally`：`terrain_grass_top` + `ground_left/mid/right`） | 同几何，alpha 逐像素同基准件 | `scene_state.py`（R3 场景版） | ⚠️ **待弃**：已被上一行的环境光方案取代（11-27 晚）。留着作回退，实机验收后移入 `_legacy/`。`scene_state.py --check` 在移除前仍然有效 |
+| 地形·两态（旧，**已归档**） | **4 个地面件 × 2 态 = 8 张**（`*_dark` / `*_ally`：`terrain_grass_top` + `ground_left/mid/right`） | 同几何，alpha 逐像素同基准件 | `scene_state.py`（R3 场景版，已停用） | 📦 **已移到 `art/_legacy/scene_two_state_2026-11-27/`**（11-27 紫月验收通过后）。不是垃圾：`§3.2.2` 乘法褪色与 `§3.2.1 断言 3` 绿砖的原始证据。`manifest.json` 已删对应 8 条 |
 | 道具（门/灯/画框） | 0 张 | — | `game.js` fillRect | 🔴 程序画 |
 | UI | **0 张** | 见 `UI_SKIN.md` | CSS 色块 | 🔴 未开始 |
 | 字体 | 0 | — | 系统等宽 | 🔴 未定 |

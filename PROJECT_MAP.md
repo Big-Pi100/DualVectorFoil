@@ -27,7 +27,7 @@
 | **玩法设计** | ✅ **已定**（`docs/gdd/` 8 份，10 个决定可追溯）。核心循环=清房间，第一支柱=动作手感 |
 | 手感 / 操作链（13 套回归 + 4 探针全绿） | ✅ 可玩（web 版） |
 | **Godot 工程** | 🟢 **完整工程已并入**（2026-11-27，见 `DEV_FLOW §6.1`；原 17 文件骨架进 `legacy/`）。现存：6 个房间场景（`SafeHouse` 主场景 + `Room01–05`）+ 战斗测试房 + 白模房；玩家（跑 / 跳 / 二段跳）、敌人 `Invader`、交互物（休息长椅 / 房间门 / 土块 / 观景台）、对话系统（`dialogue_manager` + 3 个剧本）、旅行日志、触屏 HUD、3 个 shader；23 个测试（CI 跑 19 个）。**清房间**机制在 `BaseRoom.gd`（`purify_room` + `WorldState.invaded_rooms`）。世界数据 `godot/data/world_map.json`（48 房 / 59 连接 / 1 传送 / 12 个独立环，包围盒 332×272 格 = 1.22:1）也在，但**只搭了 6 间**，没按 48 房铺开。⚠️ 本机没有 Godot，以上是从场景与代码读出来的，**未实机验证**；跑通与否以 CI 为准 |
-| **地面表现** | 🔴 **两条线没对齐**：美术侧是 `ground_left/mid/right` 三段（96/384/96，规则 `ASSET_RULES §2`）且有两态；工程侧 7 个场景的 `Floor` 还是 `ColorRect` 纯色块 + `grass_decor` 草皮贴片。两态资产目前**没有消费点** |
+| **地面表现** | 🔴 **两条线没对齐**：美术侧是 `ground_left/mid/right` 三段（96/384/96，规则 `ASSET_RULES §2`），**两态已废止**（改用环境光，图移到 `art/_legacy/`）；工程侧 7 个场景的 `Floor` 还是 `ColorRect` 纯色块 + `grass_decor` 草皮贴片。**三段底板至今没有消费点**，且接缝最大差 **141** —— 接 TileMapLayer 前必须先过 `seam_check.py --strict` |
 | 美术规范 | ✅ **统一到 `art/ART_GUIDE.md` v1.3**（复用自 `Dual_Vector_Foil`，门禁 G1–G5 全过） |
 | 正式资产 | ✅ 41 张（`art/approved/`）：敌人 3 / 道具 3 / 特效 4 / UI 3 / 地形摆件 7 / 角色 8 态 |
 | 主角 | ✅ **已换到母版**（`gdd/05 §2.1`）：8 态 sprite 接线，旧 31 帧下线。缺蹲/下落/后跃/施法 4 张，走回退（`ART_GUIDE §12.4`） |
