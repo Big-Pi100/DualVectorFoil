@@ -304,5 +304,101 @@
     "source": "art/tools/ally_from_gen.py",
     "approved": "art/approved/Enemies/enemy_ink_ally_00_sprite.png",
     "note": "原住民态「露珠虫」：生图重画（只改眼睛）→ 色相归位到 ally 色带；轮廓 IoU≥0.95，色系见 ASSET_RULES §3.1.3，目标色见 ally_from_gen.TARGET_HUE"
+  },
+  "terrain_grass_top_dark": {
+    "category": "Terrain",
+    "source": "art/tools/scene_state.py",
+    "approved": "art/approved/Terrain/terrain_grass_top_dark.png",
+    "note": "场景堵塞态：同几何换色系（alpha 逐像素同 terrain_grass_top）；色温/材质/饱和/明度见 ASSET_RULES §3.2；色卡见 scene_state.py SCENE"
+  },
+  "terrain_grass_top_ally": {
+    "category": "Terrain",
+    "source": "art/tools/scene_state.py",
+    "approved": "art/approved/Terrain/terrain_grass_top_ally.png",
+    "note": "场景恢复态：同几何换色系（alpha 逐像素同 terrain_grass_top）；色温/材质/饱和/明度见 ASSET_RULES §3.2；色卡见 scene_state.py SCENE"
+  },
+  "terrain_grass_decor_dark": {
+    "category": "Terrain",
+    "source": "art/tools/scene_state.py",
+    "approved": "art/approved/Terrain/terrain_grass_decor_dark.png",
+    "note": "场景堵塞态：同几何换色系（alpha 逐像素同 terrain_grass_decor）；色温/材质/饱和/明度见 ASSET_RULES §3.2；色卡见 scene_state.py SCENE"
+  },
+  "terrain_grass_decor_ally": {
+    "category": "Terrain",
+    "source": "art/tools/scene_state.py",
+    "approved": "art/approved/Terrain/terrain_grass_decor_ally.png",
+    "note": "场景恢复态：同几何换色系（alpha 逐像素同 terrain_grass_decor）；色温/材质/饱和/明度见 ASSET_RULES §3.2；色卡见 scene_state.py SCENE"
+  },
+  "terrain_stone_block_dark": {
+    "category": "Terrain",
+    "source": "art/tools/scene_state.py",
+    "approved": "art/approved/Terrain/terrain_stone_block_dark.png",
+    "note": "场景堵塞态：同几何换色系（alpha 逐像素同 terrain_stone_block）；色温/材质/饱和/明度见 ASSET_RULES §3.2；色卡见 scene_state.py SCENE"
+  },
+  "terrain_stone_block_ally": {
+    "category": "Terrain",
+    "source": "art/tools/scene_state.py",
+    "approved": "art/approved/Terrain/terrain_stone_block_ally.png",
+    "note": "场景恢复态：同几何换色系（alpha 逐像素同 terrain_stone_block）；色温/材质/饱和/明度见 ASSET_RULES §3.2；色卡见 scene_state.py SCENE"
+  },
+  "terrain_stone_pillar_dark": {
+    "category": "Terrain",
+    "source": "art/tools/scene_state.py",
+    "approved": "art/approved/Terrain/terrain_stone_pillar_dark.png",
+    "note": "场景堵塞态：同几何换色系（alpha 逐像素同 terrain_stone_pillar）；色温/材质/饱和/明度见 ASSET_RULES §3.2；色卡见 scene_state.py SCENE"
+  },
+  "terrain_stone_pillar_ally": {
+    "category": "Terrain",
+    "source": "art/tools/scene_state.py",
+    "approved": "art/approved/Terrain/terrain_stone_pillar_ally.png",
+    "note": "场景恢复态：同几何换色系（alpha 逐像素同 terrain_stone_pillar）；色温/材质/饱和/明度见 ASSET_RULES §3.2；色卡见 scene_state.py SCENE"
+  },
+  "terrain_stone_bench_dark": {
+    "category": "Terrain",
+    "source": "art/tools/scene_state.py",
+    "approved": "art/approved/Terrain/terrain_stone_bench_dark.png",
+    "note": "场景堵塞态：同几何换色系（alpha 逐像素同 terrain_stone_bench）；色温/材质/饱和/明度见 ASSET_RULES §3.2；色卡见 scene_state.py SCENE"
+  },
+  "terrain_stone_bench_ally": {
+    "category": "Terrain",
+    "source": "art/tools/scene_state.py",
+    "approved": "art/approved/Terrain/terrain_stone_bench_ally.png",
+    "note": "场景恢复态：同几何换色系（alpha 逐像素同 terrain_stone_bench）；色温/材质/饱和/明度见 ASSET_RULES §3.2；色卡见 scene_state.py SCENE"
+  },
+  "ground_left_dark": {
+    "category": "Terrain",
+    "source": "art/tools/scene_state.py",
+    "approved": "art/approved/Terrain/ground_left_dark.png",
+    "note": "场景堵塞态：同几何换色系（alpha 逐像素同 ground_left）；色温/材质/饱和/明度见 ASSET_RULES §3.2；色卡见 scene_state.py SCENE"
+  },
+  "ground_left_ally": {
+    "category": "Terrain",
+    "source": "art/tools/scene_state.py",
+    "approved": "art/approved/Terrain/ground_left_ally.png",
+    "note": "场景恢复态：同几何换色系（alpha 逐像素同 ground_left）；色温/材质/饱和/明度见 ASSET_RULES §3.2；色卡见 scene_state.py SCENE"
+  },
+  "ground_mid_dark": {
+    "category": "Terrain",
+    "source": "art/tools/scene_state.py",
+    "approved": "art/approved/Terrain/ground_mid_dark.png",
+    "note": "场景堵塞态：同几何换色系（alpha 逐像素同 ground_mid）；色温/材质/饱和/明度见 ASSET_RULES §3.2；色卡见 scene_state.py SCENE"
+  },
+  "ground_mid_ally": {
+    "category": "Terrain",
+    "source": "art/tools/scene_state.py",
+    "approved": "art/approved/Terrain/ground_mid_ally.png",
+    "note": "场景恢复态：同几何换色系（alpha 逐像素同 ground_mid）；色温/材质/饱和/明度见 ASSET_RULES §3.2；色卡见 scene_state.py SCENE"
+  },
+  "ground_right_dark": {
+    "category": "Terrain",
+    "source": "art/tools/scene_state.py",
+    "approved": "art/approved/Terrain/ground_right_dark.png",
+    "note": "场景堵塞态：同几何换色系（alpha 逐像素同 ground_right）；色温/材质/饱和/明度见 ASSET_RULES §3.2；色卡见 scene_state.py SCENE"
+  },
+  "ground_right_ally": {
+    "category": "Terrain",
+    "source": "art/tools/scene_state.py",
+    "approved": "art/approved/Terrain/ground_right_ally.png",
+    "note": "场景恢复态：同几何换色系（alpha 逐像素同 ground_right）；色温/材质/饱和/明度见 ASSET_RULES §3.2；色卡见 scene_state.py SCENE"
   }
 }

@@ -33,6 +33,9 @@ DOC02 = GDD / "02_战斗系统.md"
 DOC_REF = REF / "REF_TREE_PHYSIOLOGY.md"
 JSON_REF = REF / "tree_physiology_refs.json"
 ENEMY_DIR = ROOT / "art" / "approved" / "Enemies"
+TERRAIN_DIR = ROOT / "art" / "approved" / "Terrain"
+ASSET_RULES = ROOT / "art" / "ASSET_RULES.md"
+SCENE_TOOL = ROOT / "art" / "tools" / "scene_state.py"
 
 # 八处翻译：系统词 → 生理词（必须同一行出现）
 MAPPINGS = [
@@ -401,6 +404,61 @@ def check_duo(r05: str, r03: str, r02: str) -> list[str]:
     return errs
 
 
+def check_scene(r04: str, r03: str) -> list[str]:
+    """第四轮：场景两态（2026-11-27 白哥定「场景的色系也要这样分类」）。"""
+    errs: list[str] = []
+
+    # 1. 04 §2.1 必须在，且两件事都在：alpha 不能动、色温分开
+    seg = tree_section(r04, "### 2.1", "## 3.")
+    if not seg:
+        errs.append("04: 找不到 §2.1「场景两态」—— 地表换色没有落点")
+    else:
+        if not same_line(seg, "alpha", "逐像素"):
+            errs.append("04 §2.1: 没有一行同时写「alpha」和「逐像素」"
+                        "—— 瓦片几何一动就出缝，这条是硬约束")
+        for k in ("冷像素", "DARK", "ALLY"):
+            if k not in seg:
+                errs.append(f"04 §2.1: 少了「{k}」")
+
+    # 2. 规范侧的判据必须在（不然就是只有结论没有依据）
+    rules = ASSET_RULES.read_text(encoding="utf-8") if ASSET_RULES.exists() else ""
+    if "### 3.2" not in rules:
+        errs.append("ASSET_RULES: 缺 §3.2 场景两态 —— 判据没有单一真源")
+    else:
+        for k in ("色温", "材质不糊", "可读性"):
+            if k not in tree_section(rules, "### 3.2", "## 4."):
+                errs.append(f"ASSET_RULES §3.2: 少了「{k}」判据")
+
+    # 3. 03 必须写明「清区 → 换地色」这条画面开关
+    if not same_line(r03, "地面", "色系"):
+        errs.append("03: 没有一行同时写「地面」和「色系」"
+                    "—— 清区变田在画面上少了一个可见反馈")
+
+    # 4. 磁盘：每个基准件都必须有两态
+    #    基准件清单**从工具里取**，不在这里重抄一遍 ——
+    #    抄一遍就等于两个真源，加新件时必有一边忘改。
+    stems: list[str] = []
+    if SCENE_TOOL.exists():
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("scene_state", SCENE_TOOL)
+        mod = importlib.util.module_from_spec(spec)
+        try:
+            spec.loader.exec_module(mod)
+            stems = list(mod.BASE_STEMS)
+        except Exception as e:  # noqa: BLE001
+            errs.append(f"scene_state.py 无法加载：{e}")
+    else:
+        errs.append("art/tools/scene_state.py 不存在 —— 场景两态没有产线")
+
+    for stem in stems:
+        for st in ("dark", "ally"):
+            if not (TERRAIN_DIR / f"{stem}_{st}.png").exists():
+                errs.append(f"Terrain: 「{stem}」缺 {st} 态 —— "
+                            "规范写了两态、磁盘只有一态")
+
+    return errs
+
+
 def main() -> int:
     d = load()
     r05 = DOC05.read_text(encoding="utf-8")
@@ -414,7 +472,8 @@ def main() -> int:
         return 0
 
     errs = (check_internal(d) + check_05(r05, d) + check_03(r03) + check_04(r04)
-            + check_ref(rref) + check_parasite(r05, r03, r02) + check_duo(r05, r03, r02))
+            + check_ref(rref) + check_parasite(r05, r03, r02) + check_duo(r05, r03, r02)
+            + check_scene(r04, r03))
 
     g = d["girdling"]
     w = d["wound"]
