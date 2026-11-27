@@ -92,6 +92,8 @@ godot/
 │  ├─ rooms/              SafeHouse（主场景）+ Room01–05 + BaseRoom.gd（房间基类）
 │  ├─ enemies/            Invader.tscn + InvaderVisual.gd
 │  ├─ interactables/      RestBench / RoomDoor / SoilPlot / VistaZone
+│  ├─ tiles/              **gen_tileset.gd** 生成 ground_tileset.tres（96×144，3 source / 6 块）
+│  │                      **apply_ground.gd** 给房间挂 TileMapLayer（幂等，可重跑）
 │  └─ shaders/            boiling_line / desaturate_wipe / paper_grain / **env_light**
 ├─ ui/                    DialogueBalloon / TouchHUD / TravelJournal
 ├─ dialogue/              StoryDirector + 3 个 .dialogue 剧本
@@ -122,6 +124,32 @@ godot/
 > `[autoload]` 段被挪到 `[display]` 前面（无害），**所有 `;` 注释被删干净**（不可恢复）。
 > 上面这张表原本就是 `project.godot` 里的四条中文注释，已搬到这里。
 > 结论：**能被机器重写的文件不承载文档**；引擎行为的理由写进 README / `FEEL_TABLE.md`。
+
+## 地面：真地形贴图 + 端头留给以后的坑
+
+7 个房间的 `Floor` 原来只有一个 40 高的 `ColorRect` 纯色块，那批地形贴图一张没进游戏。
+2026-11-27 换成 `TileMapLayer`：
+
+```
+Floor (640, 620)    碰撞 1200×40 → 地面顶 y=600
+└─ Visual           原 ColorRect，保留作兜底与退路（摘掉图层就退回色块）
+└─ GroundTiles       TileMapLayer，position (-640, -20) ⇒ tile(0,0) 左上角落在 (0,600)
+└─ GrassDecor0..3    草皮贴片（旧设计遗留，见「已知缺口」）
+```
+
+- 全部用 **mid** 横铺 14 块 = 1344px，屏幕 1280 铺满，右侧 64 裁在屏外
+- **不用 left / right**：7 个房间地面都是整条连续，没有坑或断崖。端头瓦片是圆石收口，
+  插在连续地面中间会露出来。它们已经生成进 TileSet，留给以后做坑——那时就是坑的两壁
+- 重跑：`python art/tools/seam_check.py --tile` 验接缝 → 改图后
+  `godot --headless --path godot --script res://world/tiles/gen_tileset.gd` →
+  `... --script res://world/tiles/apply_ground.gd`
+
+**改这两个脚本前先知道两件事**（都写进注释了）：
+
+1. 动态 `add_child` 的节点**必须设 `owner`**，否则 `pack()` 静默丢弃 —— 而
+   `ResourceSaver.save` 照样成功、文件照样变，只有回读才知道节点不在里面。
+2. 回读**必须 `CACHE_MODE_IGNORE`**：`load()` 命中缓存，刚存的路径读回来是旧的，
+   于是自测自己报 FAIL 而文件其实是对的。验证手段比被验证的东西更不可靠。
 
 ## 环境光：紫月（`world/shaders/env_light.gdshader`）
 
@@ -160,8 +188,9 @@ python art/tools/sync_godot.py --prune   # 连镜像里多出的文件一起删�
 | --- | --- | --- |
 | `art/experiments/` 不在本地 | 4 个 `test_e04_* / test_e05_*` 跑不了（读 `res://art/experiments/`） | CI 已排除；要跑先 `git checkout origin/master -- art/experiments`（95MB） |
 | `addons/dialogue_manager` 引用 `tests/test_basic_dialogue.gd` | 那是插件自带的示例测试，远端也没有 | 不影响运行，不补 |
-| 三段底板至今没有消费点 | 7 个房间 Floor 还是 `ColorRect` 纯色块 | 接缝已验可靠（噪声比 0.86，比材料自身笔触还小）；`seam_check.py --tile` 全绿，可以接 TileSet |
-| 7 个房间 Floor 仍是 `ColorRect` | 三段底板（96/384/96）与新地形贴图无消费点 | 接 TileMapLayer 时一并换 |
+| **草皮贴片现在像异物** | `GrassDecor` 4 块是给 40 高纯色地面设计的（带石边的方形土台）。地形自带连续草皮后，它们变成"摆在草地上的砖" | 待定：删 / 下移埋进地形 / 改成稀疏草簇。**别直接删**，`test_world_visual_swap` 会拦 |
+| **地形重复周期 192px** | mid 384 宽 = 两个镜像半，1280 屏幕上重复 6.7 次，凑近看得出"这是贴的" | 美术侧问题（`art/` 出 2–3 套中间段变体）。接线本身没做错 |
+| TestCombat / WhiteboxTest 没铺地形 | 那两个是白盒调试场景，不继承 `BaseRoom`，也没环境光 | 故意不铺：它们用来单看手感，地形会干扰判断 |
 
 ## 改动纪律
 
