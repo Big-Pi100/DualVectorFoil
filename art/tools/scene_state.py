@@ -72,14 +72,19 @@ TERRAIN_DIR = ART / "approved" / "Terrain"
 MANIFEST = ART / "approved" / "manifest.json"
 OUT = ART / "out" / "scene"
 
-# 只做基准件。`*_200` 是 R4 整数缩放的派生物（`ASSET_RULES R4`），
-# 由基准件重新派生即可 —— 让缩放件也各自出两态，等于同一件事存三份。
+# 只做**地面件**。两个排除项各有理由，别靠感觉往回调：
+#
+# | 排除 | 理由 |
+# |---|---|
+# | `*_200` | R4 整数缩放的派生物（`ASSET_RULES R4`），由基准件重新派生即可 —— 让缩放件也各自出两态，等于同一件事存三份 |
+# | `terrain_stone_block` / `pillar` / `bench` / `grass_decor` | **立体摆件，本作不接入**（`ART_GUIDE §12.3`、`README §3`）。它们带顶面/厚度，不进 tilemap、不作地面，也不占两态资产位 |
+#
+# 摆件这条踩过一次：2026-11-27 之前 `BASE_STEMS` 把四个摆件一起收了，
+# 于是「已判定不接入」的 `terrain_stone_block` 又长出了 `_dark` / `_ally`
+# 两态并注册进 manifest —— 文档说不接入、磁盘上却有两态资产，两边对不上。
+# 现在由 `stray_variants()` 兜底：approved 里出现不属于地面的两态文件就报错。
 BASE_STEMS = [
-    "terrain_grass_top",
-    "terrain_grass_decor",
-    "terrain_stone_block",
-    "terrain_stone_pillar",
-    "terrain_stone_bench",
+    "terrain_grass_top",   # 草皮母版（ground_* 由它裁切）
     "ground_left",
     "ground_mid",
     "ground_right",
@@ -362,6 +367,30 @@ def verify(base: Image.Image, dark: Image.Image, ally: Image.Image, name: str) -
     return errs
 
 
+def stray_variants() -> list[str]:
+    """approved 里不该存在的两态文件。**这条是防"废弃件又长回来"的。**
+
+    起因：`terrain_stone_block` 在 `ART_GUIDE §12.3` / `README §3` 里判定
+    「本作不接入」，可它一度出了 `_dark` / `_ally` 两态并注册进 manifest。
+    文档和磁盘各说各话，而且没有一条断言会抓到 —— 因为 `--check` 只遍历
+    `BASE_STEMS`，**不在清单里的文件它根本不看**（空集合上做全称判断永远为真，
+    这个坑本项目栽过第三次）。
+
+    所以反过来查：磁盘上有哪些 `*_dark` / `*_ally`，减去 `BASE_STEMS` 该有的，
+    剩下的就是野生的。多一个都算 FAIL，不靠人眼。
+    """
+    expect = {f"{s}_{st}.png" for s in BASE_STEMS for st in ("dark", "ally")}
+    errs = []
+    for p in sorted(TERRAIN_DIR.glob("*_dark.png")) + sorted(TERRAIN_DIR.glob("*_ally.png")):
+        if p.name not in expect:
+            stem = p.stem.rsplit("_", 1)[0]
+            why = "（立体摆件，本作不接入）" if stem.startswith("terrain_") else ""
+            errs.append(
+                f"{p.name}: 不属于地面件的两态资产{why} —— "
+                "要么删掉，要么把 stem 加进 BASE_STEMS 并写清理由")
+    return errs
+
+
 def seam_check() -> list[str]:
     """底板接缝不变量。**换色是逐像素纯函数，所以接缝必然保持** —— 这条是守它的。
 
@@ -621,6 +650,7 @@ def main() -> int:
     # ---- 接缝（只验 approved 里的基准件，与两态无关）
     if "--check" in args:
         errs += seam_check()
+        errs += stray_variants()
 
     if errs:
         print("\n".join("FAIL  " + e for e in errs))

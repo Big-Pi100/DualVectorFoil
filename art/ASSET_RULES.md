@@ -441,11 +441,31 @@ python art/tools/scene_state.py --sheet     # 四组合实机合成（场景两�
 `*_200` 是 R4 整数缩放的派生物，**不单独出两态** —— 从基准件重新派生即可，
 否则同一件事要存三份。
 
+**摆件（`terrain_stone_block` / `pillar` / `bench` / `grass_decor`）也不出两态。**
+两态回答的是「这块地现在归谁」——只有进了关卡的地面才有这个状态。摆件没进关卡，
+换色就是给一个不存在的状态做资产。2026-11-27 之前 `BASE_STEMS` 把四个摆件一起收了，
+于是已判定不接入的 `terrain_stone_block` 长出 `_dark` / `_ally` 并注册进 manifest，
+文档说"不接入"、磁盘上却有两态 —— 两边各说各话，而且没有任何断言会抓到
+（`--check` 只遍历 `BASE_STEMS`，不在清单里的文件它根本不看）。现在由
+`scene_state.py --check` 的 `stray_variants()` 反向查：approved 里出现不属于地面件的
+两态文件，一个都算 FAIL。
+
 **不带后缀的基准件（`terrain_grass_top.png` 等）是"未分类的原始素材"，不是第三种态。**
 它们的饱和度 0.61、明度 0.74，比绝大多数演员还艳 —— 那正是这套系统要修的东西。
 prototype（`src/game.js`）目前还引用基准件，接场景两态切换时一并改掉。
 
 ## 4. 立体摆件：不许当"脚下的地面"，但可以当背景与竖直构件
+
+先定状态，别把三种事混成一句"废弃"：
+
+| 件 | 状态 | 含义 |
+| --- | --- | --- |
+| `terrain_stone_block` / `pillar` / `grass_decor` | 🟡 **留库备用**（`S_SPARE`） | **不接入**关卡，但母版留着 ——「用不到只是现在，不代表一直用不到」 |
+| `terrain_stone_bench` | 🔴 **弃用**（`S_DROP`，唯一弃件） | 横向房被撤，纵向房也用不上：既不承重也不成景 |
+| 三件摆件的 `_dark` / `_ally` | ⛔ **不存在，也不该存在** | 没进关卡就没有两态，见 `§3.2` |
+
+判定来源是 `art/tools/contact_sheet.py` 的 `DECISION`（2026-11-26 白哥定），
+本文只解释规则，不另立一套状态。
 
 `Terrain/` 里的 `terrain_stone_block`（200×165 立方石）、`terrain_stone_pillar`（200×323 柱）、
 `terrain_grass_decor`（200×103 草丛）都是**带顶面的 2.5D 摆件**。
@@ -467,7 +487,17 @@ prototype（`src/game.js`）目前还引用基准件，接场景两态切换时�
 
 所以 `asset_rules_check.py` 那条"摆件不得出现在场景里"的断言，含义要读成
 **"摆件目前没有被当作地面误用"**，不是"永远不许出现"。真要拿它做背景，
-先把这条断言改成"摆件不得挂在碰撞体或 `GroundStrip` 上"，再改场景。
+按这个顺序改，别只改一半：
+
+1. 把那条断言改成"摆件不得挂在碰撞体或 `GroundStrip` 上"；
+2. 把 stem 加进 `scene_state.py` 的 `BASE_STEMS`，并**在代码注释里写明理由**
+   （`stray_variants()` 会盯着：加了清单才有两态，不加就一个都不许有）；
+3. 跑 `--approve` 出两态、`--check` 过六条断言、`--matrix` 重验可读性
+   —— 背景岩体也会被换色，演员站在它前面还读不读得出，得重新量；
+4. 更新 `contact_sheet.py` 的 `DECISION`（`S_SPARE` → `S_READY`）与本表的状态列。
+
+**状态只有一个真源**：`contact_sheet.py` 的 `DECISION`。本文和 `README` 都只是解释它；
+两处说法打架时，以 `DECISION` 为准，然后把这里改过来 —— 别反过来。
 
 ---
 

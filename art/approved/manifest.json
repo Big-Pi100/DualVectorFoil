@@ -99,13 +99,13 @@
     "category": "Terrain",
     "source": "art/experiments/E04_GodotScale/assets/E02_terrain_0.png",
     "approved": "art/approved/Terrain/terrain_stone_block.png",
-    "note": "G2+G4"
+    "note": "【不接入·留库备用】G2+G4"
   },
   "terrain_stone_pillar": {
     "category": "Terrain",
     "source": "art/experiments/E04_GodotScale/assets/E02_terrain_1.png",
     "approved": "art/approved/Terrain/terrain_stone_pillar.png",
-    "note": "G2+G4"
+    "note": "【不接入·留库备用】G2+G4"
   },
   "terrain_grass_top": {
     "category": "Terrain",
@@ -213,13 +213,13 @@
     "category": "Terrain",
     "source": "art/approved/Terrain/terrain_grass_top.png",
     "approved": "art/approved/Terrain/terrain_grass_decor.png",
-    "note": "Phase2 gameplay-size grass strip (200x103) for floor decor + soil plot"
+    "note": "【不接入·留库备用】Phase2 gameplay-size grass strip (200x103) for floor decor + soil plot"
   },
   "terrain_stone_bench": {
     "category": "Terrain",
     "source": "art/approved/Terrain/terrain_stone_block.png",
     "approved": "art/approved/Terrain/terrain_stone_bench.png",
-    "note": "Phase2 gameplay-size stone (61x52) for RestBench body"
+    "note": "【弃用·唯一弃件】Phase2 gameplay-size stone (61x52) for RestBench body；无两态（不进关卡）"
   },
   "item_star_sprite": {
     "category": "Items",
@@ -237,13 +237,13 @@
     "category": "Terrain",
     "source": "art/approved/Terrain/terrain_stone_block.png",
     "approved": "art/approved/Terrain/terrain_stone_block_200.png",
-    "note": "Phase3 gameplay-size stone block (200x165) derived from G2/G4-approved 1024 source; used by Room04 book pile + Room05 lighthouse. Fixed 1024-original-in-scene proportion bug (2026-11-26)."
+    "note": "【不接入·留库备用】Phase3 gameplay-size stone block (200x165) derived from G2/G4-approved 1024 source; used by Room04 book pile + Room05 lighthouse. Fixed 1024-original-in-scene proportion bug (2026-11-26)."
   },
   "terrain_stone_pillar_200": {
     "category": "Terrain",
     "source": "art/approved/Terrain/terrain_stone_pillar.png",
     "approved": "art/approved/Terrain/terrain_stone_pillar_200.png",
-    "note": "Phase3 gameplay-size stone pillar (200x323) derived from G2/G4-approved 1024 source; used by Room03 windmill. Fixed 1024-original-in-scene proportion bug (2026-11-26)."
+    "note": "【不接入·留库备用】Phase3 gameplay-size stone pillar (200x323) derived from G2/G4-approved 1024 source; used by Room03 windmill. Fixed 1024-original-in-scene proportion bug (2026-11-26)."
   },
   "ground_left": {
     "category": "Terrain",
@@ -316,54 +316,6 @@
     "source": "art/tools/scene_state.py",
     "approved": "art/approved/Terrain/terrain_grass_top_ally.png",
     "note": "场景恢复态：同几何换色系（alpha 逐像素同 terrain_grass_top）；色温/材质/饱和/明度见 ASSET_RULES §3.2；色卡见 scene_state.py SCENE"
-  },
-  "terrain_grass_decor_dark": {
-    "category": "Terrain",
-    "source": "art/tools/scene_state.py",
-    "approved": "art/approved/Terrain/terrain_grass_decor_dark.png",
-    "note": "场景堵塞态：同几何换色系（alpha 逐像素同 terrain_grass_decor）；色温/材质/饱和/明度见 ASSET_RULES §3.2；色卡见 scene_state.py SCENE"
-  },
-  "terrain_grass_decor_ally": {
-    "category": "Terrain",
-    "source": "art/tools/scene_state.py",
-    "approved": "art/approved/Terrain/terrain_grass_decor_ally.png",
-    "note": "场景恢复态：同几何换色系（alpha 逐像素同 terrain_grass_decor）；色温/材质/饱和/明度见 ASSET_RULES §3.2；色卡见 scene_state.py SCENE"
-  },
-  "terrain_stone_block_dark": {
-    "category": "Terrain",
-    "source": "art/tools/scene_state.py",
-    "approved": "art/approved/Terrain/terrain_stone_block_dark.png",
-    "note": "场景堵塞态：同几何换色系（alpha 逐像素同 terrain_stone_block）；色温/材质/饱和/明度见 ASSET_RULES §3.2；色卡见 scene_state.py SCENE"
-  },
-  "terrain_stone_block_ally": {
-    "category": "Terrain",
-    "source": "art/tools/scene_state.py",
-    "approved": "art/approved/Terrain/terrain_stone_block_ally.png",
-    "note": "场景恢复态：同几何换色系（alpha 逐像素同 terrain_stone_block）；色温/材质/饱和/明度见 ASSET_RULES §3.2；色卡见 scene_state.py SCENE"
-  },
-  "terrain_stone_pillar_dark": {
-    "category": "Terrain",
-    "source": "art/tools/scene_state.py",
-    "approved": "art/approved/Terrain/terrain_stone_pillar_dark.png",
-    "note": "场景堵塞态：同几何换色系（alpha 逐像素同 terrain_stone_pillar）；色温/材质/饱和/明度见 ASSET_RULES §3.2；色卡见 scene_state.py SCENE"
-  },
-  "terrain_stone_pillar_ally": {
-    "category": "Terrain",
-    "source": "art/tools/scene_state.py",
-    "approved": "art/approved/Terrain/terrain_stone_pillar_ally.png",
-    "note": "场景恢复态：同几何换色系（alpha 逐像素同 terrain_stone_pillar）；色温/材质/饱和/明度见 ASSET_RULES §3.2；色卡见 scene_state.py SCENE"
-  },
-  "terrain_stone_bench_dark": {
-    "category": "Terrain",
-    "source": "art/tools/scene_state.py",
-    "approved": "art/approved/Terrain/terrain_stone_bench_dark.png",
-    "note": "场景堵塞态：同几何换色系（alpha 逐像素同 terrain_stone_bench）；色温/材质/饱和/明度见 ASSET_RULES §3.2；色卡见 scene_state.py SCENE"
-  },
-  "terrain_stone_bench_ally": {
-    "category": "Terrain",
-    "source": "art/tools/scene_state.py",
-    "approved": "art/approved/Terrain/terrain_stone_bench_ally.png",
-    "note": "场景恢复态：同几何换色系（alpha 逐像素同 terrain_stone_bench）；色温/材质/饱和/明度见 ASSET_RULES §3.2；色卡见 scene_state.py SCENE"
   },
   "ground_left_dark": {
     "category": "Terrain",
