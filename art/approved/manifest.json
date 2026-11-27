@@ -267,18 +267,18 @@
     "category": "Enemies",
     "source": "art/tools/duo_state.py",
     "approved": "art/approved/Enemies/enemy_slime_ally_00_sprite.png",
-    "note": "原住民态：idle 版换色系（生成物，勿手改）；alpha 逐像素同 dark 版"
+    "note": "原住民态：idle 版换色系（生成物，勿手改）；alpha 逐像素同 dark 版；目标色见 duo_state.py PALETTES[slime]"
   },
   "enemy_bat_ally_00_sprite": {
     "category": "Enemies",
     "source": "art/tools/duo_state.py",
     "approved": "art/approved/Enemies/enemy_bat_ally_00_sprite.png",
-    "note": "原住民态：idle 版换色系（生成物，勿手改）；alpha 逐像素同 dark 版"
+    "note": "原住民态：idle 版换色系（生成物，勿手改）；alpha 逐像素同 dark 版；目标色见 duo_state.py PALETTES[bat]"
   },
   "enemy_spike_ally_00_sprite": {
     "category": "Enemies",
     "source": "art/tools/duo_state.py",
     "approved": "art/approved/Enemies/enemy_spike_ally_00_sprite.png",
-    "note": "原住民态：idle 版换色系（生成物，勿手改）；alpha 逐像素同 dark 版"
+    "note": "原住民态：idle 版换色系（生成物，勿手改）；alpha 逐像素同 dark 版；目标色见 duo_state.py PALETTES[spike]"
   }
 }
