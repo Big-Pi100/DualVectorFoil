@@ -483,6 +483,16 @@ def check(reports: list[dict]) -> int:
 
 def gaps(reports: list[dict]) -> int:
     """缺口清单（不是门禁）。列出现在还做不到的排布要求。"""
+    ok = [r for r in reports if "error" not in r]
+    if ok:
+        filled = sum(r["filled_ratio"] for r in ok) / len(ok)
+        zero420 = sum(1 for r in ok if r["rows"]["sky"] + r["rows"]["mid"] == 0)
+        zero200 = sum(1 for r in ok if r["rows"]["sky"] == 0)
+        print(f"汇总：{len(ok)} 间房，平均非空 {filled*100:.1f}% → 空纸色 {100-filled*100:.1f}%")
+        print(f"      y<420 零元素 {zero420}/{len(ok)}   y<200 零元素 {zero200}/{len(ok)}\n")
+        print("      ↑ 引用这些数时从这里抄，别手算（2026-11-27 手算错过一次：把 76% 写成 70%，")
+        print("        把 y<200 的 5/6 挂到 y<420 上）\n")
+
     print("排布缺口（不判死，属待办）：\n")
     for r in reports:
         name = r["file"]
