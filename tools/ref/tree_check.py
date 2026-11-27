@@ -405,29 +405,43 @@ def check_duo(r05: str, r03: str, r02: str) -> list[str]:
 
 
 def check_scene(r04: str, r03: str) -> list[str]:
-    """第四轮：场景两态（2026-11-27 白哥定「场景的色系也要这样分类」）。"""
+    """第四轮：场景两态 —— 11-27 白天定「同一张图两套色」，当晚改为「一份美术两套光照」。
+
+    断言对象跟着方案换，不是为了让检查好过：
+    旧方案的硬约束是「alpha 逐像素相同」（两套图会被拼接缝惩罚）；
+    环境光方案下只有一张图，几何根本不变，这条自动成立、不再需要文档承诺。
+    换来的是三个新契约：开关叫什么（night / desaturate_amount）、
+    紫月这个叙事词必须出现、以及「明度只能加法」—— 后者被驳回两次了。
+    """
     errs: list[str] = []
 
-    # 1. 04 §2.1 必须在，且两件事都在：alpha 不能动、色温分开
+    # 1. 04 §2.1 必须在，且写清了环境光的契约
     seg = tree_section(r04, "### 2.1", "## 3.")
     if not seg:
         errs.append("04: 找不到 §2.1「场景两态」—— 地表换色没有落点")
     else:
-        if not same_line(seg, "alpha", "逐像素"):
-            errs.append("04 §2.1: 没有一行同时写「alpha」和「逐像素」"
-                        "—— 瓦片几何一动就出缝，这条是硬约束")
-        for k in ("冷像素", "DARK", "ALLY"):
+        for k in ("night", "紫月", "desaturate_amount"):
             if k not in seg:
-                errs.append(f"04 §2.1: 少了「{k}」")
+                errs.append(f"04 §2.1: 少了「{k}」—— 环境光的契约参数，"
+                            "关卡文档是策划读的那份，不能只有实现里有")
+        if "加法" not in seg:
+            errs.append("04 §2.1: 没写「明度只能加法」—— 乘法压对比度，这条被驳回两次")
+        if "3.2.6" not in seg:
+            errs.append("04 §2.1: 没有指向 ASSET_RULES §3.2.6 —— 判据没有单一真源")
 
     # 2. 规范侧的判据必须在（不然就是只有结论没有依据）
     rules = ASSET_RULES.read_text(encoding="utf-8") if ASSET_RULES.exists() else ""
     if "### 3.2" not in rules:
         errs.append("ASSET_RULES: 缺 §3.2 场景两态 —— 判据没有单一真源")
     else:
+        seg2 = tree_section(rules, "### 3.2", "## 4.")
         for k in ("色温", "材质不糊", "可读性"):
-            if k not in tree_section(rules, "### 3.2", "## 4."):
+            if k not in seg2:
                 errs.append(f"ASSET_RULES §3.2: 少了「{k}」判据")
+        for k in ("3.2.6", "night", "植被"):
+            if k not in seg2:
+                errs.append(f"ASSET_RULES §3.2: 少了环境光的「{k}」"
+                            "—— 换成环境光之后，旧判据不能原地留着不更新")
 
     # 3. 03 必须写明「清区 → 换地色」这条画面开关
     if not same_line(r03, "地面", "色系"):

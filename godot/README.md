@@ -59,13 +59,24 @@ godot/
 │  ├─ rooms/              SafeHouse（主场景）+ Room01–05 + BaseRoom.gd（房间基类）
 │  ├─ enemies/            Invader.tscn + InvaderVisual.gd
 │  ├─ interactables/      RestBench / RoomDoor / SoilPlot / VistaZone
-│  └─ shaders/            boiling_line / desaturate_wipe / paper_grain
+│  └─ shaders/            boiling_line / desaturate_wipe / paper_grain / **env_light**
 ├─ ui/                    DialogueBalloon / TouchHUD / TravelJournal
 ├─ dialogue/              StoryDirector + 3 个 .dialogue 剧本
 ├─ addons/dialogue_manager/  第三方对话插件（118 文件，勿手改）
 ├─ tests/                 23 个 test_*.gd（CI 跑 19 个）
 └─ art/approved/          ← 根 `art/approved/` 的**只读镜像**，不要手改
 ```
+
+## 环境光：紫月（`world/shaders/env_light.gdshader`）
+
+被侵占的房间是**紫月**，清完是**日光**。一个 shader 管全局，不给地面出两套图。
+
+- 挂在 `PostProcessLayer/EnvLightRect`，**排在 `DesaturateRect` 之后**：
+  先变灰、再上色，紫月才照得上去。写在前面会被去色层洗掉。
+- `night` 由 `BaseRoom._setup_invasion_state()` 驱动（侵占 1.0 / 清完 0.0），
+  净化时与 `wipe_radius` 并行补间。**实机按 `F3` 手动开关**，可直接对比两套光照。
+- 参数含义见 `art/ASSET_RULES.md §3.2.6`；校验端 `art/tools/env_light.py --check` 六条断言，
+  **参数名与 shader 的 uniform 一一对应，改一边必须改另一边**。
 
 ## 资产：镜像，不是真源
 
